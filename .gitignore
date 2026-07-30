@@ -11,6 +11,10 @@ frontend/dist/
 .env
 *.log
 
+# Certificados de desarrollo local (HTTPS/TLS BIOPET) - nunca versionar el keystore real
+Backend/certs/*
+!Backend/certs/.gitkeep
+
 # IDE
 .idea/
 .vscode/
