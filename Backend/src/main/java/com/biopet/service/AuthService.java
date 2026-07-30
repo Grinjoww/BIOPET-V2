@@ -4,8 +4,10 @@ import com.biopet.entity.Rol;
 import com.biopet.dto.*;
 import com.biopet.entity.Usuario;
 import com.biopet.exception.EmailDuplicadoException;
+import com.biopet.exception.RateLimitExcedidoException;
 import com.biopet.exception.RecursoNoEncontradoException;
 import com.biopet.repository.UsuarioRepository;
+import com.biopet.security.AuthenticationAuditService;
 import com.biopet.security.JwtService;
 import com.biopet.security.LoginRateLimiterService;
 import com.biopet.security.TokenBlacklistService;
@@ -28,19 +30,22 @@ public class AuthService {
     private final JwtService jwtService;
     private final TokenBlacklistService blacklistService;
     private final LoginRateLimiterService loginRateLimiterService;
+    private final AuthenticationAuditService authenticationAuditService;
 
     public AuthService(UsuarioRepository usuarioRepository,
                        PasswordEncoder passwordEncoder,
                        AuthenticationManager authenticationManager,
                        JwtService jwtService,
                        TokenBlacklistService blacklistService,
-                       LoginRateLimiterService loginRateLimiterService) {
+                       LoginRateLimiterService loginRateLimiterService,
+                       AuthenticationAuditService authenticationAuditService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.blacklistService = blacklistService;
         this.loginRateLimiterService = loginRateLimiterService;
+        this.authenticationAuditService = authenticationAuditService;
     }
 
     @Transactional
@@ -60,19 +65,33 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request, String ip) {
-        loginRateLimiterService.verificarPermitido(ip);
+        String emailSolicitado = request.email().toLowerCase();
+
+        try {
+            loginRateLimiterService.verificarPermitido(ip);
+        } catch (RateLimitExcedidoException ex) {
+            authenticationAuditService.loginBloqueado(ip, emailSolicitado);
+            throw ex;
+        }
 
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email().toLowerCase(), request.password())
+                    new UsernamePasswordAuthenticationToken(emailSolicitado, request.password())
             );
         } catch (BadCredentialsException ex) {
-            loginRateLimiterService.registrarFallo(ip);
+            try {
+                loginRateLimiterService.registrarFallo(ip);
+            } catch (RateLimitExcedidoException limiteExcedido) {
+                authenticationAuditService.loginBloqueado(ip, emailSolicitado);
+                throw limiteExcedido;
+            }
+            authenticationAuditService.loginFallido(ip, emailSolicitado);
             throw ex;
         }
 
         loginRateLimiterService.reiniciar(ip);
+        authenticationAuditService.loginExitoso(ip, authentication.getName());
 
         Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(authentication.getName())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no existe"));
