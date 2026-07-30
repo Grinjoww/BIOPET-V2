@@ -1,0 +1,22 @@
+package com.biopet.exception;
+
+import java.net.URI;
+
+public enum ProblemType {
+    VALIDATION("urn:biopet:error:validation"),
+    NOT_FOUND("urn:biopet:error:not-found"),
+    CONFLICT("urn:biopet:error:conflict"),
+    UNAUTHORIZED("urn:biopet:error:unauthorized"),
+    BAD_REQUEST("urn:biopet:error:bad-request"),
+    INTERNAL("urn:biopet:error:internal");
+
+    private final URI uri;
+
+    ProblemType(String urn) {
+        this.uri = URI.create(urn);
+    }
+
+    public URI uri() {
+        return uri;
+    }
+}
