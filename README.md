@@ -82,3 +82,12 @@ obligatorio por validación, pero el servidor siempre asigna `ROLE_DUENO`):
 
 Un usuario `ROLE_DUENO` puede consultar mascotas, pero crear, actualizar o eliminar
 requiere el usuario administrador de arriba.
+
+## Actualizar los digests de las imágenes
+
+Las imágenes de PostgreSQL y Redis están fijadas por digest sha256 para evitar
+derivas silenciosas. Para actualizar a una versión más reciente:
+
+1. `docker pull postgres:16-alpine` (o la versión que corresponda)
+2. `docker inspect --format='{{index .RepoDigests 0}}' postgres:16-alpine`
+3. Copiar el nuevo digest a `docker-compose.yml`
