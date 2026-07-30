@@ -1,19 +1,26 @@
 package com.biopet.controller;
 
 import com.biopet.dto.*;
+import com.biopet.security.JwtCookieService;
 import com.biopet.service.AuthService;
+import io.jsonwebtoken.JwtException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
     private final AuthService authService;
+    private final JwtCookieService jwtCookieService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, JwtCookieService jwtCookieService) {
         this.authService = authService;
+        this.jwtCookieService = jwtCookieService;
     }
 
     @PostMapping("/registro")
@@ -22,18 +29,40 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<AuthSessionResponse> login(@Valid @RequestBody LoginRequest request,
+                                                       HttpServletResponse response) {
+        AuthResponse authResponse = authService.login(request);
+        jwtCookieService.addAccessCookie(response, authResponse.accessToken());
+        jwtCookieService.addRefreshCookie(response, authResponse.refreshToken());
+        return ResponseEntity.ok(new AuthSessionResponse(authResponse.expiresIn()));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
-        return ResponseEntity.ok(authService.refresh(request));
+    public ResponseEntity<AuthSessionResponse> refresh(HttpServletRequest servletRequest,
+                                                         HttpServletResponse servletResponse) {
+        String refreshToken = jwtCookieService.readRefreshToken(servletRequest)
+                .orElseThrow(() -> new BadCredentialsException("Refresh token ausente o inválido"));
+
+        AuthResponse authResponse;
+        try {
+            authResponse = authService.refresh(new RefreshRequest(refreshToken));
+        } catch (JwtException | IllegalArgumentException ex) {
+            throw new BadCredentialsException("Refresh token ausente o inválido");
+        }
+
+        jwtCookieService.addAccessCookie(servletResponse, authResponse.accessToken());
+        return ResponseEntity.ok(new AuthSessionResponse(authResponse.expiresIn()));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authorization) {
-        authService.logout(authorization);
+    public ResponseEntity<Void> logout(HttpServletRequest servletRequest,
+                                        HttpServletResponse servletResponse) {
+        jwtCookieService.readAccessToken(servletRequest).ifPresent(authService::logout);
+        jwtCookieService.readRefreshToken(servletRequest).ifPresent(authService::logout);
+
+        jwtCookieService.clearAccessCookie(servletResponse);
+        jwtCookieService.clearRefreshCookie(servletResponse);
+
         return ResponseEntity.noContent().build();
     }
 }

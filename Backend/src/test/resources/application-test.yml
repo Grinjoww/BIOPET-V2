@@ -21,6 +21,11 @@ security:
     refresh-expiration-ms: 604800000
     issuer: biopet-test-api
     audience: biopet-test-frontend
+  cookie:
+    access-name: access_token
+    refresh-name: refresh_token
+    secure: true
+    same-site: Strict
 
 app:
   cors:

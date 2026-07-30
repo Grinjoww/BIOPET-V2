@@ -36,6 +36,11 @@ security:
     refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
     issuer: ${JWT_ISSUER:biopet-api}
     audience: ${JWT_AUDIENCE:biopet-frontend}
+  cookie:
+    access-name: access_token
+    refresh-name: refresh_token
+    secure: true
+    same-site: Strict
 
 app:
   cors:

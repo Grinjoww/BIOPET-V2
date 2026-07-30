@@ -8,12 +8,15 @@ import com.biopet.exception.RecursoNoEncontradoException;
 import com.biopet.repository.UsuarioRepository;
 import com.biopet.security.JwtService;
 import com.biopet.security.TokenBlacklistService;
+import io.jsonwebtoken.JwtException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 
 @Service
 public class AuthService {
@@ -79,12 +82,17 @@ public class AuthService {
         return new AuthResponse(jwtService.generateAccessToken(usuario), refreshToken, jwtService.getExpirationMs() / 1000);
     }
 
-    public void logout(String bearerToken) {
-        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Token JWT requerido");
+    public void logout(String token) {
+        if (token == null || token.isEmpty()) {
+            return;
         }
-        String token = bearerToken.substring(7);
-        blacklistService.revoke(jwtService.extractJti(token), jwtService.extractExpiration(token));
+        try {
+            String jti = jwtService.extractJti(token);
+            Instant expiresAt = jwtService.extractExpiration(token);
+            blacklistService.revoke(jti, expiresAt);
+        } catch (JwtException | IllegalArgumentException ex) {
+            // Token inválido, expirado o no procesable: no se revoca, no se propaga el error.
+        }
     }
 
     public UsuarioResponse perfil(String email) {
