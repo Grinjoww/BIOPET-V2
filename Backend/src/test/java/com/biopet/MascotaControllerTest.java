@@ -1,5 +1,6 @@
 package com.biopet;
 
+import com.biopet.entity.Mascota;
 import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
 import com.biopet.repository.MascotaRepository;
@@ -20,6 +21,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -422,6 +424,60 @@ class MascotaControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.detail").isNotEmpty())
                 .andExpect(jsonPath("$.instance").value("/api/mascotas/" + mascotaId));
+    }
+
+    @Test
+    void adminEliminaMascotaExitosamente() throws Exception {
+        Long duenoId = registrarDuenoYObtenerId("eliminar.exitoso.dueno@biopet.com", "ClaveDueno123*");
+        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+        Long mascotaId = crearMascotaYObtenerId(tokenAdmin, duenoId, "Firulais");
+
+        mockMvc.perform(delete("/api/mascotas/" + mascotaId)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isNoContent());
+
+        Mascota mascotaEliminada = mascotaRepository.findById(mascotaId)
+                .orElseThrow(() -> new AssertionError("La mascota fue eliminada físicamente de la base de datos: " + mascotaId));
+        assertFalse(mascotaEliminada.isActivo());
+    }
+
+    @Test
+    void crearMascotaConCamposInvalidosDevuelve422() throws Exception {
+        Long duenoId = registrarDuenoYObtenerId("invalido.dueno@biopet.com", "ClaveDueno123*");
+        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+
+        mockMvc.perform(post("/api/mascotas")
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"duenioId":%d,"nombre":"","especie":"Perro","raza":"Mestizo","fechaNacimiento":"2020-01-01"}
+                                """.formatted(duenoId)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:validation"))
+                .andExpect(jsonPath("$.title").value("Error de validación"))
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.instance").value("/api/mascotas"))
+                .andExpect(jsonPath("$.errors").exists())
+                .andExpect(jsonPath("$.errors.nombre").isArray());
+    }
+
+    @Test
+    void auxiliarConservaAccesoGlobalAlListado() throws Exception {
+        Long dueno1Id = registrarDuenoYObtenerId("auxiliar.dueno1@biopet.com", "ClaveDueno123*");
+        Long dueno2Id = registrarDuenoYObtenerId("auxiliar.dueno2@biopet.com", "ClaveDueno456*");
+
+        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+        crearMascota(tokenAdmin, dueno1Id, "Rex");
+        crearMascota(tokenAdmin, dueno2Id, "Kitty");
+
+        crearUsuarioConRol("auxiliar.listado@biopet.com", "ClaveAux123*", Rol.ROLE_AUXILIAR);
+        String tokenAuxiliar = extractCookieValue(iniciarSesion("auxiliar.listado@biopet.com", "ClaveAux123*"), "access_token");
+
+        mockMvc.perform(get("/api/mascotas?page=0&size=10")
+                        .header("Authorization", "Bearer " + tokenAuxiliar))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2));
     }
 
     private Long crearUsuarioConRolYObtenerId(String email, String password, Rol rol) {
