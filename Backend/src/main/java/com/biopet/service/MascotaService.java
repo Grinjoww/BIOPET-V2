@@ -2,7 +2,9 @@ package com.biopet.service;
 
 import com.biopet.dto.MascotaRequest;
 import com.biopet.dto.MascotaResponse;
+import com.biopet.dto.ResumenEspecieResponse;
 import com.biopet.entity.Mascota;
+import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
 import com.biopet.exception.RecursoNoEncontradoException;
 import com.biopet.repository.MascotaRepository;
@@ -13,6 +15,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class MascotaService {
@@ -76,6 +80,20 @@ public class MascotaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Mascota no encontrada: " + id));
         mascota.setActivo(false);
         mascotaRepository.save(mascota);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ResumenEspecieResponse> resumenPorEspecie(Long duenioIdSolicitado, String emailAutenticado) {
+        Usuario usuarioAutenticado = usuarioRepository.findByEmailAndActivoTrue(emailAutenticado)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + emailAutenticado));
+
+        Long duenioIdEfectivo = (usuarioAutenticado.getRol() == Rol.ROLE_ADMIN)
+                ? duenioIdSolicitado
+                : usuarioAutenticado.getId();
+
+        return mascotaRepository.resumenPorEspecie(duenioIdEfectivo).stream()
+                .map(r -> new ResumenEspecieResponse(r.getEspecie(), r.getTotal()))
+                .toList();
     }
 
     private MascotaResponse toResponse(Mascota mascota) {
