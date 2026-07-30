@@ -115,7 +115,26 @@ class AuthControllerTest {
     @Test
     void accesoSinToken() throws Exception {
         mockMvc.perform(get("/api/usuarios/me"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType("application/problem+json;charset=UTF-8"))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:unauthorized"))
+                .andExpect(jsonPath("$.title").value("No autenticado"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/usuarios/me"));
+    }
+
+    @Test
+    void accesoConTokenInvalido() throws Exception {
+        mockMvc.perform(get("/api/usuarios/me")
+                        .header("Authorization", "Bearer token-invalido"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType("application/problem+json;charset=UTF-8"))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:unauthorized"))
+                .andExpect(jsonPath("$.title").value("No autenticado"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/usuarios/me"));
     }
 
     @Test

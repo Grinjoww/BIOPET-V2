@@ -75,4 +75,41 @@ class MascotaControllerTest {
                 .andExpect(jsonPath("$.detail").isNotEmpty())
                 .andExpect(jsonPath("$.instance").value("/api/mascotas/999999"));
     }
+
+    @Test
+    void crearMascotaConRolInsuficienteDevuelveProblemDetail() throws Exception {
+        mockMvc.perform(post("/api/auth/registro")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nombre":"Dueño Real","email":"dueno@biopet.com","password":"ClaveDueno123*","rol":"ROLE_DUENO"}
+                                """))
+                .andExpect(status().isCreated());
+
+        String loginResponse = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"dueno@biopet.com","password":"ClaveDueno123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        JsonNode json = objectMapper.readTree(loginResponse);
+        String tokenDueno = json.get("accessToken").asText();
+
+        mockMvc.perform(post("/api/mascotas")
+                        .header("Authorization", "Bearer " + tokenDueno)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"duenioId":1,"nombre":"Firulais","especie":"Perro","raza":"Mestizo","fechaNacimiento":"2020-01-01"}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType("application/problem+json;charset=UTF-8"))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:forbidden"))
+                .andExpect(jsonPath("$.title").value("Acceso denegado"))
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/mascotas"));
+    }
 }
