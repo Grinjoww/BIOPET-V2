@@ -17,6 +17,9 @@ public class AuthenticationAuditService {
     private static final String EVENTO_LOGIN_EXITOSO = "LOGIN_SUCCESS";
     private static final String EVENTO_LOGIN_FALLIDO = "LOGIN_FAILURE";
     private static final String EVENTO_LOGIN_BLOQUEADO = "LOGIN_RATE_LIMITED";
+    private static final String EVENTO_REFRESH_EXITOSO = "REFRESH_SUCCESS";
+    private static final String EVENTO_REFRESH_FALLIDO = "REFRESH_FAILURE";
+    private static final String EVENTO_LOGOUT_EXITOSO = "LOGOUT_SUCCESS";
 
     private static final String RESULTADO_EXITO = "SUCCESS";
     private static final String RESULTADO_FALLO = "FAILURE";
@@ -32,6 +35,18 @@ public class AuthenticationAuditService {
 
     public void loginBloqueado(String ip, String subject) {
         logger.warn(formatear(EVENTO_LOGIN_BLOQUEADO, RESULTADO_BLOQUEADO, ip, subject));
+    }
+
+    public void refreshExitoso(String ip, String subject) {
+        logger.info(formatear(EVENTO_REFRESH_EXITOSO, RESULTADO_EXITO, ip, subject));
+    }
+
+    public void refreshFallido(String ip, String subject) {
+        logger.warn(formatear(EVENTO_REFRESH_FALLIDO, RESULTADO_FALLO, ip, subject));
+    }
+
+    public void logoutExitoso(String ip, String subject) {
+        logger.info(formatear(EVENTO_LOGOUT_EXITOSO, RESULTADO_EXITO, ip, subject));
     }
 
     private String formatear(String evento, String resultado, String ip, String subject) {
