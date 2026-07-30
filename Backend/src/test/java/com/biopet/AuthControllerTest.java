@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -68,7 +69,13 @@ class AuthControllerTest {
                         .content("""
                                 {"email":"jaime@biopet.com","password":"incorrecta"}
                                 """))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:unauthorized"))
+                .andExpect(jsonPath("$.title").value("No autenticado"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/auth/login"));
     }
 
     @Test
@@ -78,7 +85,31 @@ class AuthControllerTest {
                         .content("""
                                 {"nombre":"Jaime","email":"jaime@biopet.com","password":"OtraClave123*","rol":"ROLE_ADMIN"}
                                 """))
-                .andExpect(status().isConflict());
+                .andExpect(status().isConflict())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:conflict"))
+                .andExpect(jsonPath("$.title").value("Conflicto de datos"))
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/auth/registro"));
+    }
+
+    @Test
+    void registroConCamposInvalidos() throws Exception {
+        mockMvc.perform(post("/api/auth/registro")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nombre":"","email":"no-es-un-email","password":"corta","rol":"ROLE_ADMIN"}
+                                """))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:validation"))
+                .andExpect(jsonPath("$.title").value("Error de validación"))
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.instance").value("/api/auth/registro"))
+                .andExpect(jsonPath("$.errors.nombre").isArray())
+                .andExpect(jsonPath("$.errors.email").isArray())
+                .andExpect(jsonPath("$.errors.password").isArray());
     }
 
     @Test
