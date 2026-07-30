@@ -14,32 +14,36 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final TokenBlacklistService blacklistService;
     private final UserDetailsServiceImpl userDetailsService;
+    private final JwtCookieService jwtCookieService;
 
     public JwtAuthenticationFilter(JwtService jwtService,
                                    TokenBlacklistService blacklistService,
-                                   UserDetailsServiceImpl userDetailsService) {
+                                   UserDetailsServiceImpl userDetailsService,
+                                   JwtCookieService jwtCookieService) {
         this.jwtService = jwtService;
         this.blacklistService = blacklistService;
         this.userDetailsService = userDetailsService;
+        this.jwtCookieService = jwtCookieService;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String header = request.getHeader("Authorization");
-        if (header == null || !header.startsWith("Bearer ")) {
+        Optional<String> resolvedToken = resolveToken(request);
+        if (resolvedToken.isEmpty()) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = header.substring(7);
+        String token = resolvedToken.get();
         try {
             String email = jwtService.extractEmail(token);
             String jti = jwtService.extractJti(token);
@@ -60,5 +64,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private Optional<String> resolveToken(HttpServletRequest request) {
+        Optional<String> cookieToken = jwtCookieService.readAccessToken(request);
+        if (cookieToken.isPresent()) {
+            return cookieToken;
+        }
+
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            return Optional.of(header.substring(7));
+        }
+
+        return Optional.empty();
     }
 }
