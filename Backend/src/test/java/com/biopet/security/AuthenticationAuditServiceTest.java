@@ -77,6 +77,63 @@ class AuthenticationAuditServiceTest {
     }
 
     @Test
+    void refreshExitosoRegistraEventoInfo() {
+        service.refreshExitoso("203.0.113.20", "usuario@biopet.com");
+
+        ILoggingEvent evento = ultimoEvento();
+        String mensaje = evento.getFormattedMessage();
+
+        assertTrue(mensaje.contains("AUTH_AUDIT"));
+        assertTrue(mensaje.contains("timestamp="));
+        assertTrue(mensaje.contains("event=REFRESH_SUCCESS"));
+        assertTrue(mensaje.contains("result=SUCCESS"));
+        assertTrue(mensaje.contains("ip=203.0.113.20"));
+        assertTrue(mensaje.contains("subject=usuario@biopet.com"));
+        assertEquals(Level.INFO, evento.getLevel());
+        assertFalse(mensaje.contains("access_token"));
+        assertFalse(mensaje.contains("refresh_token"));
+        assertFalse(mensaje.contains("Bearer"));
+    }
+
+    @Test
+    void refreshFallidoRegistraEventoWarn() {
+        service.refreshFallido("203.0.113.21", "unknown");
+
+        ILoggingEvent evento = ultimoEvento();
+        String mensaje = evento.getFormattedMessage();
+
+        assertTrue(mensaje.contains("AUTH_AUDIT"));
+        assertTrue(mensaje.contains("timestamp="));
+        assertTrue(mensaje.contains("event=REFRESH_FAILURE"));
+        assertTrue(mensaje.contains("result=FAILURE"));
+        assertTrue(mensaje.contains("ip=203.0.113.21"));
+        assertTrue(mensaje.contains("subject=unknown"));
+        assertEquals(Level.WARN, evento.getLevel());
+        assertFalse(mensaje.contains("access_token"));
+        assertFalse(mensaje.contains("refresh_token"));
+        assertFalse(mensaje.contains("Bearer"));
+    }
+
+    @Test
+    void logoutExitosoRegistraEventoInfo() {
+        service.logoutExitoso("203.0.113.22", "usuario@biopet.com");
+
+        ILoggingEvent evento = ultimoEvento();
+        String mensaje = evento.getFormattedMessage();
+
+        assertTrue(mensaje.contains("AUTH_AUDIT"));
+        assertTrue(mensaje.contains("timestamp="));
+        assertTrue(mensaje.contains("event=LOGOUT_SUCCESS"));
+        assertTrue(mensaje.contains("result=SUCCESS"));
+        assertTrue(mensaje.contains("ip=203.0.113.22"));
+        assertTrue(mensaje.contains("subject=usuario@biopet.com"));
+        assertEquals(Level.INFO, evento.getLevel());
+        assertFalse(mensaje.contains("access_token"));
+        assertFalse(mensaje.contains("refresh_token"));
+        assertFalse(mensaje.contains("Bearer"));
+    }
+
+    @Test
     void valoresNulosSeNormalizanComoUnknown() {
         service.loginFallido(null, null);
 

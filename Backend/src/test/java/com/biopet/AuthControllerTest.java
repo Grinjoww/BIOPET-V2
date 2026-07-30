@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -385,6 +386,9 @@ class AuthControllerTest {
         assertTrue(accessCookieHeader.contains("Secure"));
         assertTrue(accessCookieHeader.contains("SameSite=Strict"));
         assertTrue(accessCookieHeader.contains("Path=/"));
+
+        verify(authenticationAuditService, times(1)).refreshExitoso(anyString(), eq(EMAIL_VALIDO));
+        verify(authenticationAuditService, never()).refreshFallido(anyString(), any());
     }
 
     @Test
@@ -400,6 +404,9 @@ class AuthControllerTest {
                 .andReturn();
 
         assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).isEmpty());
+
+        verify(authenticationAuditService, times(1)).refreshFallido(anyString(), isNull());
+        verify(authenticationAuditService, never()).refreshExitoso(anyString(), anyString());
     }
 
     @Test
@@ -416,6 +423,9 @@ class AuthControllerTest {
                 .andReturn();
 
         assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).isEmpty());
+
+        verify(authenticationAuditService, times(1)).refreshFallido(anyString(), isNull());
+        verify(authenticationAuditService, never()).refreshExitoso(anyString(), anyString());
     }
 
     @Test
@@ -440,6 +450,8 @@ class AuthControllerTest {
                 .andReturn();
 
         assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).isEmpty());
+
+        verify(authenticationAuditService, times(1)).refreshFallido(anyString(), isNull());
     }
 
     @Test
@@ -466,6 +478,8 @@ class AuthControllerTest {
                 .andReturn();
 
         assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).isEmpty());
+
+        verify(authenticationAuditService, times(1)).refreshFallido(anyString(), eq(EMAIL_VALIDO));
     }
 
     @Test
@@ -517,6 +531,8 @@ class AuthControllerTest {
         verify(tokenBlacklistService, times(1)).revoke(eq(accessJti), any(Instant.class));
         verify(tokenBlacklistService, times(1)).revoke(eq(refreshJti), any(Instant.class));
         verify(tokenBlacklistService, times(2)).revoke(anyString(), any(Instant.class));
+
+        verify(authenticationAuditService, times(1)).logoutExitoso(anyString(), eq(EMAIL_VALIDO));
     }
 
     @Test
@@ -531,6 +547,8 @@ class AuthControllerTest {
         assertTrue(setCookieHeaders.stream().anyMatch(header -> header.startsWith("refresh_token=")));
 
         verify(tokenBlacklistService, never()).revoke(anyString(), any(Instant.class));
+
+        verify(authenticationAuditService, times(1)).logoutExitoso(anyString(), isNull());
     }
 
     @Test
