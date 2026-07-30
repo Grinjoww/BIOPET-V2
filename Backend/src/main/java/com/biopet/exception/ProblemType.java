@@ -9,6 +9,7 @@ public enum ProblemType {
     UNAUTHORIZED("urn:biopet:error:unauthorized"),
     FORBIDDEN("urn:biopet:error:forbidden"),
     BAD_REQUEST("urn:biopet:error:bad-request"),
+    RATE_LIMITED("urn:biopet:error:rate-limited"),
     INTERNAL("urn:biopet:error:internal");
 
     private final URI uri;

@@ -30,8 +30,9 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthSessionResponse> login(@Valid @RequestBody LoginRequest request,
+                                                       HttpServletRequest servletRequest,
                                                        HttpServletResponse response) {
-        AuthResponse authResponse = authService.login(request);
+        AuthResponse authResponse = authService.login(request, servletRequest.getRemoteAddr());
         jwtCookieService.addAccessCookie(response, authResponse.accessToken());
         jwtCookieService.addRefreshCookie(response, authResponse.refreshToken());
         return ResponseEntity.ok(new AuthSessionResponse(authResponse.expiresIn()));

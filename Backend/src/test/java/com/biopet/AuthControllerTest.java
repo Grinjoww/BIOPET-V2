@@ -4,6 +4,7 @@ import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
 import com.biopet.repository.UsuarioRepository;
 import com.biopet.security.JwtService;
+import com.biopet.security.LoginRateLimiterService;
 import com.biopet.security.TokenBlacklistService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 
 import java.time.Instant;
 import java.util.List;
@@ -45,21 +47,50 @@ class AuthControllerTest {
     @Autowired UsuarioRepository usuarioRepository;
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired JwtService jwtService;
+    @Autowired LoginRateLimiterService loginRateLimiterService;
 
     @MockBean TokenBlacklistService tokenBlacklistService;
+
+    private static final String EMAIL_VALIDO = "jaime@biopet.com";
+    private static final String PASSWORD_VALIDO = "ClaveCorrecta123*";
+    private static final String PASSWORD_INVALIDO = "incorrecta";
+
+    private static final String IP_DEFECTO = "127.0.0.1";
+    private static final String IP_CINCO_FALLOS = "203.0.113.101";
+    private static final String IP_SEIS_FALLOS = "203.0.113.102";
+    private static final String IP_BLOQUEADA = "203.0.113.103";
+    private static final String IP_A = "203.0.113.104";
+    private static final String IP_B = "203.0.113.105";
+    private static final String IP_REINICIO = "203.0.113.106";
 
     @BeforeEach
     void setUp() {
         usuarioRepository.deleteAll();
         Usuario usuario = Usuario.builder()
                 .nombre("Jaime Mariscal")
-                .email("jaime@biopet.com")
-                .passwordHash(passwordEncoder.encode("ClaveCorrecta123*"))
+                .email(EMAIL_VALIDO)
+                .passwordHash(passwordEncoder.encode(PASSWORD_VALIDO))
                 .rol(Rol.ROLE_ADMIN)
                 .activo(true)
                 .build();
         usuarioRepository.save(usuario);
         when(tokenBlacklistService.isRevoked(anyString())).thenReturn(false);
+
+        for (String ip : List.of(IP_DEFECTO, IP_CINCO_FALLOS, IP_SEIS_FALLOS, IP_BLOQUEADA, IP_A, IP_B, IP_REINICIO)) {
+            loginRateLimiterService.reiniciar(ip);
+        }
+    }
+
+    private ResultActions loginDesde(String email, String password, String remoteAddr) throws Exception {
+        return mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .with(request -> {
+                    request.setRemoteAddr(remoteAddr);
+                    return request;
+                })
+                .content("""
+                        {"email":"%s","password":"%s"}
+                        """.formatted(email, password)));
     }
 
     @Test
@@ -115,6 +146,79 @@ class AuthControllerTest {
                 .andReturn();
 
         assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).isEmpty());
+    }
+
+    @Test
+    void quintoIntentoFallidoSigueRespondiendo401() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_CINCO_FALLOS)
+                    .andExpect(status().isUnauthorized());
+        }
+    }
+
+    @Test
+    void sextoIntentoFallidoDevuelve429ProblemDetail() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_SEIS_FALLOS)
+                    .andExpect(status().isUnauthorized());
+        }
+
+        loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_SEIS_FALLOS)
+                .andExpect(status().isTooManyRequests())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:rate-limited"))
+                .andExpect(jsonPath("$.title").value("Demasiados intentos"))
+                .andExpect(jsonPath("$.status").value(429))
+                .andExpect(jsonPath("$.detail").value(
+                        "Se ha excedido el número máximo de intentos fallidos de inicio de sesión. Intente nuevamente más tarde."))
+                .andExpect(jsonPath("$.instance").value("/api/auth/login"))
+                .andExpect(mvcResult -> {
+                    String retryAfter = mvcResult.getResponse().getHeader(HttpHeaders.RETRY_AFTER);
+                    assertTrue(retryAfter != null && Long.parseLong(retryAfter) > 0);
+                });
+    }
+
+    @Test
+    void ipBloqueadaRechazaInclusoCredencialesCorrectas() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_BLOQUEADA)
+                    .andExpect(status().isUnauthorized());
+        }
+        loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_BLOQUEADA)
+                .andExpect(status().isTooManyRequests());
+
+        MvcResult result = loginDesde(EMAIL_VALIDO, PASSWORD_VALIDO, IP_BLOQUEADA)
+                .andExpect(status().isTooManyRequests())
+                .andReturn();
+
+        assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).isEmpty());
+    }
+
+    @Test
+    void intentosDesdeIpsDistintasNoSeAcumulan() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_A)
+                    .andExpect(status().isUnauthorized());
+        }
+
+        loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_B)
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void loginExitosoReiniciaContadorDeLaIp() throws Exception {
+        for (int i = 0; i < 4; i++) {
+            loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_REINICIO)
+                    .andExpect(status().isUnauthorized());
+        }
+
+        loginDesde(EMAIL_VALIDO, PASSWORD_VALIDO, IP_REINICIO)
+                .andExpect(status().isOk());
+
+        for (int i = 0; i < 5; i++) {
+            loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_REINICIO)
+                    .andExpect(status().isUnauthorized());
+        }
     }
 
     @Test

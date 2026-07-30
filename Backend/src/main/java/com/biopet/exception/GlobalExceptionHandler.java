@@ -1,6 +1,7 @@
 package com.biopet.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -59,6 +60,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ProblemDetail> argumentoInvalido(IllegalArgumentException ex, HttpServletRequest request) {
         return problemResponse(HttpStatus.BAD_REQUEST, ProblemType.BAD_REQUEST, "Solicitud inválida", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(RateLimitExcedidoException.class)
+    public ResponseEntity<ProblemDetail> demasiadosIntentos(RateLimitExcedidoException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetailFactory.build(
+                HttpStatus.TOO_MANY_REQUESTS,
+                ProblemType.RATE_LIMITED,
+                "Demasiados intentos",
+                "Se ha excedido el número máximo de intentos fallidos de inicio de sesión. Intente nuevamente más tarde.",
+                request
+        );
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getSegundosRestantes()))
+                .body(problemDetail);
     }
 
     private ResponseEntity<ProblemDetail> problemResponse(HttpStatus status, ProblemType type, String title,

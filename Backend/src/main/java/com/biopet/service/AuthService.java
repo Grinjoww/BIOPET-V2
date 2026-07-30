@@ -7,9 +7,11 @@ import com.biopet.exception.EmailDuplicadoException;
 import com.biopet.exception.RecursoNoEncontradoException;
 import com.biopet.repository.UsuarioRepository;
 import com.biopet.security.JwtService;
+import com.biopet.security.LoginRateLimiterService;
 import com.biopet.security.TokenBlacklistService;
 import io.jsonwebtoken.JwtException;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,17 +27,20 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final TokenBlacklistService blacklistService;
+    private final LoginRateLimiterService loginRateLimiterService;
 
     public AuthService(UsuarioRepository usuarioRepository,
                        PasswordEncoder passwordEncoder,
                        AuthenticationManager authenticationManager,
                        JwtService jwtService,
-                       TokenBlacklistService blacklistService) {
+                       TokenBlacklistService blacklistService,
+                       LoginRateLimiterService loginRateLimiterService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.blacklistService = blacklistService;
+        this.loginRateLimiterService = loginRateLimiterService;
     }
 
     @Transactional
@@ -54,10 +59,21 @@ public class AuthService {
         return toResponse(guardado);
     }
 
-    public AuthResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email().toLowerCase(), request.password())
-        );
+    public AuthResponse login(LoginRequest request, String ip) {
+        loginRateLimiterService.verificarPermitido(ip);
+
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.email().toLowerCase(), request.password())
+            );
+        } catch (BadCredentialsException ex) {
+            loginRateLimiterService.registrarFallo(ip);
+            throw ex;
+        }
+
+        loginRateLimiterService.reiniciar(ip);
+
         Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(authentication.getName())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no existe"));
         return new AuthResponse(
