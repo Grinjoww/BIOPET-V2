@@ -7,6 +7,7 @@ public enum ProblemType {
     NOT_FOUND("urn:biopet:error:not-found"),
     CONFLICT("urn:biopet:error:conflict"),
     UNAUTHORIZED("urn:biopet:error:unauthorized"),
+    FORBIDDEN("urn:biopet:error:forbidden"),
     BAD_REQUEST("urn:biopet:error:bad-request"),
     INTERNAL("urn:biopet:error:internal");
 
