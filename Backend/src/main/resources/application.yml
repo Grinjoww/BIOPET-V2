@@ -4,8 +4,8 @@ server:
 spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/biopet_db}
-    username: ${DB_USER:biopet_user}
-    password: ${DB_PASSWORD:biopet_pass}
+    username: ${DB_APP_USER:biopet_app}
+    password: ${DB_APP_PASSWORD:biopet_app_dev_pass}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -20,6 +20,8 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
+    user: ${DB_USER:biopet_user}
+    password: ${DB_PASSWORD:biopet_pass}
   data:
     redis:
       host: ${REDIS_HOST:localhost}
