@@ -1,6 +1,8 @@
 package com.biopet.config;
 
 import com.biopet.security.JwtAuthenticationFilter;
+import com.biopet.security.ProblemAccessDeniedHandler;
+import com.biopet.security.ProblemAuthenticationEntryPoint;
 import com.biopet.service.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -30,14 +32,20 @@ import java.util.List;
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserDetailsServiceImpl userDetailsService;
+    private final ProblemAuthenticationEntryPoint problemAuthenticationEntryPoint;
+    private final ProblemAccessDeniedHandler problemAccessDeniedHandler;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          UserDetailsServiceImpl userDetailsService) {
+                          UserDetailsServiceImpl userDetailsService,
+                          ProblemAuthenticationEntryPoint problemAuthenticationEntryPoint,
+                          ProblemAccessDeniedHandler problemAccessDeniedHandler) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.userDetailsService = userDetailsService;
+        this.problemAuthenticationEntryPoint = problemAuthenticationEntryPoint;
+        this.problemAccessDeniedHandler = problemAccessDeniedHandler;
     }
 
     @Bean
@@ -52,10 +60,8 @@ public class SecurityConfig {
                         .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'self'; object-src 'none'"))
                 )
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req, res, e) ->
-                                res.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, "No autenticado"))
-                        .accessDeniedHandler((req, res, e) ->
-                                res.sendError(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN, "Acceso denegado")))
+                        .authenticationEntryPoint(problemAuthenticationEntryPoint)
+                        .accessDeniedHandler(problemAccessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
