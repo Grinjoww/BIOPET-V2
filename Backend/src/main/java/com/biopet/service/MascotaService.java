@@ -3,6 +3,7 @@ package com.biopet.service;
 import com.biopet.dto.MascotaRequest;
 import com.biopet.dto.MascotaResponse;
 import com.biopet.entity.Mascota;
+import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
 import com.biopet.exception.RecursoNoEncontradoException;
 import com.biopet.repository.MascotaRepository;
@@ -24,9 +25,15 @@ public class MascotaService {
         this.usuarioRepository = usuarioRepository;
     }
 
-    @Cacheable(value = "mascotas", key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()")
+    @Cacheable(value = "mascotas", key = "#email + '-' + #pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()")
     @Transactional(readOnly = true)
-    public Page<MascotaResponse> listar(Pageable pageable) {
+    public Page<MascotaResponse> listar(Pageable pageable, String email) {
+        Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+
+        if (usuario.getRol() == Rol.ROLE_DUENO) {
+            return mascotaRepository.findAllByDuenioIdAndActivoTrue(usuario.getId(), pageable).map(this::toResponse);
+        }
         return mascotaRepository.findAllByActivoTrue(pageable).map(this::toResponse);
     }
 

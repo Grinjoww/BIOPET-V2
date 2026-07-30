@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,8 +24,8 @@ public class MascotaController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')")
-    public Page<MascotaResponse> listar(Pageable pageable) {
-        return mascotaService.listar(pageable);
+    public Page<MascotaResponse> listar(Pageable pageable, @AuthenticationPrincipal UserDetails userDetails) {
+        return mascotaService.listar(pageable, userDetails.getUsername());
     }
 
     @GetMapping("/{id}")
