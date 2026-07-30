@@ -10,12 +10,14 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/00-schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+      - ./db/roles.sql:/docker-entrypoint-initdb.d/02-roles.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-biopet_user} -d ${DB_NAME:-biopet_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
-
   redis:
     image: redis:7-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
     container_name: biopet-redis
