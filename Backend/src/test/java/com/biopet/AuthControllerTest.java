@@ -4,6 +4,7 @@ import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
 import com.biopet.repository.UsuarioRepository;
 import com.biopet.security.TokenBlacklistService;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -183,6 +184,118 @@ class AuthControllerTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("jaime@biopet.com"));
+    }
+
+    @Test
+    void refreshCookieValidaEmiteNuevaAccessCookie() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"jaime@biopet.com","password":"ClaveCorrecta123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String refreshToken = extractCookieValue(loginResult, "refresh_token");
+
+        MvcResult refreshResult = mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie("refresh_token", refreshToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.expiresIn").isNumber())
+                .andExpect(jsonPath("$.accessToken").doesNotExist())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andReturn();
+
+        List<String> setCookieHeaders = refreshResult.getResponse().getHeaders(HttpHeaders.SET_COOKIE);
+        assertEquals(1, setCookieHeaders.size());
+
+        String accessCookieHeader = setCookieHeaders.get(0);
+        assertTrue(accessCookieHeader.startsWith("access_token="));
+        assertTrue(accessCookieHeader.contains("HttpOnly"));
+        assertTrue(accessCookieHeader.contains("Secure"));
+        assertTrue(accessCookieHeader.contains("SameSite=Strict"));
+        assertTrue(accessCookieHeader.contains("Path=/"));
+    }
+
+    @Test
+    void refreshSinCookieDevuelve401ProblemDetail() throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/auth/refresh"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:unauthorized"))
+                .andExpect(jsonPath("$.title").value("No autenticado"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/auth/refresh"))
+                .andReturn();
+
+        assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).isEmpty());
+    }
+
+    @Test
+    void refreshCookieInvalidaDevuelve401ProblemDetail() throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie("refresh_token", "token-invalido")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:unauthorized"))
+                .andExpect(jsonPath("$.title").value("No autenticado"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/auth/refresh"))
+                .andReturn();
+
+        assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).isEmpty());
+    }
+
+    @Test
+    void accessTokenNoSirveComoRefreshCookie() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"jaime@biopet.com","password":"ClaveCorrecta123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String accessToken = extractCookieValue(loginResult, "access_token");
+
+        MvcResult result = mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie("refresh_token", accessToken)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:unauthorized"))
+                .andExpect(jsonPath("$.title").value("No autenticado"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andReturn();
+
+        assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).isEmpty());
+    }
+
+    @Test
+    void refreshCookieRevocadaDevuelve401() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"jaime@biopet.com","password":"ClaveCorrecta123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String refreshToken = extractCookieValue(loginResult, "refresh_token");
+
+        when(tokenBlacklistService.isRevoked(anyString())).thenReturn(true);
+
+        MvcResult result = mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie("refresh_token", refreshToken)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:unauthorized"))
+                .andExpect(jsonPath("$.title").value("No autenticado"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andReturn();
+
+        assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).isEmpty());
     }
 
     private String extractCookieValue(MvcResult result, String cookieName) {
