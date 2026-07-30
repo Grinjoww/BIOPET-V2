@@ -1,0 +1,67 @@
+# Trazabilidad preliminar — REQ ↔ Historia de Usuario ↔ Caso de Uso
+
+Proyecto BIOPET — Tercera Entrega (v0.9.0-rc)
+
+Este archivo es un **insumo preliminar** para construir la matriz de trazabilidad
+completa exigida por el bloque A.3.3 de la Guía de la Tercera Entrega
+(`docs/trazabilidad/matriz.csv`, con columnas adicionales `modulo_codigo`,
+`endpoint_api`, `prueba_automatizada`, `tipo_acceso` y `evidencia_empirica`).
+Aquí solo se cubren las columnas `REQ`, `Historia de Usuario`, `Caso de Uso` y
+`Estado`, tal como fue solicitado. Todos los datos provienen exclusivamente del
+SRS v0.9.0-rc y de los dos documentos derivados (`HistoriasUsuario.docx`,
+`CasosDeUso.docx`).
+
+El campo **Estado** replica el estado declarado en el SRS para cada requisito
+(sección 6, Matriz de trazabilidad — resumen), no un estado inferido.
+
+| REQ | Historia de Usuario | Caso de Uso | Estado |
+|---|---|---|---|
+| REQ-F-001 | HU-001 | CU-01 | Implementado y verificado |
+| REQ-F-002 | HU-001 | CU-01 | Implementado y verificado |
+| REQ-F-003 | HU-002 | CU-02 | Implementado y verificado |
+| REQ-F-004 | HU-003 | CU-03 | Implementado y verificado |
+| REQ-F-005 | HU-004 | CU-04 | Implementado y verificado |
+| REQ-F-006 | HU-005 | CU-05 | Implementado y verificado |
+| REQ-F-007 | HU-006 | CU-06 | Implementado (verificación por inspección y prueba manual) |
+| REQ-F-008 | HU-007 | CU-07 | Implementado y verificado |
+| REQ-F-009 | HU-008 | CU-08 | Implementado y verificado |
+| REQ-F-010 | HU-009 | CU-09 | Implementado y verificado |
+| REQ-F-011 | HU-010 | CU-10 | Implementado y verificado |
+| REQ-F-012 | HU-011 | CU-11 | Implementado y verificado |
+| REQ-F-013 | HU-012 | CU-12 | Pendiente — diseño de datos disponible, sin código |
+| REQ-F-014 | HU-013 | CU-13 | Pendiente |
+| REQ-F-015 | HU-014 | CU-14 | Pendiente — diseño de datos disponible, sin código |
+| REQ-F-016 | HU-015 | CU-15 | Pendiente — diseño de datos disponible, sin código |
+| REQ-F-017 | HU-016 | CU-16 | Pendiente — depende de REQ-F-013 |
+| REQ-F-018 | HU-017 | CU-17 | Pendiente — diseño de datos disponible, sin código |
+| REQ-F-019 | HU-018 | CU-18 | Pendiente |
+| REQ-F-020 | HU-019 | CU-19 | Parcialmente pendiente |
+
+## Notas de cobertura
+
+- **20 requisitos funcionales del SRS (REQ-F-001 a REQ-F-020) están cubiertos**, sin excepción.
+- **19 historias de usuario**: REQ-F-001 y REQ-F-002 comparten HU-001 porque ambos
+  describen resultados del mismo flujo de entrada (`POST /api/auth/registro`);
+  el resto de requisitos tiene una historia dedicada.
+- **19 casos de uso**, en correspondencia 1:1 con las historias de usuario.
+  CU-01 concentra REQ-F-001 y REQ-F-002 igual que su historia asociada.
+- CU-05 (verificación de autorización por rol, REQ-F-006) es un caso de uso
+  transversal referenciado como precondición implícita por CU-07 a CU-11, que
+  operan sobre recursos protegidos por rol.
+- Los requisitos no funcionales (REQ-NF-001 a REQ-NF-013) **no se incluyen en
+  esta tabla** porque el alcance solicitado fue exclusivamente sobre requisitos
+  funcionales e historias/casos de uso derivados de ellos; permanecerán como
+  columnas propias en la matriz completa (`matriz.csv`), tal como ya lo indica
+  el SRS en su sección 6.
+
+## Validación de trazabilidad (checklist)
+
+- [x] Todas las historias (HU-001 a HU-019) se rastrean hasta uno o varios
+      requisitos del SRS (columna REQ de la tabla anterior).
+- [x] Todos los casos de uso (CU-01 a CU-19) se rastrean hasta una o varias
+      historias de usuario (correspondencia 1:1 explícita en la tabla).
+- [x] No existen historias sin requisito asociado.
+- [x] No existen casos de uso sin historia asociada.
+- [x] Los 20 requisitos funcionales del SRS quedan representados; ninguno fue
+      omitido ni se agregó un requisito, historia o caso de uso sin sustento
+      en el SRS.
