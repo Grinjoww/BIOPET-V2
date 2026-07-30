@@ -51,9 +51,7 @@ public class MascotaService {
     @CacheEvict(value = "mascotas", allEntries = true)
     @Transactional
     public MascotaResponse crear(MascotaRequest request) {
-        Usuario duenio = usuarioRepository.findById(request.duenioId())
-                .filter(Usuario::isActivo)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Dueño no encontrado: " + request.duenioId()));
+        Usuario duenio = resolverDuenio(request.duenioId());
         Mascota mascota = Mascota.builder()
                 .duenio(duenio)
                 .nombre(request.nombre())
@@ -73,9 +71,7 @@ public class MascotaService {
         Mascota mascota = mascotaRepository.findByIdAndActivoTrue(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Mascota no encontrada: " + id));
         verificarPropiedad(usuario, mascota);
-        Usuario duenio = usuarioRepository.findById(request.duenioId())
-                .filter(Usuario::isActivo)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Dueño no encontrado: " + request.duenioId()));
+        Usuario duenio = resolverDuenio(request.duenioId());
         mascota.setDuenio(duenio);
         mascota.setNombre(request.nombre());
         mascota.setEspecie(request.especie());
@@ -104,6 +100,16 @@ public class MascotaService {
         if (!tieneAccesoGlobal(usuario.getRol()) && !mascota.getDuenio().getId().equals(usuario.getId())) {
             throw new AccessDeniedException("No tiene permisos para acceder a esta mascota.");
         }
+    }
+
+    private Usuario resolverDuenio(Long duenioId) {
+        Usuario duenio = usuarioRepository.findById(duenioId)
+                .filter(Usuario::isActivo)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Dueño no encontrado: " + duenioId));
+        if (duenio.getRol() != Rol.ROLE_DUENO) {
+            throw new IllegalArgumentException("El usuario asignado como dueño debe tener rol ROLE_DUENO: " + duenioId);
+        }
+        return duenio;
     }
 
     private MascotaResponse toResponse(Mascota mascota) {
