@@ -4,8 +4,10 @@ import com.biopet.entity.Rol;
 import com.biopet.dto.*;
 import com.biopet.entity.Usuario;
 import com.biopet.exception.EmailDuplicadoException;
+import com.biopet.exception.RateLimitExcedidoException;
 import com.biopet.exception.RecursoNoEncontradoException;
 import com.biopet.repository.UsuarioRepository;
+import com.biopet.security.AuthenticationAuditService;
 import com.biopet.security.JwtService;
 import com.biopet.security.LoginRateLimiterService;
 import com.biopet.security.TokenBlacklistService;
@@ -28,19 +30,22 @@ public class AuthService {
     private final JwtService jwtService;
     private final TokenBlacklistService blacklistService;
     private final LoginRateLimiterService loginRateLimiterService;
+    private final AuthenticationAuditService authenticationAuditService;
 
     public AuthService(UsuarioRepository usuarioRepository,
                        PasswordEncoder passwordEncoder,
                        AuthenticationManager authenticationManager,
                        JwtService jwtService,
                        TokenBlacklistService blacklistService,
-                       LoginRateLimiterService loginRateLimiterService) {
+                       LoginRateLimiterService loginRateLimiterService,
+                       AuthenticationAuditService authenticationAuditService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.blacklistService = blacklistService;
         this.loginRateLimiterService = loginRateLimiterService;
+        this.authenticationAuditService = authenticationAuditService;
     }
 
     @Transactional
@@ -60,19 +65,33 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request, String ip) {
-        loginRateLimiterService.verificarPermitido(ip);
+        String emailSolicitado = request.email().toLowerCase();
+
+        try {
+            loginRateLimiterService.verificarPermitido(ip);
+        } catch (RateLimitExcedidoException ex) {
+            authenticationAuditService.loginBloqueado(ip, emailSolicitado);
+            throw ex;
+        }
 
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email().toLowerCase(), request.password())
+                    new UsernamePasswordAuthenticationToken(emailSolicitado, request.password())
             );
         } catch (BadCredentialsException ex) {
-            loginRateLimiterService.registrarFallo(ip);
+            try {
+                loginRateLimiterService.registrarFallo(ip);
+            } catch (RateLimitExcedidoException limiteExcedido) {
+                authenticationAuditService.loginBloqueado(ip, emailSolicitado);
+                throw limiteExcedido;
+            }
+            authenticationAuditService.loginFallido(ip, emailSolicitado);
             throw ex;
         }
 
         loginRateLimiterService.reiniciar(ip);
+        authenticationAuditService.loginExitoso(ip, authentication.getName());
 
         Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(authentication.getName())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario autenticado no existe"));
@@ -83,31 +102,51 @@ public class AuthService {
         );
     }
 
-    public AuthResponse refresh(RefreshRequest request) {
+    public AuthResponse refresh(RefreshRequest request, String ip) {
         String refreshToken = request.refreshToken();
-        if (!jwtService.isRefreshToken(refreshToken)) {
-            throw new IllegalArgumentException("El token enviado no es un refresh token");
+        String emailVerificado = null;
+        try {
+            if (refreshToken == null || refreshToken.isBlank()) {
+                throw new IllegalArgumentException("Refresh token ausente");
+            }
+            if (!jwtService.isRefreshToken(refreshToken)) {
+                throw new IllegalArgumentException("El token enviado no es un refresh token");
+            }
+            emailVerificado = jwtService.extractEmail(refreshToken);
+            String jti = jwtService.extractJti(refreshToken);
+            if (blacklistService.isRevoked(jti)) {
+                throw new IllegalArgumentException("Refresh token revocado");
+            }
+            Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(emailVerificado)
+                    .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+
+            authenticationAuditService.refreshExitoso(ip, emailVerificado);
+            return new AuthResponse(jwtService.generateAccessToken(usuario), refreshToken, jwtService.getExpirationMs() / 1000);
+        } catch (RuntimeException ex) {
+            authenticationAuditService.refreshFallido(ip, emailVerificado);
+            throw ex;
         }
-        String email = jwtService.extractEmail(refreshToken);
-        String jti = jwtService.extractJti(refreshToken);
-        if (blacklistService.isRevoked(jti)) {
-            throw new IllegalArgumentException("Refresh token revocado");
-        }
-        Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(email)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
-        return new AuthResponse(jwtService.generateAccessToken(usuario), refreshToken, jwtService.getExpirationMs() / 1000);
     }
 
-    public void logout(String token) {
+    public void logout(String accessToken, String refreshToken, String ip) {
+        String subjectAccess = revocarYObtenerSubject(accessToken);
+        String subjectRefresh = revocarYObtenerSubject(refreshToken);
+        String subject = (subjectAccess != null) ? subjectAccess : subjectRefresh;
+        authenticationAuditService.logoutExitoso(ip, subject);
+    }
+
+    private String revocarYObtenerSubject(String token) {
         if (token == null || token.isEmpty()) {
-            return;
+            return null;
         }
         try {
             String jti = jwtService.extractJti(token);
             Instant expiresAt = jwtService.extractExpiration(token);
             blacklistService.revoke(jti, expiresAt);
+            return jwtService.extractEmail(token);
         } catch (JwtException | IllegalArgumentException ex) {
             // Token inválido, expirado o no procesable: no se revoca, no se propaga el error.
+            return null;
         }
     }
 

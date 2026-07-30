@@ -41,12 +41,11 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<AuthSessionResponse> refresh(HttpServletRequest servletRequest,
                                                          HttpServletResponse servletResponse) {
-        String refreshToken = jwtCookieService.readRefreshToken(servletRequest)
-                .orElseThrow(() -> new BadCredentialsException("Refresh token ausente o inválido"));
+        String refreshToken = jwtCookieService.readRefreshToken(servletRequest).orElse(null);
 
         AuthResponse authResponse;
         try {
-            authResponse = authService.refresh(new RefreshRequest(refreshToken));
+            authResponse = authService.refresh(new RefreshRequest(refreshToken), servletRequest.getRemoteAddr());
         } catch (JwtException | IllegalArgumentException ex) {
             throw new BadCredentialsException("Refresh token ausente o inválido");
         }
@@ -58,8 +57,9 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest servletRequest,
                                         HttpServletResponse servletResponse) {
-        jwtCookieService.readAccessToken(servletRequest).ifPresent(authService::logout);
-        jwtCookieService.readRefreshToken(servletRequest).ifPresent(authService::logout);
+        String accessToken = jwtCookieService.readAccessToken(servletRequest).orElse(null);
+        String refreshToken = jwtCookieService.readRefreshToken(servletRequest).orElse(null);
+        authService.logout(accessToken, refreshToken, servletRequest.getRemoteAddr());
 
         jwtCookieService.clearAccessCookie(servletResponse);
         jwtCookieService.clearRefreshCookie(servletResponse);

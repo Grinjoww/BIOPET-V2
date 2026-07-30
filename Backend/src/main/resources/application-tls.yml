@@ -1,0 +1,25 @@
+# Perfil "tls": habilita HTTPS nativo (Tomcat embebido) ademas del HTTP base.
+# Uso: SPRING_PROFILES_INCLUDE=tls (se suma a los perfiles ya activos, no los reemplaza).
+#
+# El keystore NO se versiona. Se genera localmente con:
+#   scripts/generate-dev-keystore.ps1   (Windows)
+#   scripts/generate-dev-keystore.sh    (Linux/macOS)
+#
+# TLS_KEYSTORE_PASSWORD por defecto ("changeit") es un valor de desarrollo/academico,
+# nunca un secreto de produccion.
+
+server:
+  port: ${TLS_HTTPS_PORT:8443}
+  ssl:
+    enabled: true
+    key-store: ${TLS_KEYSTORE_PATH:file:./certs/biopet-dev.p12}
+    key-store-type: PKCS12
+    key-store-password: ${TLS_KEYSTORE_PASSWORD:changeit}
+    key-alias: ${TLS_KEY_ALIAS:biopet-local}
+    enabled-protocols: TLSv1.3
+    protocol: TLS
+
+# Puerto del conector HTTP adicional (TomcatDualConnectorConfig), independiente
+# de server.port porque este ultimo pasa a ser el puerto HTTPS bajo este perfil.
+tls:
+  http-port: ${TLS_HTTP_PORT:8080}
