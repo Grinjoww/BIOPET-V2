@@ -55,8 +55,14 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authorization) {
-        authService.logout(authorization);
+    public ResponseEntity<Void> logout(HttpServletRequest servletRequest,
+                                        HttpServletResponse servletResponse) {
+        jwtCookieService.readAccessToken(servletRequest).ifPresent(authService::logout);
+        jwtCookieService.readRefreshToken(servletRequest).ifPresent(authService::logout);
+
+        jwtCookieService.clearAccessCookie(servletResponse);
+        jwtCookieService.clearRefreshCookie(servletResponse);
+
         return ResponseEntity.noContent().build();
     }
 }
