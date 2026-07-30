@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "Si utiliza este software, cítelo usando los metadatos de este archivo."
+title: "BIOPET — Sistema Integral de Gestión Veterinaria"
+type: software
+authors:
+  - family-names: "Beltrán Montiel"
+    given-names: "Fred Adrián"
+    affiliation: "Universidad Técnica Estatal de Quevedo"
+  - family-names: "Mariscal Cabrera"
+    given-names: "Jaime Josué"
+    affiliation: "Universidad Técnica Estatal de Quevedo"
+  - family-names: "Taipe Mora"
+    given-names: "Zaida Melissa"
+    affiliation: "Universidad Técnica Estatal de Quevedo"
+version: 0.9.0-rc
+date-released: "2026-07-24"
+license: MIT
+repository-code: "https://github.com/JirachinG19Stdio/PFC-VET-ENTR3-v0.9.0-rc"
+keywords:
+  - "gestión veterinaria"
+  - "Spring Boot"
+  - "Java"
+  - "Angular"
+  - "JWT"
+  - "PostgreSQL"
+  - "aplicaciones web"
+  - "PFC"
+# doi: pendiente de asignación por Zenodo al archivar el tag v0.9.0-rc.
+# Se agregará aquí, en README.md y en la portada del informe técnico
+# conforme al bloque E.2 de la Guía de la Tercera Entrega.
