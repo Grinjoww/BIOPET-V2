@@ -11,6 +11,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -60,6 +61,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ProblemDetail> argumentoInvalido(IllegalArgumentException ex, HttpServletRequest request) {
         return problemResponse(HttpStatus.BAD_REQUEST, ProblemType.BAD_REQUEST, "Solicitud inválida", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ProblemDetail> parametroInvalido(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        String detail = "El parámetro '" + ex.getName() + "' tiene un formato inválido.";
+        return problemResponse(HttpStatus.BAD_REQUEST, ProblemType.BAD_REQUEST, "Parámetro inválido", detail, request);
     }
 
     @ExceptionHandler(RateLimitExcedidoException.class)
