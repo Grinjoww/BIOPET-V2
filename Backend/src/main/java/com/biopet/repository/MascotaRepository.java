@@ -12,6 +12,7 @@ import java.util.Optional;
 
 public interface MascotaRepository extends JpaRepository<Mascota, Long> {
     Page<Mascota> findAllByActivoTrue(Pageable pageable);
+    Page<Mascota> findAllByDuenioIdAndActivoTrue(Long duenioId, Pageable pageable);
     Optional<Mascota> findByIdAndActivoTrue(Long id);
 
     @Query(value = "SELECT * FROM fn_resumen_mascotas_por_especie(:duenioId)", nativeQuery = true)
