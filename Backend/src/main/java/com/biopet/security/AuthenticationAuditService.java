@@ -20,6 +20,7 @@ public class AuthenticationAuditService {
     private static final String EVENTO_REFRESH_EXITOSO = "REFRESH_SUCCESS";
     private static final String EVENTO_REFRESH_FALLIDO = "REFRESH_FAILURE";
     private static final String EVENTO_LOGOUT_EXITOSO = "LOGOUT_SUCCESS";
+    private static final String EVENTO_TOKEN_REVOCADO = "TOKEN_REVOKED";
 
     private static final String RESULTADO_EXITO = "SUCCESS";
     private static final String RESULTADO_FALLO = "FAILURE";
@@ -47,6 +48,10 @@ public class AuthenticationAuditService {
 
     public void logoutExitoso(String ip, String subject) {
         logger.info(formatear(EVENTO_LOGOUT_EXITOSO, RESULTADO_EXITO, ip, subject));
+    }
+
+    public void tokenRevocado(String ip, String subject) {
+        logger.warn(formatear(EVENTO_TOKEN_REVOCADO, RESULTADO_BLOQUEADO, ip, subject));
     }
 
     private String formatear(String evento, String resultado, String ip, String subject) {

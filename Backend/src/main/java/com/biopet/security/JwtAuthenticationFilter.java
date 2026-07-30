@@ -22,15 +22,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final TokenBlacklistService blacklistService;
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtCookieService jwtCookieService;
+    private final AuthenticationAuditService authenticationAuditService;
 
     public JwtAuthenticationFilter(JwtService jwtService,
                                    TokenBlacklistService blacklistService,
                                    UserDetailsServiceImpl userDetailsService,
-                                   JwtCookieService jwtCookieService) {
+                                   JwtCookieService jwtCookieService,
+                                   AuthenticationAuditService authenticationAuditService) {
         this.jwtService = jwtService;
         this.blacklistService = blacklistService;
         this.userDetailsService = userDetailsService;
         this.jwtCookieService = jwtCookieService;
+        this.authenticationAuditService = authenticationAuditService;
     }
 
     @Override
@@ -47,8 +50,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String email = jwtService.extractEmail(token);
             String jti = jwtService.extractJti(token);
-            boolean tokenValido = jwtService.isAccessToken(token) && !blacklistService.isRevoked(jti);
+            boolean esAccessToken = jwtService.isAccessToken(token);
+            boolean revocado = esAccessToken && blacklistService.isRevoked(jti);
 
+            if (revocado) {
+                authenticationAuditService.tokenRevocado(request.getRemoteAddr(), email);
+            }
+
+            boolean tokenValido = esAccessToken && !revocado;
             if (email != null && tokenValido && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
