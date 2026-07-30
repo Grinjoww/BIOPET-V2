@@ -2,6 +2,7 @@ package com.biopet.controller;
 
 import com.biopet.dto.MascotaRequest;
 import com.biopet.dto.MascotaResponse;
+import com.biopet.dto.ResumenEspecieResponse;
 import com.biopet.service.MascotaService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -9,7 +10,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/mascotas")
@@ -26,7 +30,7 @@ public class MascotaController {
         return mascotaService.listar(pageable);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')")
     public MascotaResponse buscar(@PathVariable Long id) {
         return mascotaService.buscar(id);
@@ -49,5 +53,13 @@ public class MascotaController {
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         mascotaService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/resumen-especies")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')")
+    public List<ResumenEspecieResponse> resumenPorEspecies(
+            @RequestParam(required = false) Long duenioId,
+            Authentication authentication) {
+        return mascotaService.resumenPorEspecie(duenioId, authentication.getName());
     }
 }
