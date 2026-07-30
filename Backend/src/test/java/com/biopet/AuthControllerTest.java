@@ -3,6 +3,7 @@ package com.biopet;
 import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
 import com.biopet.repository.UsuarioRepository;
+import com.biopet.security.AuthenticationAuditService;
 import com.biopet.security.JwtService;
 import com.biopet.security.LoginRateLimiterService;
 import com.biopet.security.TokenBlacklistService;
@@ -50,6 +51,7 @@ class AuthControllerTest {
     @Autowired LoginRateLimiterService loginRateLimiterService;
 
     @MockBean TokenBlacklistService tokenBlacklistService;
+    @MockBean AuthenticationAuditService authenticationAuditService;
 
     private static final String EMAIL_VALIDO = "jaime@biopet.com";
     private static final String PASSWORD_VALIDO = "ClaveCorrecta123*";
@@ -62,6 +64,10 @@ class AuthControllerTest {
     private static final String IP_A = "203.0.113.104";
     private static final String IP_B = "203.0.113.105";
     private static final String IP_REINICIO = "203.0.113.106";
+    private static final String IP_AUDITORIA_EXITO = "203.0.113.107";
+    private static final String IP_AUDITORIA_FALLO = "203.0.113.108";
+    private static final String IP_AUDITORIA_BLOQUEO = "203.0.113.109";
+    private static final String IP_AUDITORIA_IP_BLOQUEADA = "203.0.113.110";
 
     @BeforeEach
     void setUp() {
@@ -76,7 +82,8 @@ class AuthControllerTest {
         usuarioRepository.save(usuario);
         when(tokenBlacklistService.isRevoked(anyString())).thenReturn(false);
 
-        for (String ip : List.of(IP_DEFECTO, IP_CINCO_FALLOS, IP_SEIS_FALLOS, IP_BLOQUEADA, IP_A, IP_B, IP_REINICIO)) {
+        for (String ip : List.of(IP_DEFECTO, IP_CINCO_FALLOS, IP_SEIS_FALLOS, IP_BLOQUEADA, IP_A, IP_B, IP_REINICIO,
+                IP_AUDITORIA_EXITO, IP_AUDITORIA_FALLO, IP_AUDITORIA_BLOQUEO, IP_AUDITORIA_IP_BLOQUEADA)) {
             loginRateLimiterService.reiniciar(ip);
         }
     }
@@ -219,6 +226,57 @@ class AuthControllerTest {
             loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_REINICIO)
                     .andExpect(status().isUnauthorized());
         }
+    }
+
+    @Test
+    void loginExitosoInvocaAuditoriaDeExitoUnaVez() throws Exception {
+        loginDesde(EMAIL_VALIDO, PASSWORD_VALIDO, IP_AUDITORIA_EXITO)
+                .andExpect(status().isOk());
+
+        verify(authenticationAuditService, times(1)).loginExitoso(eq(IP_AUDITORIA_EXITO), eq(EMAIL_VALIDO));
+        verify(authenticationAuditService, never()).loginFallido(anyString(), anyString());
+        verify(authenticationAuditService, never()).loginBloqueado(anyString(), anyString());
+    }
+
+    @Test
+    void loginFallidoInvocaAuditoriaDeFalloUnaVez() throws Exception {
+        loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_AUDITORIA_FALLO)
+                .andExpect(status().isUnauthorized());
+
+        verify(authenticationAuditService, times(1)).loginFallido(eq(IP_AUDITORIA_FALLO), eq(EMAIL_VALIDO));
+        verify(authenticationAuditService, never()).loginExitoso(anyString(), anyString());
+        verify(authenticationAuditService, never()).loginBloqueado(anyString(), anyString());
+    }
+
+    @Test
+    void sextoIntentoInvocaAuditoriaDeBloqueoYNoDeFalloParaEseIntento() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_AUDITORIA_BLOQUEO)
+                    .andExpect(status().isUnauthorized());
+        }
+        verify(authenticationAuditService, times(5)).loginFallido(eq(IP_AUDITORIA_BLOQUEO), eq(EMAIL_VALIDO));
+
+        loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_AUDITORIA_BLOQUEO)
+                .andExpect(status().isTooManyRequests());
+
+        verify(authenticationAuditService, times(1)).loginBloqueado(eq(IP_AUDITORIA_BLOQUEO), eq(EMAIL_VALIDO));
+        verify(authenticationAuditService, times(5)).loginFallido(eq(IP_AUDITORIA_BLOQUEO), eq(EMAIL_VALIDO));
+    }
+
+    @Test
+    void ipBloqueadaInvocaAuditoriaDeBloqueoYNoAutentica() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_AUDITORIA_IP_BLOQUEADA)
+                    .andExpect(status().isUnauthorized());
+        }
+        loginDesde(EMAIL_VALIDO, PASSWORD_INVALIDO, IP_AUDITORIA_IP_BLOQUEADA)
+                .andExpect(status().isTooManyRequests());
+
+        loginDesde(EMAIL_VALIDO, PASSWORD_VALIDO, IP_AUDITORIA_IP_BLOQUEADA)
+                .andExpect(status().isTooManyRequests());
+
+        verify(authenticationAuditService, times(2)).loginBloqueado(eq(IP_AUDITORIA_IP_BLOQUEADA), eq(EMAIL_VALIDO));
+        verify(authenticationAuditService, never()).loginExitoso(anyString(), anyString());
     }
 
     @Test
