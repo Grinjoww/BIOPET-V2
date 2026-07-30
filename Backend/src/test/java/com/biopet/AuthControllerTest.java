@@ -3,6 +3,7 @@ package com.biopet;
 import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
 import com.biopet.repository.UsuarioRepository;
+import com.biopet.security.JwtService;
 import com.biopet.security.TokenBlacklistService;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,11 +19,17 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -37,6 +44,7 @@ class AuthControllerTest {
     @Autowired MockMvc mockMvc;
     @Autowired UsuarioRepository usuarioRepository;
     @Autowired PasswordEncoder passwordEncoder;
+    @Autowired JwtService jwtService;
 
     @MockBean TokenBlacklistService tokenBlacklistService;
 
@@ -296,6 +304,162 @@ class AuthControllerTest {
                 .andReturn();
 
         assertTrue(result.getResponse().getHeaders(HttpHeaders.SET_COOKIE).isEmpty());
+    }
+
+    @Test
+    void logoutConAmbasCookiesRevocaTokensYLasElimina() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"jaime@biopet.com","password":"ClaveCorrecta123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String accessToken = extractCookieValue(loginResult, "access_token");
+        String refreshToken = extractCookieValue(loginResult, "refresh_token");
+        String accessJti = jwtService.extractJti(accessToken);
+        String refreshJti = jwtService.extractJti(refreshToken);
+
+        MvcResult logoutResult = mockMvc.perform(post("/api/auth/logout")
+                        .cookie(new Cookie("access_token", accessToken), new Cookie("refresh_token", refreshToken)))
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+        List<String> setCookieHeaders = logoutResult.getResponse().getHeaders(HttpHeaders.SET_COOKIE);
+        assertEquals(2, setCookieHeaders.size());
+
+        String accessCookieHeader = setCookieHeaders.stream()
+                .filter(header -> header.startsWith("access_token="))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No se emitió la cookie de eliminación access_token"));
+        String refreshCookieHeader = setCookieHeaders.stream()
+                .filter(header -> header.startsWith("refresh_token="))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No se emitió la cookie de eliminación refresh_token"));
+
+        assertEquals("access_token=", primerAtributo(accessCookieHeader));
+        assertTrue(accessCookieHeader.contains("Max-Age=0"));
+        assertTrue(accessCookieHeader.contains("Path=/"));
+        assertTrue(accessCookieHeader.contains("HttpOnly"));
+        assertTrue(accessCookieHeader.contains("Secure"));
+        assertTrue(accessCookieHeader.contains("SameSite=Strict"));
+
+        assertEquals("refresh_token=", primerAtributo(refreshCookieHeader));
+        assertTrue(refreshCookieHeader.contains("Max-Age=0"));
+        assertTrue(refreshCookieHeader.contains("Path=/api/auth"));
+        assertTrue(refreshCookieHeader.contains("HttpOnly"));
+        assertTrue(refreshCookieHeader.contains("Secure"));
+        assertTrue(refreshCookieHeader.contains("SameSite=Strict"));
+
+        verify(tokenBlacklistService, times(1)).revoke(eq(accessJti), any(Instant.class));
+        verify(tokenBlacklistService, times(1)).revoke(eq(refreshJti), any(Instant.class));
+        verify(tokenBlacklistService, times(2)).revoke(anyString(), any(Instant.class));
+    }
+
+    @Test
+    void logoutSinCookiesEsIdempotente() throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/auth/logout"))
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+        List<String> setCookieHeaders = result.getResponse().getHeaders(HttpHeaders.SET_COOKIE);
+        assertEquals(2, setCookieHeaders.size());
+        assertTrue(setCookieHeaders.stream().anyMatch(header -> header.startsWith("access_token=")));
+        assertTrue(setCookieHeaders.stream().anyMatch(header -> header.startsWith("refresh_token=")));
+
+        verify(tokenBlacklistService, never()).revoke(anyString(), any(Instant.class));
+    }
+
+    @Test
+    void logoutSoloConAccessCookieRevocaAccessYEliminaAmbas() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"jaime@biopet.com","password":"ClaveCorrecta123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String accessToken = extractCookieValue(loginResult, "access_token");
+
+        MvcResult result = mockMvc.perform(post("/api/auth/logout")
+                        .cookie(new Cookie("access_token", accessToken)))
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+        List<String> setCookieHeaders = result.getResponse().getHeaders(HttpHeaders.SET_COOKIE);
+        assertEquals(2, setCookieHeaders.size());
+        assertTrue(setCookieHeaders.stream().anyMatch(header -> header.startsWith("access_token=")));
+        assertTrue(setCookieHeaders.stream().anyMatch(header -> header.startsWith("refresh_token=")));
+
+        verify(tokenBlacklistService, times(1)).revoke(anyString(), any(Instant.class));
+    }
+
+    @Test
+    void logoutSoloConRefreshCookieRevocaRefreshYEliminaAmbas() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"jaime@biopet.com","password":"ClaveCorrecta123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String refreshToken = extractCookieValue(loginResult, "refresh_token");
+
+        MvcResult result = mockMvc.perform(post("/api/auth/logout")
+                        .cookie(new Cookie("refresh_token", refreshToken)))
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+        List<String> setCookieHeaders = result.getResponse().getHeaders(HttpHeaders.SET_COOKIE);
+        assertEquals(2, setCookieHeaders.size());
+        assertTrue(setCookieHeaders.stream().anyMatch(header -> header.startsWith("access_token=")));
+        assertTrue(setCookieHeaders.stream().anyMatch(header -> header.startsWith("refresh_token=")));
+
+        verify(tokenBlacklistService, times(1)).revoke(anyString(), any(Instant.class));
+    }
+
+    @Test
+    void logoutConCookiesInvalidasSigueSiendo204() throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/auth/logout")
+                        .cookie(new Cookie("access_token", "access-invalido"), new Cookie("refresh_token", "refresh-invalido")))
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+        List<String> setCookieHeaders = result.getResponse().getHeaders(HttpHeaders.SET_COOKIE);
+        assertEquals(2, setCookieHeaders.size());
+
+        verify(tokenBlacklistService, never()).revoke(anyString(), any(Instant.class));
+    }
+
+    @Test
+    void logoutProcesaTokenValidoAunqueElOtroSeaInvalido() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"jaime@biopet.com","password":"ClaveCorrecta123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String accessToken = extractCookieValue(loginResult, "access_token");
+
+        MvcResult result = mockMvc.perform(post("/api/auth/logout")
+                        .cookie(new Cookie("access_token", accessToken), new Cookie("refresh_token", "refresh-invalido")))
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+        List<String> setCookieHeaders = result.getResponse().getHeaders(HttpHeaders.SET_COOKIE);
+        assertEquals(2, setCookieHeaders.size());
+
+        verify(tokenBlacklistService, times(1)).revoke(anyString(), any(Instant.class));
+    }
+
+    private String primerAtributo(String setCookieHeader) {
+        int separatorIndex = setCookieHeader.indexOf(';');
+        return separatorIndex >= 0 ? setCookieHeader.substring(0, separatorIndex) : setCookieHeader;
     }
 
     private String extractCookieValue(MvcResult result, String cookieName) {
