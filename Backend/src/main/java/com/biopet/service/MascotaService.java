@@ -12,6 +12,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,9 +39,13 @@ public class MascotaService {
     }
 
     @Transactional(readOnly = true)
-    public MascotaResponse buscar(Long id) {
-        return mascotaRepository.findByIdAndActivoTrue(id).map(this::toResponse)
+    public MascotaResponse buscar(Long id, String email) {
+        Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+        Mascota mascota = mascotaRepository.findByIdAndActivoTrue(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Mascota no encontrada: " + id));
+        verificarPropiedad(usuario, mascota);
+        return toResponse(mascota);
     }
 
     @CacheEvict(value = "mascotas", allEntries = true)
@@ -62,9 +67,12 @@ public class MascotaService {
 
     @CacheEvict(value = "mascotas", allEntries = true)
     @Transactional
-    public MascotaResponse actualizar(Long id, MascotaRequest request) {
+    public MascotaResponse actualizar(Long id, MascotaRequest request, String email) {
+        Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
         Mascota mascota = mascotaRepository.findByIdAndActivoTrue(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Mascota no encontrada: " + id));
+        verificarPropiedad(usuario, mascota);
         Usuario duenio = usuarioRepository.findById(request.duenioId())
                 .filter(Usuario::isActivo)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Dueño no encontrado: " + request.duenioId()));
@@ -78,11 +86,24 @@ public class MascotaService {
 
     @CacheEvict(value = "mascotas", allEntries = true)
     @Transactional
-    public void eliminar(Long id) {
+    public void eliminar(Long id, String email) {
+        Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
         Mascota mascota = mascotaRepository.findByIdAndActivoTrue(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Mascota no encontrada: " + id));
+        verificarPropiedad(usuario, mascota);
         mascota.setActivo(false);
         mascotaRepository.save(mascota);
+    }
+
+    private boolean tieneAccesoGlobal(Rol rol) {
+        return rol == Rol.ROLE_ADMIN || rol == Rol.ROLE_VETERINARIO || rol == Rol.ROLE_AUXILIAR;
+    }
+
+    private void verificarPropiedad(Usuario usuario, Mascota mascota) {
+        if (!tieneAccesoGlobal(usuario.getRol()) && !mascota.getDuenio().getId().equals(usuario.getId())) {
+            throw new AccessDeniedException("No tiene permisos para acceder a esta mascota.");
+        }
     }
 
     private MascotaResponse toResponse(Mascota mascota) {

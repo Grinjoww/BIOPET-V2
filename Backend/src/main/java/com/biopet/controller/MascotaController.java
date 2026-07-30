@@ -30,8 +30,8 @@ public class MascotaController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')")
-    public MascotaResponse buscar(@PathVariable Long id) {
-        return mascotaService.buscar(id);
+    public MascotaResponse buscar(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+        return mascotaService.buscar(id, userDetails.getUsername());
     }
 
     @PostMapping
@@ -42,14 +42,15 @@ public class MascotaController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR')")
-    public MascotaResponse actualizar(@PathVariable Long id, @Valid @RequestBody MascotaRequest request) {
-        return mascotaService.actualizar(id, request);
+    public MascotaResponse actualizar(@PathVariable Long id, @Valid @RequestBody MascotaRequest request,
+                                       @AuthenticationPrincipal UserDetails userDetails) {
+        return mascotaService.actualizar(id, request, userDetails.getUsername());
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR')")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        mascotaService.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+        mascotaService.eliminar(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
 }
