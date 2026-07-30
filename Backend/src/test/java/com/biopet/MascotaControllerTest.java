@@ -269,6 +269,180 @@ class MascotaControllerTest {
                 .andExpect(jsonPath("$.type").value("urn:biopet:error:forbidden"));
     }
 
+    @Test
+    void adminCreaMascotaConDuenioActivoRolDuenoExitosa() throws Exception {
+        Long duenoId = registrarDuenoYObtenerId("crear.exitoso.dueno@biopet.com", "ClaveDueno123*");
+        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+
+        mockMvc.perform(post("/api/mascotas")
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"duenioId":%d,"nombre":"Firulais","especie":"Perro","raza":"Mestizo","fechaNacimiento":"2020-01-01"}
+                                """.formatted(duenoId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.duenioId").value(duenoId));
+    }
+
+    @Test
+    void adminIntentaCrearMascotaAsignadaAUsuarioAdminEsRechazado() throws Exception {
+        Long adminId = crearUsuarioConRolYObtenerId("otro.admin@biopet.com", "ClaveAdmin123*", Rol.ROLE_ADMIN);
+        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+
+        mockMvc.perform(post("/api/mascotas")
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"duenioId":%d,"nombre":"Firulais","especie":"Perro","raza":"Mestizo","fechaNacimiento":"2020-01-01"}
+                                """.formatted(adminId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:bad-request"))
+                .andExpect(jsonPath("$.title").value("Solicitud inválida"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/mascotas"));
+    }
+
+    @Test
+    void adminIntentaCrearMascotaAsignadaAVeterinarioEsRechazado() throws Exception {
+        Long veterinarioId = crearUsuarioConRolYObtenerId("otro.veterinario@biopet.com", "ClaveVet123*", Rol.ROLE_VETERINARIO);
+        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+
+        mockMvc.perform(post("/api/mascotas")
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"duenioId":%d,"nombre":"Firulais","especie":"Perro","raza":"Mestizo","fechaNacimiento":"2020-01-01"}
+                                """.formatted(veterinarioId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:bad-request"))
+                .andExpect(jsonPath("$.title").value("Solicitud inválida"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/mascotas"));
+    }
+
+    @Test
+    void adminIntentaCrearMascotaAsignadaAAuxiliarEsRechazado() throws Exception {
+        Long auxiliarId = crearUsuarioConRolYObtenerId("otro.auxiliar@biopet.com", "ClaveAux123*", Rol.ROLE_AUXILIAR);
+        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+
+        mockMvc.perform(post("/api/mascotas")
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"duenioId":%d,"nombre":"Firulais","especie":"Perro","raza":"Mestizo","fechaNacimiento":"2020-01-01"}
+                                """.formatted(auxiliarId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:bad-request"))
+                .andExpect(jsonPath("$.title").value("Solicitud inválida"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/mascotas"));
+    }
+
+    @Test
+    void adminIntentaCrearMascotaConDuenioIdInexistenteDevuelve404() throws Exception {
+        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+
+        mockMvc.perform(post("/api/mascotas")
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"duenioId":999999,"nombre":"Firulais","especie":"Perro","raza":"Mestizo","fechaNacimiento":"2020-01-01"}
+                                """))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:not-found"))
+                .andExpect(jsonPath("$.title").value("Recurso no encontrado"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/mascotas"));
+    }
+
+    @Test
+    void adminIntentaCrearMascotaConUsuarioInactivoDevuelve404() throws Exception {
+        Long duenoInactivoId = crearUsuarioInactivoYObtenerId("inactivo.dueno@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
+        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+
+        mockMvc.perform(post("/api/mascotas")
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"duenioId":%d,"nombre":"Firulais","especie":"Perro","raza":"Mestizo","fechaNacimiento":"2020-01-01"}
+                                """.formatted(duenoInactivoId)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:not-found"))
+                .andExpect(jsonPath("$.title").value("Recurso no encontrado"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/mascotas"));
+    }
+
+    @Test
+    void adminActualizaMascotaAsignandolaAOtroUsuarioActivoDuenoExitosa() throws Exception {
+        Long dueno1Id = registrarDuenoYObtenerId("actualizar.exitoso.dueno1@biopet.com", "ClaveDueno123*");
+        Long dueno2Id = registrarDuenoYObtenerId("actualizar.exitoso.dueno2@biopet.com", "ClaveDueno456*");
+
+        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+        Long mascotaId = crearMascotaYObtenerId(tokenAdmin, dueno1Id, "Firulais");
+
+        mockMvc.perform(put("/api/mascotas/" + mascotaId)
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"duenioId":%d,"nombre":"Firulais","especie":"Perro","raza":"Mestizo","fechaNacimiento":"2020-01-01"}
+                                """.formatted(dueno2Id)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.duenioId").value(dueno2Id));
+    }
+
+    @Test
+    void adminIntentaActualizarMascotaConRolDeDuenioIncorrectoEsRechazado() throws Exception {
+        Long duenoId = registrarDuenoYObtenerId("actualizar.rechazo.dueno@biopet.com", "ClaveDueno123*");
+        Long veterinarioId = crearUsuarioConRolYObtenerId("actualizar.rechazo.veterinario@biopet.com", "ClaveVet123*", Rol.ROLE_VETERINARIO);
+
+        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+        Long mascotaId = crearMascotaYObtenerId(tokenAdmin, duenoId, "Firulais");
+
+        mockMvc.perform(put("/api/mascotas/" + mascotaId)
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"duenioId":%d,"nombre":"Firulais","especie":"Perro","raza":"Mestizo","fechaNacimiento":"2020-01-01"}
+                                """.formatted(veterinarioId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:bad-request"))
+                .andExpect(jsonPath("$.title").value("Solicitud inválida"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/mascotas/" + mascotaId));
+    }
+
+    private Long crearUsuarioConRolYObtenerId(String email, String password, Rol rol) {
+        crearUsuarioConRol(email, password, rol);
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new AssertionError("Usuario no encontrado tras crearlo: " + email))
+                .getId();
+    }
+
+    private Long crearUsuarioInactivoYObtenerId(String email, String password, Rol rol) {
+        Usuario usuario = Usuario.builder()
+                .nombre("Usuario Inactivo")
+                .email(email)
+                .passwordHash(passwordEncoder.encode(password))
+                .rol(rol)
+                .build();
+        Usuario guardado = usuarioRepository.save(usuario);
+        guardado.setActivo(false);
+        return usuarioRepository.save(guardado).getId();
+    }
+
     private Long crearMascotaYObtenerId(String tokenAdmin, Long duenioId, String nombre) throws Exception {
         crearMascota(tokenAdmin, duenioId, nombre);
         return mascotaRepository.findAll().stream()
