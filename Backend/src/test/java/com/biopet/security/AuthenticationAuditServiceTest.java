@@ -134,6 +134,26 @@ class AuthenticationAuditServiceTest {
     }
 
     @Test
+    void tokenRevocadoRegistraEventoWarn() {
+        service.tokenRevocado("203.0.113.23", "usuario@biopet.com");
+
+        ILoggingEvent evento = ultimoEvento();
+        String mensaje = evento.getFormattedMessage();
+
+        assertTrue(mensaje.contains("AUTH_AUDIT"));
+        assertTrue(mensaje.contains("timestamp="));
+        assertTrue(mensaje.contains("event=TOKEN_REVOKED"));
+        assertTrue(mensaje.contains("result=BLOCKED"));
+        assertTrue(mensaje.contains("ip=203.0.113.23"));
+        assertTrue(mensaje.contains("subject=usuario@biopet.com"));
+        assertEquals(Level.WARN, evento.getLevel());
+        assertEquals(1, mensaje.split("\\R", -1).length);
+        assertFalse(mensaje.contains("access_token"));
+        assertFalse(mensaje.contains("refresh_token"));
+        assertFalse(mensaje.contains("Bearer"));
+    }
+
+    @Test
     void valoresNulosSeNormalizanComoUnknown() {
         service.loginFallido(null, null);
 
