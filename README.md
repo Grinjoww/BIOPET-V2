@@ -61,6 +61,30 @@ versión distinta de la imagen si el mantenedor del tag la actualiza silenciosam
 en Docker Hub. Con el digest fijado, `postgres:16-alpine@sha256:...` siempre resuelve
 exactamente al mismo contenido binario.
 
+### Imágenes base del build del backend
+
+Las imágenes usadas para compilar y ejecutar el backend (`maven:3.9-eclipse-temurin-21`
+y `eclipse-temurin:21-jre-alpine`) también están fijadas por digest sha256 en
+`Backend/Dockerfile`, por la misma razón que Postgres y Redis en `docker-compose.yml`.
+
+Para consultar y actualizar estos digests:
+
+```bash
+docker pull maven:3.9-eclipse-temurin-21
+docker pull eclipse-temurin:21-jre-alpine
+docker inspect --format='{{index .RepoDigests 0}}' maven:3.9-eclipse-temurin-21
+docker inspect --format='{{index .RepoDigests 0}}' eclipse-temurin:21-jre-alpine
+```
+
+Cada comando `docker inspect` imprime la línea completa `imagen:tag@sha256:...`
+lista para copiar en el `FROM` correspondiente de `Backend/Dockerfile`. Después de
+actualizar, validar con:
+
+```bash
+make up
+docker compose ps
+```
+
 ### Cómo consultar el digest actual de una imagen
 
 ```bash
