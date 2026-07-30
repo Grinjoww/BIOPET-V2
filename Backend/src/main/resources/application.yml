@@ -28,6 +28,9 @@ spring:
       port: ${REDIS_PORT:6379}
   cache:
     type: redis
+    redis:
+      time-to-live: ${CACHE_TTL_MS:300000}
+      cache-null-values: false
 
 security:
   jwt:
