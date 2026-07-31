@@ -1,0 +1,36 @@
+@startuml
+!define RECTANGLE class
+skinparam packageStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<pendiente>> #F1F5F9
+  BorderColor<<pendiente>> #94A3B8
+  FontColor<<pendiente>> #64748B
+}
+
+actor "Veterinario" as vet
+actor "Administrador" as admin
+actor "Auxiliar" as auxiliar
+actor "Dueño de Mascota" as dueno
+
+rectangle "BIOPET\n[Sistema de software]\nCentraliza el registro de mascotas\ny su gestion por rol (RBAC + JWT)" as biopet
+
+rectangle "Dispositivos IoT\n[Sistema externo]\nTelemetria de ubicacion\n(REQ-F-016, pendiente)" as iot <<pendiente>>
+rectangle "Servicio de IA Cognitiva\n[Sistema externo]\nRecomendaciones clinicas\n(REQ-F-017, pendiente)" as ia <<pendiente>>
+rectangle "Servicio de Correos\n[Sistema externo]\nNotificaciones\n(sin requisito formal aun)" as correo <<pendiente>>
+
+vet --> biopet : usa [HTTPS]
+admin --> biopet : usa [HTTPS]
+auxiliar --> biopet : usa [HTTPS]
+dueno --> biopet : usa [HTTPS]
+
+biopet .down.> iot : recibiria telemetria de\n[API REST] (no implementado)
+biopet .down.> ia : consultaria recomendaciones\n[HTTPS/JSON] (no implementado)
+biopet .down.> correo : enviaria notificaciones\n[SMTP/API] (no implementado)
+
+note bottom of iot
+  Los tres sistemas externos de abajo pertenecen
+  a la vision original de la Entrega 1A y NO estan
+  implementados en el estado v0.9.0-rc. Se muestran
+  con borde punteado para no sobre-declarar alcance.
+end note
+@enduml

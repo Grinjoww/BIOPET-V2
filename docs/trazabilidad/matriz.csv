@@ -26,7 +26,7 @@ REQ-NF-003,no funcional,Must,,,Nginx / despliegue TLS,N/A,curl -v (pendiente),,d
 REQ-NF-004,no funcional,Must,,,JwtService,N/A,JwtServiceTest,CRUD-ORM,,verificado
 REQ-NF-005,no funcional,Must,,,UserDetailsServiceImpl,N/A,Inspeccion de BD,CRUD-ORM,,verificado
 REQ-NF-006,no funcional,Must,,,GlobalExceptionHandler/ProblemDetailFactory,Todos los endpoints,Coleccion Postman,CRUD-ORM,,verificado
-REQ-NF-007,no funcional,Should,,,Frontend Angular,N/A,Lighthouse (pendiente),,docs/mediciones/lighthouse/ (pendiente),pendiente
+REQ-NF-007,no funcional,Should,,,Frontend Angular,N/A,"lighthouserc.js (config lista, ejecucion real pendiente)",,docs/mediciones/lighthouse/ (pendiente de corrida real),pendiente
 REQ-NF-008,no funcional,Should,,,Frontend Angular,N/A,Prueba manual exploratoria (pendiente),,,pendiente
 REQ-NF-009,no funcional,Must,,,Logging de autenticacion,N/A,Auditoria OWASP A09 (pendiente),,docs/mediciones/sec/ (A09 - pendiente),pendiente
 REQ-NF-010,no funcional,Should,,,Rate limiting (no implementado),POST /api/auth/login,Auditoria OWASP A07 (pendiente),,docs/mediciones/sec/ (A07 - pendiente),pendiente
