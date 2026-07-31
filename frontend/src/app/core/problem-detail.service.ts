@@ -41,11 +41,31 @@ export class ProblemDetailService {
    */
   private mensajeValidacion(problem: ProblemDetail | null): string | null {
     const errores = (problem as any)?.errors as Record<string, string[]> | undefined;
-    if (!errores) return null;
+    if (!errores || Object.keys(errores).length === 0) return null;
 
     const partes = Object.entries(errores).map(
       ([campo, mensajes]) => `${campo}: ${mensajes.join(', ')}`
     );
-    return partes.length ? partes.join(' · ') : null;
+    return partes.join(' · ');
+  }
+
+  /**
+   * Expone el mapa crudo campo -> mensajes del 422, para que los
+   * formularios (p. ej. el de mascotas) puedan pintar el mensaje debajo
+   * del campo exacto en lugar de solo mostrar un resumen general.
+   * Devuelve null si el error no es un 422 con `errors` o si no hay error.
+   */
+  erroresPorCampo(err: HttpErrorResponse | null): Record<string, string[]> | null {
+    if (!err || err.status !== 422) return null;
+    const problem = err.error as ProblemDetail | null;
+    const errores = (problem as any)?.errors as Record<string, string[]> | undefined;
+    return errores && Object.keys(errores).length ? errores : null;
+  }
+
+  /** Primer mensaje de error para un campo concreto, o null si no aplica. */
+  primerErrorDeCampo(err: HttpErrorResponse | null, campo: string): string | null {
+    const errores = this.erroresPorCampo(err);
+    const mensajes = errores?.[campo];
+    return mensajes && mensajes.length ? mensajes[0] : null;
   }
 }
