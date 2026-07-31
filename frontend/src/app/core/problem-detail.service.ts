@@ -46,7 +46,7 @@ export class ProblemDetailService {
     const partes = Object.entries(errores).map(
       ([campo, mensajes]) => `${campo}: ${mensajes.join(', ')}`
     );
-    return partes.length ? partes.join(' · ') : null;
+    return partes.join(' · ');
   }
 
   /**
