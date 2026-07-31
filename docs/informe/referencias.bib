@@ -1,0 +1,130 @@
+% referencias.bib
+%
+% Bibliografia del Informe final de la Tercera Entrega de BIOPET.
+% Estilo de compilacion: BibTeX clasico con \bibliographystyle{ieeetr}
+% (ver informe-entrega-3.tex). No se inventaron autores, titulos, anios
+% ni identificadores: cada entrada corresponde a una norma tecnica (RFC,
+% ISO), a la documentacion oficial de una herramienta ya usada de forma
+% real en este proyecto (Spring, JaCoCo, PostgreSQL, Redis, k6,
+% Lighthouse), o a una referencia academica/de la industria ampliamente
+% citada por su nombre estandar (OWASP Top 10, modelo C4, SUS de Brooke,
+% WCAG, taxonomia CRediT).
+%
+% Los campos "url" y "note" de cada entrada se limitan a la pagina oficial
+% del proyecto/norma correspondiente, sin DOI inventado. Cuando un dato no
+% pudo verificarse contra una fuente ya citada en este repositorio, se deja
+% explicito en un comentario junto a la entrada, en vez de inventarlo.
+
+@misc{owasp-top10,
+  author       = {{OWASP Foundation}},
+  title        = {{OWASP} Top 10:2021 -- The Ten Most Critical Web Application Security Risks},
+  year         = {2021},
+  howpublished = {\url{https://owasp.org/Top10/}},
+  note         = {Consultado como referencia de las categorias A01, A02, A03, A05, A07 y A09 auditadas en docs/mediciones/sec/.}
+}
+
+@techreport{rfc7519,
+  author      = {M. Jones and J. Bradley and N. Sakimura},
+  title       = {{JSON Web Token (JWT)}},
+  institution = {IETF},
+  type        = {RFC},
+  number      = {7519},
+  year        = {2015},
+  month       = {May},
+  howpublished = {\url{https://www.rfc-editor.org/rfc/rfc7519}}
+}
+
+@techreport{rfc7807,
+  author      = {M. Nottingham and E. Wilde},
+  title       = {{Problem Details for HTTP APIs}},
+  institution = {IETF},
+  type        = {RFC},
+  number      = {7807},
+  year        = {2016},
+  month       = {March},
+  howpublished = {\url{https://www.rfc-editor.org/rfc/rfc7807}},
+  note        = {Version citada por ADR-006 (docs/adr/ADR-006-autenticacion-seguridad.md) y por Spring ProblemDetail; obsoleta desde 2023 por RFC 9457, no usada en este repositorio.}
+}
+
+@misc{spring-security-docs,
+  author       = {{Spring Team}},
+  title        = {{Spring Security} Reference Documentation},
+  howpublished = {\url{https://docs.spring.io/spring-security/reference/}},
+  note         = {Version 6.x, usada en Backend/pom.xml (spring-boot-starter-security).}
+}
+
+@misc{spring-boot-docs,
+  author       = {{Spring Team}},
+  title        = {{Spring Boot} Reference Documentation},
+  howpublished = {\url{https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/}},
+  note         = {Version 3.2.x, usada en Backend/pom.xml.}
+}
+
+@misc{jacoco-docs,
+  author       = {{EclEmma / JaCoCo team}},
+  title        = {{JaCoCo} Java Code Coverage Library},
+  howpublished = {\url{https://www.jacoco.org/jacoco/trunk/doc/}},
+  note         = {Version 0.8.12, usada por jacoco-maven-plugin en Backend/pom.xml.}
+}
+
+@misc{postgresql-docs,
+  author       = {{The PostgreSQL Global Development Group}},
+  title        = {{PostgreSQL 16} Documentation},
+  howpublished = {\url{https://www.postgresql.org/docs/16/}}
+}
+
+@misc{redis-docs,
+  author       = {{Redis Ltd.}},
+  title        = {{Redis} Documentation},
+  howpublished = {\url{https://redis.io/docs/}}
+}
+
+@misc{k6-docs,
+  author       = {{Grafana Labs}},
+  title        = {{k6} Documentation},
+  howpublished = {\url{https://k6.io/docs/}},
+  note         = {Version real usada: k6 v2.1.0 (windows/amd64), ver docs/mediciones/perf/REPORT.md.}
+}
+
+@misc{c4-model,
+  author       = {Simon Brown},
+  title        = {The {C4} Model for Visualising Software Architecture},
+  howpublished = {\url{https://c4model.com/}}
+}
+
+@incollection{sus-brooke1996,
+  author    = {John Brooke},
+  title     = {{SUS}: A Quick and Dirty Usability Scale},
+  booktitle = {Usability Evaluation in Industry},
+  editor    = {P. W. Jordan and B. Thomas and B. A. Weerdmeester and A. L. McClelland},
+  publisher = {Taylor \& Francis},
+  address   = {London},
+  year      = {1996},
+  note      = {Referencia estandar del instrumento SUS citada en docs/etica/ETHICS.md; metadatos no reverificados en linea durante esta fase, se usa la cita canonica ampliamente reconocida de este trabajo.}
+}
+
+@misc{iso9241-11,
+  author       = {{International Organization for Standardization}},
+  title        = {{ISO 9241-11:2018} Ergonomics of Human-System Interaction -- Part 11: Usability: Definitions and Concepts},
+  year         = {2018},
+  howpublished = {\url{https://www.iso.org/standard/63500.html}}
+}
+
+@misc{wcag21,
+  author       = {{World Wide Web Consortium (W3C)}},
+  title        = {Web Content Accessibility Guidelines ({WCAG}) 2.1},
+  howpublished = {\url{https://www.w3.org/TR/WCAG21/}}
+}
+
+@misc{lighthouse-docs,
+  author       = {{Google Chrome Developers}},
+  title        = {{Lighthouse}},
+  howpublished = {\url{https://developer.chrome.com/docs/lighthouse/}},
+  note         = {Herramienta prevista para la auditoria de accesibilidad automatica del frontend (pendiente de ejecucion, ver capitulo de Resultados -- Zaida).}
+}
+
+@misc{credit-taxonomy,
+  author       = {{NISO / CRediT}},
+  title        = {{CRediT} -- Contributor Roles Taxonomy},
+  howpublished = {\url{https://credit.niso.org/}}
+}

@@ -1,0 +1,20 @@
+# Auxiliares de compilacion LaTeX (locales, no versionados).
+# El PDF final SI se versiona, pero en docs/informe-entrega-3.pdf
+# (un nivel arriba de esta carpeta), no aqui.
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.nav
+*.snm
+*.vrb
+secciones/*.aux

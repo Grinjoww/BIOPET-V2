@@ -1,0 +1,151 @@
+\chapter{Protocolo experimental}
+\label{cap:protocolo-experimental}
+
+\section{Entorno de ejecuci\'on}
+
+\begin{table}[H]
+  \centering
+  \caption{Entorno de ejecuci\'on observado durante la Fase~9A de evidencias de seguridad (\texttt{docs/mediciones/sec/REPORT.md}) y la medici\'on de rendimiento (\texttt{docs/mediciones/perf/REPORT.md}).}
+  \label{tab:entorno-ejecucion}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Componente & Versi\'on observada \\
+    \midrule
+    Sistema operativo & Windows~11 (build 10.0.26200) \\
+    Java & OpenJDK 21.0.11 (Eclipse Temurin) \\
+    Maven & Apache Maven 3.9.16 \\
+    Docker & Docker Desktop 4.83.0, Engine 29.6.2 \\
+    k6 & v2.1.0 (windows/amd64) \\
+    PostgreSQL & 16 (imagen \texttt{postgres:16-alpine}, digest fijado) \\
+    Redis & 7 (imagen \texttt{redis:7-alpine}, digest fijado) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Todas las mediciones de seguridad y rendimiento reportadas en este informe
+se ejecutaron en una \'unica m\'aquina de desarrollo, sobre el stack Docker
+completo (\texttt{docker-compose.yml} + \texttt{docker-compose.tls.yml}
+cuando aplic\'o TLS). No se dispuso de un entorno de staging separado ni de
+m\'ultiples m\'aquinas para las corridas reportadas.
+
+\section{Comandos reproducibles}
+
+\begin{itemize}[nosep]
+  \item \textbf{Arranque completo:} \texttt{make up} (o
+    \texttt{docker compose -f docker-compose.yml -f docker-compose.tls.yml up --build -d}
+    para incluir HTTPS).
+  \item \textbf{Pruebas y cobertura del backend:} \texttt{cd Backend \&\& mvn clean verify}.
+  \item \textbf{Evidencia de seguridad:}
+    \texttt{scripts/security-evidence.ps1} / \texttt{.sh}.
+  \item \textbf{Rendimiento:} scripts de k6 orquestados junto con
+    \texttt{scripts/perf-analysis.py} (agregaci\'on estad\'istica de los
+    \texttt{k6-runN-\{frio,caliente\}.json}).
+  \item \textbf{Colecci\'on Postman:} \texttt{docs/postman/BIOPET.postman\_collection.json}
+    con el entorno \texttt{docs/postman/BIOPET-Local.postman\_environment.json}.
+\end{itemize}
+
+\section{Mediciones de rendimiento y cach\'e (Fred)}
+
+\begin{itemize}[nosep]
+  \item \textbf{N\'umero de corridas:} 3 en fr\'io (cach\'e vac\'ia) y 3 en
+    caliente, contra \texttt{GET /api/mascotas} sobre HTTPS/TLS~1.3 real.
+  \item \textbf{Tama\~no de muestra por corrida:} entre 3\,191 y 3\,236
+    peticiones completadas (50~VUs durante $\sim$30--35~s).
+  \item \textbf{Tratamiento de datos:} cada corrida se agrega por separado
+    (media, mediana, desviaci\'on est\'andar, percentiles p50/p90/p95/p99,
+    tasa de error, throughput); no se promedian las seis corridas entre
+    s\'i para evitar mezclar condiciones de cach\'e fr\'ia y caliente.
+  \item \textbf{Intervalos de confianza:} al 95\,\%, calculados con la
+    distribuci\'on t de Student (\texttt{scipy.stats.t}), apropiada para el
+    tama\~no de muestra de cada corrida.
+  \item \textbf{Criterio de aceptaci\'on:} tasa de error 0{,}0\,\% obligatoria
+    en todas las corridas (cumplido en las seis).
+  \item \textbf{Cach\'e (Redis):} verificada de forma aislada con
+    \texttt{redis-cli DBSIZE} sobre una \'unica clave de cach\'e
+    (\texttt{mascotas::admin@biopet.ec-0-10-UNSORTED}), en lugar de
+    \texttt{keyspace_hits}/\texttt{keyspace_misses} globales (que tambi\'en
+    cuentan la verificaci\'on de lista negra de JWT en cada petici\'on
+    autenticada).
+\end{itemize}
+
+\section{Mediciones de seguridad (Jaime)}
+
+\begin{itemize}[nosep]
+  \item \textbf{M\'etodo:} inspecci\'on directa del c\'odigo fuente para
+    confirmar el mecanismo de cada control, ejecuci\'on real de la suite
+    \texttt{mvn clean verify}, y verificaci\'on en vivo contra el stack
+    Docker con perfil \texttt{tls} activo usando \texttt{curl}/\texttt{curl.exe}
+    y \texttt{openssl s\_client}.
+  \item \textbf{Categor\'ias auditadas:} A01 (control de acceso), A02
+    (criptograf\'ia/TLS), A03 (inyecci\'on), A05 (cabeceras/CORS), A07
+    (autenticaci\'on), A09 (auditor\'ia). No se auditaron A04, A06, A08 ni
+    A10 por no haber sido objeto de fases anteriores.
+  \item \textbf{Criterio de aceptaci\'on:} cada afirmaci\'on cuantitativa
+    debe provenir de una prueba automatizada existente (referenciada por
+    nombre de clase y m\'etodo) o de una ejecuci\'on real documentada; no se
+    acepta una afirmaci\'on sin esa referencia.
+  \item \textbf{Datos crudos locales (no versionados):} \texttt{mvn-clean-verify.txt},
+    \texttt{docker-compose-config.txt}, \texttt{docker-compose-ps.txt},
+    \texttt{http-8080-headers.txt}, \texttt{https-8443-headers.txt}, en
+    \texttt{docs/mediciones/sec/raw/} (carpeta con solo \texttt{.gitkeep}
+    versionado).
+\end{itemize}
+
+\section{Cobertura de pruebas (Jaime)}
+
+\begin{itemize}[nosep]
+  \item \textbf{Herramienta:} JaCoCo~\cite{jacoco-docs}
+    (\texttt{jacoco-maven-plugin}~0.8.12), ligado a
+    las fases \texttt{prepare-agent} (por defecto), \texttt{report} (fase
+    \texttt{test}) y \texttt{check} (fase \texttt{verify}).
+  \item \textbf{Regla de umbral:} una \'unica regla de alcance
+    \texttt{BUNDLE} (todo el m\'odulo, no por paquete ni por clase), con
+    tres l\'imites \texttt{COVEREDRATIO} (\texttt{LINE}, \texttt{BRANCH},
+    \texttt{COMPLEXITY}), cada uno con \texttt{minimum=0.60}.
+  \item \textbf{Criterio de aceptaci\'on:} si cualquiera de los tres cae
+    por debajo de 0{,}60, \texttt{mvn verify} falla el build.
+  \item \textbf{Fuente de datos:} \texttt{Backend/target/site/jacoco/jacoco.xml}
+    (no versionado, regenerado en cada \texttt{mvn clean verify}).
+\end{itemize}
+
+\section{Usabilidad (SUS) y accesibilidad (Lighthouse) --- Zaida}
+
+\begin{itemize}[nosep]
+  \item \textbf{Instrumento de usabilidad:} System Usability Scale
+    (SUS)~\cite{sus-brooke1996}, con un m\'inimo de diez participantes externos al equipo,
+    conforme al bloque C.3 de la gu\'ia. Cada participante firma un
+    consentimiento informado (\texttt{docs/etica/plantilla.md}) antes de
+    ejecutar una tarea de referencia (login, alta, edici\'on, eliminaci\'on
+    l\'ogica, logout). Los resultados agregados se vinculan \'unicamente a
+    un c\'odigo de participante (P01, P02, \ldots), nunca a datos
+    identificables.
+  \item \textbf{Instrumento de accesibilidad autom\'atica:} Lighthouse~\cite{lighthouse-docs} CI,
+    sobre las categor\'ias Performance, Accessibility, Best Practices y
+    SEO, con un umbral m\'inimo a declarar en \texttt{lighthouserc.js}.
+  \item \textbf{Estado a la fecha de este informe:} \textbf{ninguna de las
+    dos mediciones se ha ejecutado todav\'ia}. No existe
+    \texttt{docs/mediciones/sus/} ni \texttt{docs/mediciones/lighthouse/}
+    en el repositorio, ni un \texttt{lighthouserc.js} versionado. Esta
+    secci\'on documenta el protocolo previsto, no un resultado.
+\end{itemize}
+
+\section{Diferenciaci\'on de los tipos de medici\'on}
+
+Este informe distingue expl\'icitamente seis tipos de medici\'on, cada uno
+con su propio m\'etodo y criterio de aceptaci\'on, para evitar mezclar
+cifras de naturaleza distinta:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Rendimiento} (latencia, throughput): k6, agregado por
+    corrida, IC~95\,\% con distribuci\'on t.
+  \item \textbf{Cach\'e}: \texttt{redis-cli DBSIZE} aislado, no
+    \texttt{INFO stats} global.
+  \item \textbf{Seguridad}: pruebas JUnit/MockMvc + verificaci\'on en vivo
+    con \texttt{curl}/\texttt{openssl}.
+  \item \textbf{Cobertura}: JaCoCo, contadores \texttt{LINE}/\texttt{BRANCH}/\texttt{COMPLEXITY}
+    sobre el \texttt{BUNDLE} completo.
+  \item \textbf{Usabilidad}: SUS, pendiente de ejecuci\'on.
+  \item \textbf{Accesibilidad autom\'atica}: Lighthouse, pendiente de
+    ejecuci\'on; la accesibilidad manual (atributos ARIA) s\'i est\'a
+    verificada directamente en el c\'odigo del frontend.
+\end{enumerate}

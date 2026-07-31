@@ -1,0 +1,84 @@
+\chapter{\'Etica y protecci\'on de datos}
+\label{cap:etica}
+
+Este cap\'itulo resume \texttt{docs/etica/ETHICS.md}, documento de
+referencia completo para cualquier aspecto \'etico o de gesti\'on de datos
+de BIOPET no cubierto aqu\'i.
+
+\section{Uso de datos acad\'emicos}
+
+BIOPET usa exclusivamente dos categor\'ias de datos, ambas generadas por el
+propio equipo: datos sint\'eticos de desarrollo/prueba (usuario
+administrador sembrado, datos de registro creados durante las pruebas) y
+datos emp\'iricos de evaluaci\'on generados por herramientas automatizadas
+(k6, JaCoCo, evidencia OWASP) contra el propio sistema, sin intervenci\'on
+de personas ni datos personales de terceros.
+
+\section{Ausencia de datos cl\'inicos reales}
+
+El sistema, en el alcance implementado hasta \texttt{v0.9.0-rc}, no
+almacena historiales m\'edicos ni datos cl\'inicos de mascotas: \'unicamente
+nombre, especie, raza, fecha de nacimiento y el identificador del due\~no.
+No se ha desplegado con datos de clientes reales de una cl\'inica
+veterinaria a la fecha de este informe.
+
+\section{Credenciales de desarrollo}
+
+La cuenta administradora sembrada autom\'aticamente
+(\texttt{admin@biopet.ec}) y las credenciales de ejemplo del README son
+datos ficticios de desarrollo, documentados como tales en el propio
+repositorio, y no corresponden a ninguna persona real. Este informe
+\textbf{no reproduce el valor literal de ninguna contrase\~na}, siguiendo
+la misma pr\'actica ya aplicada en \texttt{docs/mediciones/sec/} y
+\texttt{docs/postman/}.
+
+\section{No inclusi\'on de secretos}
+
+Ning\'un documento de este informe, ni sus figuras (cuando se agreguen),
+debe contener: contrase\~nas con valor, JSON Web Tokens completos
+(\texttt{eyJ...}), valores de cookies, el encabezado
+\texttt{Authorization: Bearer} con valor real, claves privadas ni el
+identificador \texttt{jti} de un token real. Esta regla se valid\'o de
+forma expl\'icita al cierre de esta fase (secci\'on de validaciones,
+cap\'itulo final de este informe).
+
+\section{Protecci\'on de JWT y cookies}
+
+El dise\~no del sistema (cap\'itulo~\ref{cap:resultados-jaime}) evita por
+construcci\'on la exposici\'on de JWT: cookies \texttt{HttpOnly} (no
+legibles desde JavaScript del navegador), \texttt{Secure} (solo sobre
+HTTPS) y \texttt{SameSite=Strict}. La documentaci\'on de este informe sigue
+la misma disciplina: cuando se describe un atributo de cookie, nunca se
+reproduce su valor.
+
+\section{Logs sin contrase\~nas}
+
+\texttt{AuthenticationAuditService} (cap\'itulo~\ref{cap:resultados-jaime})
+solo acepta \texttt{ip} y \texttt{subject} como par\'ametros en cada
+m\'etodo p\'ublico: estructuralmente, no existe ninguna v\'ia de c\'odigo
+para que una contrase\~na, un JWT completo o un encabezado
+\texttt{Authorization} lleguen al logger.
+
+\section{Responsabilidad compartida y l\'imites del entorno acad\'emico}
+
+Los tres integrantes del equipo comparten la responsabilidad de no
+introducir datos personales identificables ni secretos en el repositorio
+p\'ublico. El sistema se declara expl\'icitamente como un artefacto
+acad\'emico: si en una fase posterior se procesaran datos reales de
+clientes de una cl\'inica veterinaria, \texttt{docs/etica/ETHICS.md}
+deber\'ia actualizarse para incorporar una base legal de tratamiento y,
+si aplica en Ecuador, referencia a la Ley Org\'anica de Protecci\'on de
+Datos Personales (LOPDP) --- actualizaci\'on que no corresponde a esta
+entrega por no existir todav\'ia ese procesamiento.
+
+\section{Consentimiento informado para la prueba SUS}
+
+Cuando se ejecute la prueba de usabilidad (SUS, m\'inimo diez
+participantes externos al equipo), cada participante debe firmar el
+formulario de consentimiento informado disponible en
+\texttt{docs/etica/plantilla.md} antes de realizar la tarea de referencia.
+Los formularios firmados no se suben al repositorio p\'ublico; los
+resultados agregados se identifican \'unicamente por c\'odigo de
+participante (P01, P02, \ldots).
+
+Para el detalle completo de cada punto, ver \texttt{docs/etica/ETHICS.md}.
