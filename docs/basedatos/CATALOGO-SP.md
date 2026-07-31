@@ -25,6 +25,29 @@
   `ALTER DEFAULT PRIVILEGES` declarado en `db/roles.sql` — verificado el 29/07/2026 conectando
   directo como `biopet_app` y ejecutando la función sin necesidad de GRANT adicional.
 
+## set_actualizado_en
+
+- **Tipo:** Función PL/pgSQL de tipo *trigger* (`RETURNS TRIGGER`), no invocable
+  directamente desde una sentencia `SELECT`.
+- **Archivo:** `db/schema.sql` (líneas de definición de la función y de los dos
+  triggers que la invocan), replicada en `Backend/src/main/resources/db/migration/V1__schema_inicial.sql`.
+- **Propósito:** Mantener `actualizado_en` sincronizado automáticamente en cada
+  `UPDATE`, sin depender de que el backend (Hibernate/JPA) recuerde setear ese
+  campo manualmente en cada operación de escritura.
+- **Parámetros de entrada:** ninguno (las funciones trigger reciben el registro
+  vía las variables implícitas `NEW`/`OLD`, no por lista de parámetros).
+- **Comportamiento:** asigna `NEW.actualizado_en = NOW()` y retorna `NEW`.
+- **Tablas afectadas:** `usuarios` y `mascotas`, cada una con su propio trigger
+  `BEFORE UPDATE` (`trg_usuarios_actualizado_en`, `trg_mascotas_actualizado_en`)
+  que ejecuta esta misma función.
+- **Endpoint que la expone:** ninguno directamente — se dispara de forma
+  automática en cualquier `UPDATE` sobre esas dos tablas (por ejemplo, al usar
+  `PUT /api/mascotas/{id}`), sin que el código Java la invoque explícitamente.
+- **Privilegios:** `biopet_app` tiene `EXECUTE` mediante un `GRANT` explícito en
+  `db/roles.sql` (no vía `ALTER DEFAULT PRIVILEGES`, porque esta función se crea
+  en `db/schema.sql`, que se monta *antes* que `db/roles.sql` — el default
+  privilege solo cubre objetos creados *después* de declararlo).
+
 ## Verificación automatizada
 
 Cubierta con test de integración usando Testcontainers (PostgreSQL real desechable):
@@ -36,3 +59,9 @@ docker compose exec -T postgres psql -U biopet_app -d biopet_db \
   -c "SELECT * FROM fn_resumen_mascotas_por_especie();"
 ```
 Resultado: `Perro | 1` (29/07/2026).
+
+El trigger `set_actualizado_en` se verifica de forma implícita en cualquier test
+que haga un `UPDATE` y compruebe `actualizado_en` (por ejemplo, los tests de
+`MascotaService.actualizar`). No cuenta con un test de integración dedicado
+exclusivamente al trigger en sí — si la guía exige verificación explícita por
+procedimiento, este es un punto pendiente a considerar.
