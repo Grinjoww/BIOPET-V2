@@ -1,5 +1,5 @@
 ﻿# Java
-backend/target/
+Backend/target/
 *.class
 *.jar
 # Node

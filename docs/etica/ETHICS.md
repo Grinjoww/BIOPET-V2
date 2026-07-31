@@ -84,11 +84,11 @@ PFC. Para esa actividad, el equipo aplica el siguiente mecanismo:
    reporte con media, desviación típica e IC 95 %) se vinculan al código de
    participante, nunca a su nombre, correo o cualquier otro dato identificable.
 
-**Estado a la fecha de esta entrega:** no se encontró en los repositorios
-provistos evidencia de que la prueba SUS ya se haya ejecutado (no existe
-`docs/mediciones/sus/` en el proyecto v0.9.0-rc). Esta sección documenta el
-mecanismo que debe aplicarse cuando se ejecute, conforme a lo declarado en la
-sección 7 del SRS ("evidencia empírica cuantitativa... pendiente").
+**Estado a la fecha de esta entrega:** la prueba SUS ya se ejecutó con diez
+participantes externos al equipo (P01–P10), siguiendo el mecanismo de
+consentimiento descrito arriba. Los datos crudos y el reporte agregado están
+disponibles en `docs/mediciones/sus/sus-raw.csv` y
+`docs/mediciones/sus/REPORT.md`, respectivamente.
 
 ## iv. Ausencia de datos identificables en el repositorio público
 

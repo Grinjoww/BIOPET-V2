@@ -1,0 +1,150 @@
+\chapter{Resultados --- Zaida (requisitos, frontend y experiencia de usuario)}
+\label{cap:resultados-zaida}
+
+Este cap\'itulo integra la informaci\'on real disponible sobre el trabajo de
+Zaida: ingenier\'ia de requisitos, frontend Angular, accesibilidad manual
+verificable en el c\'odigo, e integraci\'on con el esquema de autenticaci\'on
+por cookies. Las mediciones cuantitativas de usabilidad (SUS) y
+accesibilidad autom\'atica (Lighthouse) \textbf{no se reportan como
+resultados} porque a\'un no se han ejecutado; \'unicamente se describe su
+metodolog\'ia (cap\'itulo~\ref{cap:protocolo-experimental}).
+
+\section{Requisitos}
+
+El repositorio incluye una consolidaci\'on completa de ingenier\'ia de
+requisitos: \texttt{docs/requisitos/SRS.md} (especificaci\'on de
+requisitos de software), \texttt{docs/requisitos/historias/HistoriasUsuario.md},
+\texttt{docs/requisitos/casos-de-uso/CasosDeUso.md} y
+\texttt{docs/requisitos/CHANGELOG-REQ.md}. La matriz de trazabilidad
+derivada (\texttt{docs/trazabilidad/matriz.csv}) vincula cada requisito con
+su historia de usuario, caso de uso, m\'odulo de c\'odigo, endpoint y
+prueba automatizada (cap\'itulo~\ref{cap:trazabilidad}).
+
+\section{Frontend Angular}
+
+Aplicaci\'on Angular~17.3 con componentes \emph{standalone} (sin
+\texttt{NgModule}) y formularios reactivos (\texttt{ReactiveFormsModule}).
+M\'odulos verificados directamente en \texttt{frontend/src/app/}:
+
+\begin{itemize}[nosep]
+  \item \texttt{core/auth.service.ts} / \texttt{core/auth.guard.ts}:
+    integraci\'on con el esquema de cookies del backend
+    (\texttt{credentials: include}), sin JWT en \texttt{localStorage}, y
+    protecci\'on de rutas que requieren sesi\'on.
+  \item \texttt{core/http-error.interceptor.ts} /
+    \texttt{core/problem-detail.service.ts}: interceptan las respuestas de
+    error y traducen el \texttt{ProblemDetail} del backend a un mensaje
+    legible para el usuario.
+  \item \texttt{features/login.component.ts}: formulario de login con
+    validaci\'on reactiva y manejo de foco accesible.
+  \item \texttt{features/mascotas.component.ts} /
+    \texttt{features/mascota-api.service.ts}: listado, alta, edici\'on y
+    baja de mascotas contra la API real.
+\end{itemize}
+
+% EVIDENCIA-ZAIDA-01
+% Ruta esperada: figuras/zaida/01-frontend-login.png
+\evidencia{figuras/zaida/01-frontend-login.png}%
+{Pantalla de inicio de sesi\'on del frontend de BIOPET.}%
+{fig:zaida-frontend-login}
+
+% EVIDENCIA-ZAIDA-02
+% Ruta esperada: figuras/zaida/02-crud-mascotas.png
+\evidencia{figuras/zaida/02-crud-mascotas.png}%
+{CRUD de mascotas en el frontend: listado, alta y edici\'on.}%
+{fig:zaida-crud-mascotas}
+
+\section{Autenticaci\'on mediante cookies (integraci\'on frontend)}
+
+El frontend no maneja el JWT directamente: env\'ia y recibe las cookies
+\texttt{access_token}/\texttt{refresh_token} de forma transparente gracias
+a \texttt{credentials: include} en las peticiones HTTP, consistente con el
+esquema \texttt{HttpOnly}+\texttt{Secure}+\texttt{SameSite=Strict} descrito
+en el cap\'itulo~\ref{cap:resultados-jaime}. Esta integraci\'on qued\'o
+reflejada en el historial de cambios del proyecto (rama
+\texttt{zaida/frontend-cookies-jwt} y, m\'as recientemente,
+\texttt{zaida/problemdetail-409-accesibilidad-login}, que ajust\'o el
+manejo de \texttt{ProblemDetail} y la accesibilidad del login tras la
+introducci\'on del c\'odigo 409 en el registro).
+
+\section{CRUD accesible de mascotas y accesibilidad manual}
+
+El c\'odigo fuente confirma el uso deliberado de atributos ARIA en los
+formularios cr\'iticos: \texttt{login.component.ts} usa
+\texttt{[attr.aria-invalid]}, \texttt{[attr.aria-describedby]} vinculado al
+mensaje de error de cada campo, y un bloque de error con
+\texttt{role="alert"} y \texttt{aria-live="assertive"} para que un lector
+de pantalla anuncie el error sin que el usuario deba buscarlo
+manualmente, en l\'inea con las pautas de accesibilidad WCAG~\cite{wcag21}
+--- el color rojo del CSS es un refuerzo visual adicional, no
+el \'unico canal del mensaje. El componente de mascotas
+(\texttt{mascotas.component.ts}) usa el mismo tipo de atributos de forma
+extensiva en su marcado. Estas verificaciones son de c\'odigo, no de una
+herramienta automatizada de accesibilidad.
+
+% EVIDENCIA-ZAIDA-03
+% Ruta esperada: figuras/zaida/03-responsive.png
+\evidencia{figuras/zaida/03-responsive.png}%
+{Vista responsive del frontend en un ancho de pantalla reducido.}%
+{fig:zaida-responsive}
+
+\section{Usabilidad (SUS)}
+
+El instrumento System Usability Scale (Brooke~\cite{sus-brooke1996}),
+alineado con los conceptos de usabilidad de ISO~9241-11~\cite{iso9241-11},
+con un m\'inimo de diez
+participantes externos al equipo, est\'a documentado metodol\'ogicamente en
+\texttt{docs/etica/ETHICS.md} (secci\'on~iii): consentimiento informado por
+participante, tarea de referencia (login, alta, edici\'on, eliminaci\'on
+l\'ogica, logout), y resultados agregados vinculados \'unicamente a un
+c\'odigo de participante. \textbf{A la fecha de este informe no existe
+\texttt{docs/mediciones/sus/} en el repositorio}: la prueba SUS a\'un no se
+ha ejecutado. No se reporta ninguna puntuaci\'on SUS en este documento.
+
+% EVIDENCIA-ZAIDA-05
+% Ruta esperada: figuras/zaida/05-sus-resultados.png
+\evidencia{figuras/zaida/05-sus-resultados.png}%
+{Resultados agregados del instrumento SUS (media, desviaci\'on t\'ipica, IC 95\,\%), cuando est\'en disponibles.}%
+{fig:zaida-sus-resultados}
+
+\section{Accesibilidad autom\'atica (Lighthouse)}
+
+El repositorio registra la intenci\'on de auditar el frontend con
+Lighthouse~\cite{lighthouse-docs} CI (rama hist\'orica
+\texttt{zaida/frontend-lighthouse}), pero
+\textbf{no existe actualmente un \texttt{lighthouserc.js} versionado ni una
+carpeta \texttt{docs/mediciones/lighthouse/}} con resultados. No se reporta
+ninguna puntuaci\'on de Performance, Accessibility, Best Practices ni SEO
+en este documento por no existir todav\'ia esa medici\'on.
+
+% EVIDENCIA-ZAIDA-04
+% Ruta esperada: figuras/zaida/04-lighthouse.png
+\evidencia{figuras/zaida/04-lighthouse.png}%
+{Reporte de Lighthouse CI del frontend de BIOPET, cuando est\'e disponible.}%
+{fig:zaida-lighthouse}
+
+% EVIDENCIA-ZAIDA-06
+% Ruta esperada: figuras/zaida/06-accesibilidad.png
+\evidencia{figuras/zaida/06-accesibilidad.png}%
+{Detalle de accesibilidad autom\'atica (categor\'ia Accessibility de Lighthouse), cuando est\'e disponible.}%
+{fig:zaida-accesibilidad}
+
+\section{Publicabilidad y documentaci\'on funcional}
+
+El SRS, las historias de usuario y los casos de uso est\'an versionados en
+formato Markdown (migrados desde PDF en la consolidaci\'on m\'as reciente),
+lo que permite su revisi\'on por diferencias (\emph{diff}) igual que el
+resto del c\'odigo, en lugar de binarios opacos.
+
+\section{Limitaciones reales de este bloque}
+
+\begin{itemize}[nosep]
+  \item Las mediciones de usabilidad (SUS) y accesibilidad autom\'atica
+    (Lighthouse) est\'an dise\~nadas metodol\'ogicamente pero no ejecutadas
+    a la fecha de este informe.
+  \item La verificaci\'on de accesibilidad reportada aqu\'i es de
+    inspecci\'on de c\'odigo (atributos ARIA presentes), no una auditor\'ia
+    automatizada ni una prueba con usuarios reales con discapacidad.
+  \item No se dispone de un reporte de compatibilidad entre navegadores
+    distinto del entorno de desarrollo usado por el equipo.
+\end{itemize}

@@ -43,3 +43,9 @@ clean:
 reset-db:
 	@echo "[reset-db] ADVERTENCIA: esto eliminara los datos persistentes de PostgreSQL y Redis."
 	docker compose down -v --remove-orphans
+
+# Ejecuta la auditoria Lighthouse (bloque C.5 de la Guia) contra el
+# frontend servido por el contenedor y archiva los resultados crudos en
+# docs/mediciones/lighthouse/. Requiere 'make up' corrido previamente.
+lighthouse:
+	bash scripts/run-lighthouse.sh

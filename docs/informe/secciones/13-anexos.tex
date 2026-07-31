@@ -1,0 +1,102 @@
+\chapter{Anexos}
+\label{cap:anexos}
+
+\section{Glosario de siglas}
+
+\begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Sigla & Significado \\
+    \midrule
+    ADR & Architecture Decision Record \\
+    API & Application Programming Interface \\
+    ARIA & Accessible Rich Internet Applications \\
+    CRUD & Create, Read, Update, Delete \\
+    CSP & Content Security Policy \\
+    HSTS & HTTP Strict Transport Security \\
+    JWT & JSON Web Token \\
+    OWASP & Open Worldwide Application Security Project \\
+    RBAC & Role-Based Access Control \\
+    SIEM & Security Information and Event Management \\
+    SUS & System Usability Scale \\
+    TLS & Transport Layer Security \\
+    UI & User Interface \\
+    WCAG & Web Content Accessibility Guidelines \\
+    \bottomrule
+  \end{tabular}
+  \caption{Siglas usadas en este informe.}
+  \label{tab:glosario}
+\end{table}
+
+\section{Endpoints principales de la API}
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Endpoints reales expuestos por el backend (verificados contra \texttt{AuthController}, \texttt{MascotaController}, \texttt{UsuarioController}).}
+  \label{tab:endpoints-anexo}
+  \begin{tabular}{@{}llp{7.5cm}@{}}
+    \toprule
+    M\'etodo & Ruta & Autenticaci\'on / rol \\
+    \midrule
+    POST & /api/auth/registro & P\'ublico (crea siempre \texttt{ROLE_DUENO}) \\
+    POST & /api/auth/login & P\'ublico \\
+    POST & /api/auth/refresh & Cookie \texttt{refresh\_token} \\
+    POST & /api/auth/logout & Cookie (idempotente sin sesi\'on) \\
+    GET & /api/usuarios/me & Cualquier rol autenticado \\
+    GET & /api/mascotas & Cualquier rol autenticado (alcance seg\'un rol) \\
+    GET & /api/mascotas/\{id\} & Cualquier rol autenticado (propiedad para \texttt{DUENO}) \\
+    POST & /api/mascotas & \texttt{ADMIN}/\texttt{VETERINARIO}/\texttt{AUXILIAR} \\
+    PUT & /api/mascotas/\{id\} & \texttt{ADMIN}/\texttt{VETERINARIO}/\texttt{AUXILIAR} \\
+    DELETE & /api/mascotas/\{id\} & \texttt{ADMIN}/\texttt{VETERINARIO}/\texttt{AUXILIAR} \\
+    GET & /api/mascotas/resumen-especies & Cualquier rol autenticado \\
+    GET & /actuator/health & P\'ublico \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Documentos de referencia en el repositorio}
+
+\begin{itemize}[nosep]
+  \item ADR: \texttt{docs/adr/ADR-002} a \texttt{ADR-006}.
+  \item Diagramas C4 y complementarios: \texttt{docs/diagrams/}
+    (\texttt{c4-contenedores}, \texttt{c4-componentes-backend},
+    \texttt{der-biopet}, \texttt{diagrama-clases}, \texttt{secuencia-jwt}).
+  \item Evidencia de seguridad: \texttt{docs/mediciones/sec/} (documentos
+    \texttt{A01} a \texttt{A09}, \texttt{REPORT.md}, \texttt{jacoco-summary.md}).
+  \item Evidencia de rendimiento: \texttt{docs/mediciones/perf/REPORT.md}
+    y los archivos \texttt{k6-runN-\{frio,caliente\}.json}.
+  \item Diccionario de datos de mediciones:
+    \texttt{docs/mediciones/DATA-DICTIONARY.md}.
+  \item Colecci\'on y entorno Postman: \texttt{docs/postman/}.
+  \item Requisitos: \texttt{docs/requisitos/} (SRS, historias de usuario,
+    casos de uso, \texttt{CHANGELOG-REQ.md}) y
+    \texttt{docs/trazabilidad/matriz.csv}.
+  \item \'Etica y datos: \texttt{docs/etica/ETHICS.md}.
+  \item Base de datos: \texttt{docs/basedatos/CATALOGO-SP.md}.
+\end{itemize}
+
+\section{Clases de prueba automatizadas citadas en este informe}
+
+\begin{itemize}[nosep]
+  \item \texttt{AuthControllerTest}, \texttt{JwtCookieAuthenticationTest},
+    \texttt{JwtServiceTest}, \texttt{JwtCookieServiceTest},
+    \texttt{LoginRateLimiterServiceTest},
+    \texttt{AuthenticationAuditServiceTest} (seguridad y autenticaci\'on).
+  \item \texttt{MascotaControllerTest} (autorizaci\'on por rol y por
+    propiedad).
+  \item \texttt{SqlInjectionSecurityTest}, \texttt{SecurityHeadersTest}
+    (OWASP A03 y A05).
+  \item \texttt{ResumenEspeciesIntegrationTest} (Testcontainers,
+    PostgreSQL real).
+  \item \texttt{TomcatDualConnectorConfigTest} (conector TLS adicional).
+\end{itemize}
+
+\section{Evidencias pendientes de incorporaci\'on}
+
+Ver la lista completa y numerada de capturas pendientes (responsable,
+n\'umero, ruta esperada, descripci\'on) en la secci\'on final del
+\texttt{README.md} de este informe (\texttt{docs/informe/README.md}), para
+no duplicar esa lista en dos lugares del repositorio.

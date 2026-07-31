@@ -1,29 +1,57 @@
-import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+
 import { AuthService } from '../core/auth.service';
 import { ProblemDetailService } from '../core/problem-detail.service';
 
-// NOTA DE ACCESIBILIDAD (pendiente, fuera de alcance de este commit):
-// falta asociar <label for> a cada input, foco visible y aria-describedby
-// para el mensaje de error. Se deja anotado para un commit posterior
-// fix(accessibility): ... conforme al punto 5.4 del plan de Zaida.
 @Component({
   standalone: true,
-  imports: [FormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
-  <div class="container">
-    <h2>Iniciar sesión</h2>
-    <input [(ngModel)]="email" placeholder="Email" />
-    <input [(ngModel)]="password" placeholder="Contraseña" type="password" />
-    <button (click)="login()" [disabled]="cargando">Entrar</button>
-    <p class="error" *ngIf="error">{{ error }}</p>
-  </div>`
+    <div class="container">
+      <h2>Iniciar sesión</h2>
+
+      <label for="email">Correo electrónico</label>
+      <input
+        id="email"
+        name="email"
+        type="email"
+        [(ngModel)]="email"
+        autocomplete="email"
+      />
+
+      <label for="password">Contraseña</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        [(ngModel)]="password"
+        autocomplete="current-password"
+        [attr.aria-describedby]="error ? 'login-error' : null"
+      />
+
+      <button type="button" (click)="login()" [disabled]="cargando">
+        {{ cargando ? 'Ingresando...' : 'Entrar' }}
+      </button>
+
+      <p
+        id="login-error"
+        class="error"
+        role="alert"
+        aria-live="polite"
+        *ngIf="error"
+      >
+        {{ error }}
+      </p>
+    </div>
+  `
 })
 export class LoginComponent {
-  email = 'jaime@biopet.com';
-  password = 'ClaveSegura123*';
+  email = '';
+  password = '';
   error = '';
   cargando = false;
 

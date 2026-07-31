@@ -1,0 +1,2782 @@
+{
+  "info": {
+    "name": "BIOPET - API",
+    "description": "Coleccion Postman real y reproducible del backend de BIOPET (Spring Boot),\nverificada contra el codigo actual: controladores, DTOs, SecurityConfig,\nGlobalExceptionHandler/ProblemDetailFactory/ProblemType, JwtCookieService,\nAuthService, MascotaService y application.yml/application-tls.yml.\n\n## Orden recomendado de ejecucion\n\n1. Configurar las variables de la coleccion o del entorno (emails y passwords\n   vacios por defecto: completarlos antes de empezar).\n2. Levantar el stack: `docker compose -f docker-compose.yml -f docker-compose.tls.yml up --build -d`\n   (o solo `docker-compose.yml` si no se necesita HTTPS).\n3. Ejecutar \"1. Estado del servicio\".\n4. Ejecutar Login con el rol requerido (carpeta 2).\n5. Ejecutar los requests funcionales (carpetas 2 a 4).\n6. Ejecutar Logout.\n7. Ejecutar los casos 401/403 en una sesion limpia (sin cookies).\n8. Ejecutar \"Rate limiting (login)\" al final, porque bloquea temporalmente el\n   login desde la IP actual.\n\n## Cookies, no tokens\n\nTodo el flujo de autenticacion web usa cookies HttpOnly+Secure+SameSite=Strict\n(access_token, refresh_token) gestionadas automaticamente por el cookie jar de\nPostman. Esta coleccion nunca lee, guarda ni muestra el valor de un JWT o de\nuna cookie, y no agrega `Authorization: Bearer` al flujo principal.\n\n## HTTP vs HTTPS\n\n`baseUrl` apunta por defecto a `{{baseUrlHttp}}` (http://localhost:8080). Para\nprobar contra HTTPS, cambia el valor de la variable `baseUrl` a\n`{{baseUrlHttps}}` (o pega directamente `https://localhost:8443`) en el\nentorno o en la coleccion. El HTTPS local usa un certificado autofirmado\nacademico: puede ser necesario desactivar temporalmente \"SSL certificate\nverification\" en Settings > General de Postman.\n\n## Cuentas de prueba\n\n`Backend/src/main/java/com/biopet/config/DataInitializer.java` siembra una\nunica cuenta automaticamente en cada arranque del backend: `admin@biopet.ec`,\nrol ROLE_ADMIN, de forma idempotente. La contrasena esta codificada en ese\nmismo archivo (y documentada en el README.md raiz del proyecto); no se copia\nen esta coleccion ni en su entorno. `adminEmail` puede completarse con ese\nvalor fijo; `adminPassword` debes completarla tu localmente.\n\nEl repositorio NO siembra cuentas VETERINARIO ni AUXILIAR, y el registro\npublico (`POST /api/auth/registro`) siempre crea ROLE_DUENO, sin importar el\nvalor de `rol` enviado (asi lo hace `AuthService.registrar`). Para probar\nesos dos roles hay que crear la cuenta manualmente (registrando un dueno y\ncambiando su columna `rol` directamente en PostgreSQL a\n`ROLE_VETERINARIO`/`ROLE_AUXILIAR`) y completar\n`veterinarioEmail`/`veterinarioPassword` o\n`auxiliarEmail`/`auxiliarPassword`. Ver docs/postman/README.md.\n\nNinguna captura de pantalla se genera en esta fase.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrlHttp",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "baseUrlHttps",
+      "value": "https://localhost:8443"
+    },
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "adminEmail",
+      "value": ""
+    },
+    {
+      "key": "adminPassword",
+      "value": ""
+    },
+    {
+      "key": "veterinarioEmail",
+      "value": ""
+    },
+    {
+      "key": "veterinarioPassword",
+      "value": ""
+    },
+    {
+      "key": "auxiliarEmail",
+      "value": ""
+    },
+    {
+      "key": "auxiliarPassword",
+      "value": ""
+    },
+    {
+      "key": "duenioEmail",
+      "value": ""
+    },
+    {
+      "key": "duenioPassword",
+      "value": ""
+    },
+    {
+      "key": "segundoDuenioEmail",
+      "value": ""
+    },
+    {
+      "key": "segundoDuenioPassword",
+      "value": ""
+    },
+    {
+      "key": "mascotaId",
+      "value": ""
+    },
+    {
+      "key": "mascotaAjenaId",
+      "value": ""
+    },
+    {
+      "key": "duenioUsuarioId",
+      "value": ""
+    },
+    {
+      "key": "segundoDuenioUsuarioId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Estado del servicio",
+      "item": [
+        {
+          "name": "Health check HTTP",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlHttp}}/actuator/health",
+              "host": [
+                "{{baseUrlHttp}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            },
+            "description": "Comprobacion de disponibilidad sobre el conector HTTP interno (puerto 8080, TomcatDualConnectorConfig). Publico (permitAll en SecurityConfig). No debe incluir Strict-Transport-Security: HSTS nunca se emite sobre una conexion sin cifrar."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type indica JSON (formato Actuator)', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('json');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta es JSON valido', function () {",
+                  "    pm.response.json();",
+                  "});",
+                  "",
+                  "pm.test('status es UP si el campo existe', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    if (Object.prototype.hasOwnProperty.call(cuerpo, 'status')) {",
+                  "        pm.expect(cuerpo.status).to.eql('UP');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Cabeceras de seguridad basicas presentes', function () {",
+                  "    pm.expect(pm.response.headers.get('X-Frame-Options')).to.eql('DENY');",
+                  "    pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.eql('nosniff');",
+                  "    pm.expect(pm.response.headers.get('Referrer-Policy')).to.eql('no-referrer');",
+                  "    pm.expect(pm.response.headers.get('Content-Security-Policy')).to.include(\"default-src 'self'\");",
+                  "});",
+                  "",
+                  "pm.test('No se asume HSTS sobre HTTP (no debe estar presente)', function () {",
+                  "    pm.expect(pm.response.headers.get('Strict-Transport-Security')).to.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Health check HTTPS",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrlHttps}}/actuator/health",
+              "host": [
+                "{{baseUrlHttps}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            },
+            "description": "Comprobacion de disponibilidad sobre el conector HTTPS principal (puerto 8443, perfil 'tls'). Publico. Requiere que el stack se haya levantado con el perfil 'tls' activo (docker-compose.yml + docker-compose.tls.yml) y el certificado autofirmado generado. En Postman puede ser necesario desactivar temporalmente 'SSL certificate verification' (Settings > General) porque el certificado es autofirmado y academico, nunca valido para produccion."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('La respuesta es JSON valido', function () {",
+                  "    pm.response.json();",
+                  "});",
+                  "",
+                  "pm.test('status es UP si el campo existe', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    if (Object.prototype.hasOwnProperty.call(cuerpo, 'status')) {",
+                  "        pm.expect(cuerpo.status).to.eql('UP');",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Cabeceras de seguridad presentes, incluyendo HSTS sobre HTTPS', function () {",
+                  "    pm.expect(pm.response.headers.get('X-Frame-Options')).to.eql('DENY');",
+                  "    pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.eql('nosniff');",
+                  "    pm.expect(pm.response.headers.get('Referrer-Policy')).to.eql('no-referrer');",
+                  "    pm.expect(pm.response.headers.get('Content-Security-Policy')).to.include(\"default-src 'self'\");",
+                  "    var hsts = pm.response.headers.get('Strict-Transport-Security');",
+                  "    pm.expect(hsts).to.include('max-age=31536000');",
+                  "    pm.expect(hsts).to.include('includeSubDomains');",
+                  "    pm.expect(hsts).to.include('preload');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Health checks publicos (permitAll en SecurityConfig) sobre /actuator/health, expuesto via management.endpoints.web.exposure.include=health,info,metrics. Ejecutar antes que cualquier otro flujo para confirmar que el backend (y, si aplica, el conector TLS) esta arriba."
+    },
+    {
+      "name": "2. Autenticacion",
+      "item": [
+        {
+          "name": "Registro (dueno)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "registro"
+              ]
+            },
+            "description": "Registro publico (POST /api/auth/registro). El DTO RegistroRequest exige un campo 'rol', pero AuthService.registrar ignora ese valor y asigna siempre ROLE_DUENO: no existe alta publica de ADMIN/VETERINARIO/AUXILIAR. Requiere que las variables {{duenioEmail}}/{{duenioPassword}} esten completadas antes de ejecutar (contrasena minimo 8 caracteres). Guarda el id numerico devuelto en la variable de coleccion 'duenioUsuarioId' (necesaria para crear mascotas, ya que MascotaRequest.duenioId exige un id real de un usuario ROLE_DUENO).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Usuario de prueba\",\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"{{duenioPassword}}\",\n  \"rol\": \"ROLE_DUENO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 (registro nuevo) o 409 (correo ya registrado en una ejecucion previa)', function () {",
+                  "    pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    var cuerpo = pm.response.json();",
+                  "",
+                  "    pm.test('Content-Type es application/json', function () {",
+                  "        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "    });",
+                  "",
+                  "    pm.test('El registro publico siempre asigna ROLE_DUENO, sin importar el rol enviado', function () {",
+                  "        pm.expect(cuerpo.rol).to.eql('ROLE_DUENO');",
+                  "    });",
+                  "",
+                  "    pm.test('La respuesta trae id, nombre, email y activo', function () {",
+                  "        pm.expect(cuerpo).to.have.property('id');",
+                  "        pm.expect(cuerpo).to.have.property('nombre');",
+                  "        pm.expect(cuerpo).to.have.property('email');",
+                  "        pm.expect(cuerpo).to.have.property('activo', true);",
+                  "    });",
+                  "",
+                  "    pm.collectionVariables.set('duenioUsuarioId', String(cuerpo.id));",
+                  "}",
+                  "",
+                  "if (pm.response.code === 409) {",
+                  "    pm.test('ProblemDetail de conflicto tiene el type esperado', function () {",
+                  "        pm.expect(pm.response.json().type).to.eql('urn:biopet:error:conflict');",
+                  "    });",
+                  "}",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registro (segundo dueno)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "registro"
+              ]
+            },
+            "description": "Registro publico (POST /api/auth/registro). El DTO RegistroRequest exige un campo 'rol', pero AuthService.registrar ignora ese valor y asigna siempre ROLE_DUENO: no existe alta publica de ADMIN/VETERINARIO/AUXILIAR. Requiere que las variables {{segundoDuenioEmail}}/{{segundoDuenioPassword}} esten completadas antes de ejecutar (contrasena minimo 8 caracteres). Guarda el id numerico devuelto en la variable de coleccion 'segundoDuenioUsuarioId' (necesaria para crear mascotas, ya que MascotaRequest.duenioId exige un id real de un usuario ROLE_DUENO).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Usuario de prueba\",\n  \"email\": \"{{segundoDuenioEmail}}\",\n  \"password\": \"{{segundoDuenioPassword}}\",\n  \"rol\": \"ROLE_DUENO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 (registro nuevo) o 409 (correo ya registrado en una ejecucion previa)', function () {",
+                  "    pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    var cuerpo = pm.response.json();",
+                  "",
+                  "    pm.test('Content-Type es application/json', function () {",
+                  "        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "    });",
+                  "",
+                  "    pm.test('El registro publico siempre asigna ROLE_DUENO, sin importar el rol enviado', function () {",
+                  "        pm.expect(cuerpo.rol).to.eql('ROLE_DUENO');",
+                  "    });",
+                  "",
+                  "    pm.test('La respuesta trae id, nombre, email y activo', function () {",
+                  "        pm.expect(cuerpo).to.have.property('id');",
+                  "        pm.expect(cuerpo).to.have.property('nombre');",
+                  "        pm.expect(cuerpo).to.have.property('email');",
+                  "        pm.expect(cuerpo).to.have.property('activo', true);",
+                  "    });",
+                  "",
+                  "    pm.collectionVariables.set('segundoDuenioUsuarioId', String(cuerpo.id));",
+                  "}",
+                  "",
+                  "if (pm.response.code === 409) {",
+                  "    pm.test('ProblemDetail de conflicto tiene el type esperado', function () {",
+                  "        pm.expect(pm.response.json().type).to.eql('urn:biopet:error:conflict');",
+                  "    });",
+                  "}",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (dueno)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login real (POST /api/auth/login). Las cookies access_token/refresh_token las gestiona automaticamente el cookie jar de Postman: no se leen ni se guardan tokens en variables.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"{{duenioPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('El body solo trae expiresIn (sin accessToken ni refreshToken en el body)', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('expiresIn');",
+                  "    pm.expect(cuerpo).to.not.have.property('accessToken');",
+                  "    pm.expect(cuerpo).to.not.have.property('refreshToken');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta trae cabeceras Set-Cookie', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    pm.expect(cabecerasSetCookie.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Las cookies emitidas declaran HttpOnly, Secure y SameSite=Strict (sin exponer el valor)', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    cabecerasSetCookie.forEach(function (h) {",
+                  "        var atributos = h.value.toLowerCase();",
+                  "        pm.expect(atributos).to.include('httponly');",
+                  "        pm.expect(atributos).to.include('samesite=strict');",
+                  "        // 'secure' solo se exige realmente contra HTTPS (security.cookie.secure=true en el perfil por defecto).",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (segundo dueno)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login real (POST /api/auth/login). Las cookies access_token/refresh_token las gestiona automaticamente el cookie jar de Postman: no se leen ni se guardan tokens en variables.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{segundoDuenioEmail}}\",\n  \"password\": \"{{segundoDuenioPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('El body solo trae expiresIn (sin accessToken ni refreshToken en el body)', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('expiresIn');",
+                  "    pm.expect(cuerpo).to.not.have.property('accessToken');",
+                  "    pm.expect(cuerpo).to.not.have.property('refreshToken');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta trae cabeceras Set-Cookie', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    pm.expect(cabecerasSetCookie.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Las cookies emitidas declaran HttpOnly, Secure y SameSite=Strict (sin exponer el valor)', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    cabecerasSetCookie.forEach(function (h) {",
+                  "        var atributos = h.value.toLowerCase();",
+                  "        pm.expect(atributos).to.include('httponly');",
+                  "        pm.expect(atributos).to.include('samesite=strict');",
+                  "        // 'secure' solo se exige realmente contra HTTPS (security.cookie.secure=true en el perfil por defecto).",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login real (POST /api/auth/login). Las cookies access_token/refresh_token las gestiona automaticamente el cookie jar de Postman: no se leen ni se guardan tokens en variables. Cuenta ROLE_ADMIN sembrada automaticamente al arrancar el backend (Backend/src/main/java/com/biopet/config/DataInitializer.java, bean seedAdmin, idempotente: solo crea la cuenta si admin@biopet.ec no existe ya). adminEmail puede completarse con 'admin@biopet.ec' (no es un dato sensible); adminPassword debes completarla tu localmente, tomandola del propio DataInitializer.java o del README.md raiz del proyecto (no se copia aqui). Ver docs/postman/README.md.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('El body solo trae expiresIn (sin accessToken ni refreshToken en el body)', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('expiresIn');",
+                  "    pm.expect(cuerpo).to.not.have.property('accessToken');",
+                  "    pm.expect(cuerpo).to.not.have.property('refreshToken');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta trae cabeceras Set-Cookie', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    pm.expect(cabecerasSetCookie.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Las cookies emitidas declaran HttpOnly, Secure y SameSite=Strict (sin exponer el valor)', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    cabecerasSetCookie.forEach(function (h) {",
+                  "        var atributos = h.value.toLowerCase();",
+                  "        pm.expect(atributos).to.include('httponly');",
+                  "        pm.expect(atributos).to.include('samesite=strict');",
+                  "        // 'secure' solo se exige realmente contra HTTPS (security.cookie.secure=true en el perfil por defecto).",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (veterinario)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login real (POST /api/auth/login). Las cookies access_token/refresh_token las gestiona automaticamente el cookie jar de Postman: no se leen ni se guardan tokens en variables. Requiere una cuenta ROLE_VETERINARIO creada manualmente. Ver docs/postman/README.md.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{veterinarioEmail}}\",\n  \"password\": \"{{veterinarioPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('El body solo trae expiresIn (sin accessToken ni refreshToken en el body)', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('expiresIn');",
+                  "    pm.expect(cuerpo).to.not.have.property('accessToken');",
+                  "    pm.expect(cuerpo).to.not.have.property('refreshToken');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta trae cabeceras Set-Cookie', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    pm.expect(cabecerasSetCookie.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Las cookies emitidas declaran HttpOnly, Secure y SameSite=Strict (sin exponer el valor)', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    cabecerasSetCookie.forEach(function (h) {",
+                  "        var atributos = h.value.toLowerCase();",
+                  "        pm.expect(atributos).to.include('httponly');",
+                  "        pm.expect(atributos).to.include('samesite=strict');",
+                  "        // 'secure' solo se exige realmente contra HTTPS (security.cookie.secure=true en el perfil por defecto).",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (auxiliar)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login real (POST /api/auth/login). Las cookies access_token/refresh_token las gestiona automaticamente el cookie jar de Postman: no se leen ni se guardan tokens en variables. Requiere una cuenta ROLE_AUXILIAR creada manualmente. Ver docs/postman/README.md.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{auxiliarEmail}}\",\n  \"password\": \"{{auxiliarPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('El body solo trae expiresIn (sin accessToken ni refreshToken en el body)', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('expiresIn');",
+                  "    pm.expect(cuerpo).to.not.have.property('accessToken');",
+                  "    pm.expect(cuerpo).to.not.have.property('refreshToken');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta trae cabeceras Set-Cookie', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    pm.expect(cabecerasSetCookie.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Las cookies emitidas declaran HttpOnly, Secure y SameSite=Strict (sin exponer el valor)', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    cabecerasSetCookie.forEach(function (h) {",
+                  "        var atributos = h.value.toLowerCase();",
+                  "        pm.expect(atributos).to.include('httponly');",
+                  "        pm.expect(atributos).to.include('samesite=strict');",
+                  "        // 'secure' solo se exige realmente contra HTTPS (security.cookie.secure=true en el perfil por defecto).",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Renueva el access token (POST /api/auth/refresh). No envia body: el controlador lee el refresh token unicamente desde la cookie refresh_token (Path=/api/auth), gestionada por el cookie jar de Postman. Ejecutar despues de un Login exitoso, en la misma sesion de cookies."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 si hay cookie refresh_token valida, 401 si no la hay', function () {",
+                  "    pm.expect([200, 401]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Content-Type es application/json', function () {",
+                  "        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "    });",
+                  "",
+                  "    pm.test('El body solo trae expiresIn', function () {",
+                  "        var cuerpo = pm.response.json();",
+                  "        pm.expect(cuerpo).to.have.property('expiresIn');",
+                  "        pm.expect(cuerpo).to.not.have.property('accessToken');",
+                  "        pm.expect(cuerpo).to.not.have.property('refreshToken');",
+                  "    });",
+                  "",
+                  "    pm.test('Se emite una nueva cookie de access (Set-Cookie presente)', function () {",
+                  "        var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "            return h.key.toLowerCase() === 'set-cookie';",
+                  "        });",
+                  "        pm.expect(cabecerasSetCookie.length).to.be.greaterThan(0);",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test('ProblemDetail de 401 tiene el type esperado', function () {",
+                  "        pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                  "    });",
+                  "}",
+                  "",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Cierra la sesion (POST /api/auth/logout). No envia body ni Authorization: depende del cookie jar. Es idempotente: responde 204 incluso sin cookies (AuthService.logout no falla si no hay tokens que revocar). Revoca en Redis cada token presente y elimina ambas cookies (Max-Age=0) en la respuesta."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content (idempotente, con o sin cookies previas)', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test('El cuerpo de la respuesta esta vacio', function () {",
+                  "    pm.expect(pm.response.text()).to.eql('');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Acceso SIN autenticacion (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "GET /api/usuarios/me sin cookies de sesion validas. IMPORTANTE: ejecutar este request con el cookie jar de Postman vacio para localhost (icono 'Cookies' bajo el boton Send > Manage Cookies > eliminar las de localhost), o bien antes de ejecutar cualquier Login en esta coleccion. Si se ejecuta con una sesion activa, el resultado sera 200 en vez de 401."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 401', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(401);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"Se requiere una autenticaci\\u00f3n v\\u00e1lida para acceder a este recurso.\");",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rate limiting (login)",
+          "item": [
+            {
+              "name": "Intento fallido 1",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "Intento fallido numero 1 de 5 permitidos antes del bloqueo. Debe responder 401.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', function () {",
+                      "    pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type es application/problem+json', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el type esperado', function () {",
+                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el title esperado', function () {",
+                      "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene status 401', function () {",
+                      "    pm.expect(pm.response.json().status).to.eql(401);",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail incluye instance', function () {",
+                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                      "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
+                      "});",
+                      "",
+                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                      "    var texto = pm.response.text();",
+                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                      "    patrones.forEach(function (p) {",
+                      "        pm.expect(texto).to.not.include(p);",
+                      "    });",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Intento fallido 2",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "Intento fallido numero 2 de 5 permitidos antes del bloqueo. Debe responder 401.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', function () {",
+                      "    pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type es application/problem+json', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el type esperado', function () {",
+                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el title esperado', function () {",
+                      "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene status 401', function () {",
+                      "    pm.expect(pm.response.json().status).to.eql(401);",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail incluye instance', function () {",
+                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                      "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
+                      "});",
+                      "",
+                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                      "    var texto = pm.response.text();",
+                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                      "    patrones.forEach(function (p) {",
+                      "        pm.expect(texto).to.not.include(p);",
+                      "    });",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Intento fallido 3",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "Intento fallido numero 3 de 5 permitidos antes del bloqueo. Debe responder 401.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', function () {",
+                      "    pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type es application/problem+json', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el type esperado', function () {",
+                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el title esperado', function () {",
+                      "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene status 401', function () {",
+                      "    pm.expect(pm.response.json().status).to.eql(401);",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail incluye instance', function () {",
+                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                      "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
+                      "});",
+                      "",
+                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                      "    var texto = pm.response.text();",
+                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                      "    patrones.forEach(function (p) {",
+                      "        pm.expect(texto).to.not.include(p);",
+                      "    });",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Intento fallido 4",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "Intento fallido numero 4 de 5 permitidos antes del bloqueo. Debe responder 401.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', function () {",
+                      "    pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type es application/problem+json', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el type esperado', function () {",
+                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el title esperado', function () {",
+                      "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene status 401', function () {",
+                      "    pm.expect(pm.response.json().status).to.eql(401);",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail incluye instance', function () {",
+                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                      "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
+                      "});",
+                      "",
+                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                      "    var texto = pm.response.text();",
+                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                      "    patrones.forEach(function (p) {",
+                      "        pm.expect(texto).to.not.include(p);",
+                      "    });",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Intento fallido 5",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "Intento fallido numero 5 de 5 permitidos antes del bloqueo. Debe responder 401.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 401', function () {",
+                      "    pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type es application/problem+json', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el type esperado', function () {",
+                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el title esperado', function () {",
+                      "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene status 401', function () {",
+                      "    pm.expect(pm.response.json().status).to.eql(401);",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail incluye instance', function () {",
+                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                      "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
+                      "});",
+                      "",
+                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                      "    var texto = pm.response.text();",
+                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                      "    patrones.forEach(function (p) {",
+                      "        pm.expect(texto).to.not.include(p);",
+                      "    });",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Intento fallido 6 - bloqueado",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "6º intento fallido consecutivo desde la misma IP: debe responder 429 con Retry-After.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 429', function () {",
+                      "    pm.response.to.have.status(429);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type es application/problem+json', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el type esperado', function () {",
+                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:rate-limited');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el title esperado', function () {",
+                      "    pm.expect(pm.response.json().title).to.eql('Demasiados intentos');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene status 429', function () {",
+                      "    pm.expect(pm.response.json().status).to.eql(429);",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail incluye instance', function () {",
+                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                      "    pm.expect(pm.response.json().detail).to.eql(\"Se ha excedido el n\\u00famero m\\u00e1ximo de intentos fallidos de inicio de sesi\\u00f3n. Intente nuevamente m\\u00e1s tarde.\");",
+                      "});",
+                      "",
+                      "pm.test('La respuesta incluye la cabecera Retry-After', function () {",
+                      "    var retryAfter = pm.response.headers.get('Retry-After');",
+                      "    pm.expect(retryAfter).to.not.be.null;",
+                      "    pm.expect(Number(retryAfter)).to.be.a('number');",
+                      "    pm.expect(Number(retryAfter)).to.be.greaterThan(0);",
+                      "});",
+                      "",
+                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                      "    var texto = pm.response.text();",
+                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                      "    patrones.forEach(function (p) {",
+                      "        pm.expect(texto).to.not.include(p);",
+                      "    });",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "description": "Secuencia de LoginRateLimiterService (en memoria, ConcurrentHashMap, por IP, ver\nBackend/src/main/java/com/biopet/security/LoginRateLimiterService.java): ventana y\nbloqueo de 15 minutos por defecto, maximo 6 intentos (5 fallos toleran 401, el 6º\nresponde 429 con cabecera Retry-After). El contrapunto no es distribuido: en un\ndespliegue con varias instancias cada una llevaria su propio contador.\n\nCada request de esta carpeta es un intento manual independiente (sin bucles ni\nreintentos automaticos). No se ejecuto esta secuencia de forma real durante esta\nfase para no bloquear temporalmente el login del entorno de pruebas: queda\npreparada y validada contra el comportamiento documentado en\ndocs/mediciones/sec/A07-authentication.md (pruebas automatizadas reales de\nAuthControllerTest). Ejecutarla solo al final del recorrido, deliberadamente,\nsabiendo que bloqueara el login desde la IP actual durante el tiempo configurado.\n\nUsa {{duenioEmail}} (debe estar ya registrado) junto con una contrasena\ndeliberadamente incorrecta escrita en el body (no es una credencial real ni se\nguarda en ninguna variable)."
+        }
+      ],
+      "description": "Flujo real de autenticacion basado en cookies HttpOnly+Secure+SameSite=Strict (JwtCookieService): no hay Authorization Bearer en el flujo web principal. Orden sugerido dentro de esta carpeta: Registro (dueno) y Registro (segundo dueno) una sola vez, luego Login del rol que se necesite, luego Refresh/Logout, y las verificaciones 401 en una sesion sin cookies. La subcarpeta 'Rate limiting' se ejecuta aparte y al final, porque bloquea temporalmente el login."
+    },
+    {
+      "name": "3. Mascotas",
+      "item": [
+        {
+          "name": "Crear mascota (dueno)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas"
+              ]
+            },
+            "description": "POST /api/mascotas. Rol requerido: ADMIN, VETERINARIO o AUXILIAR (hasAnyRole en MascotaController; ROLE_DUENO queda excluido de esta operacion sin importar de quien sea la mascota, ver A01-access-control.md). Ejecutar tras un Login con alguno de esos roles y tras tener {{duenioUsuarioId}} completado (viene del request de Registro correspondiente). Body basado en MascotaRequest real (duenioId, nombre, especie, raza, fechaNacimiento). Guarda el id devuelto en 'mascotaId'.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duenioId\": {{duenioUsuarioId}},\n  \"nombre\": \"Firulais\",\n  \"especie\": \"Canino\",\n  \"raza\": \"Labrador\",\n  \"fechaNacimiento\": \"2021-05-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "var cuerpo = pm.response.json();",
+                  "",
+                  "pm.test('La respuesta trae los campos principales de MascotaResponse', function () {",
+                  "    pm.expect(cuerpo).to.have.property('id');",
+                  "    pm.expect(cuerpo).to.have.property('duenioId');",
+                  "    pm.expect(cuerpo).to.have.property('nombre');",
+                  "    pm.expect(cuerpo).to.have.property('especie');",
+                  "    pm.expect(cuerpo).to.have.property('raza');",
+                  "    pm.expect(cuerpo).to.have.property('activo', true);",
+                  "});",
+                  "",
+                  "pm.test('duenioId de la respuesta coincide con el enviado', function () {",
+                  "    pm.expect(String(cuerpo.duenioId)).to.eql(pm.collectionVariables.get('duenioUsuarioId'));",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('mascotaId', String(cuerpo.id));",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear mascota (dueno ajeno)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas"
+              ]
+            },
+            "description": "POST /api/mascotas. Rol requerido: ADMIN, VETERINARIO o AUXILIAR (hasAnyRole en MascotaController; ROLE_DUENO queda excluido de esta operacion sin importar de quien sea la mascota, ver A01-access-control.md). Ejecutar tras un Login con alguno de esos roles y tras tener {{segundoDuenioUsuarioId}} completado (viene del request de Registro correspondiente). Body basado en MascotaRequest real (duenioId, nombre, especie, raza, fechaNacimiento). Guarda el id devuelto en 'mascotaAjenaId'.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duenioId\": {{segundoDuenioUsuarioId}},\n  \"nombre\": \"Michi\",\n  \"especie\": \"Felino\",\n  \"raza\": \"Siames\",\n  \"fechaNacimiento\": \"2022-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "var cuerpo = pm.response.json();",
+                  "",
+                  "pm.test('La respuesta trae los campos principales de MascotaResponse', function () {",
+                  "    pm.expect(cuerpo).to.have.property('id');",
+                  "    pm.expect(cuerpo).to.have.property('duenioId');",
+                  "    pm.expect(cuerpo).to.have.property('nombre');",
+                  "    pm.expect(cuerpo).to.have.property('especie');",
+                  "    pm.expect(cuerpo).to.have.property('raza');",
+                  "    pm.expect(cuerpo).to.have.property('activo', true);",
+                  "});",
+                  "",
+                  "pm.test('duenioId de la respuesta coincide con el enviado', function () {",
+                  "    pm.expect(String(cuerpo.duenioId)).to.eql(pm.collectionVariables.get('segundoDuenioUsuarioId'));",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('mascotaAjenaId', String(cuerpo.id));",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar mascotas (rol con acceso global)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas?page=0&size=10&sort=id,asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "id,asc"
+                }
+              ]
+            },
+            "description": "GET /api/mascotas, paginado. Roles: ADMIN, VETERINARIO, AUXILIAR o DUENO (hasAnyRole incluye los cuatro). Ejecutar tras Login (admin/veterinario/auxiliar): MascotaService.listar devuelve el listado global (findAllByActivoTrue) para esos tres roles, sin filtrar por dueno."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta es una pagina de Spring Data (content, totalElements)', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('content');",
+                  "    pm.expect(cuerpo.content).to.be.an('array');",
+                  "    pm.expect(cuerpo).to.have.property('totalElements');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar mascotas propias (dueno)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas?page=0&size=10&sort=id,asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "id,asc"
+                }
+              ]
+            },
+            "description": "GET /api/mascotas, paginado. Ejecutar tras Login (dueno): para ROLE_DUENO, MascotaService.listar filtra por findAllByDuenioIdAndActivoTrue(usuario.getId(), ...), es decir solo devuelve mascotas del propio dueno autenticado."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('La respuesta es una pagina de Spring Data', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('content');",
+                  "    pm.expect(cuerpo.content).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Cada mascota devuelta pertenece al dueno autenticado, si el id es conocido', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    var duenioId = pm.collectionVariables.get('duenioUsuarioId');",
+                  "    if (duenioId) {",
+                  "        cuerpo.content.forEach(function (m) {",
+                  "            pm.expect(String(m.duenioId)).to.eql(duenioId);",
+                  "        });",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener mascota propia por ID (dueno)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas/{{mascotaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas",
+                "{{mascotaId}}"
+              ]
+            },
+            "description": "GET /api/mascotas/{id}. Ejecutar tras Login (dueno) y tras Crear mascota (dueno), con la mascota todavia activa (antes de Eliminar mascota)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta trae los campos principales de MascotaResponse', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('id');",
+                  "    pm.expect(cuerpo).to.have.property('duenioId');",
+                  "    pm.expect(cuerpo).to.have.property('nombre');",
+                  "    pm.expect(cuerpo).to.have.property('especie');",
+                  "    pm.expect(cuerpo).to.have.property('raza');",
+                  "    pm.expect(cuerpo).to.have.property('fechaNacimiento');",
+                  "    pm.expect(cuerpo).to.have.property('activo');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Casos de autorizacion",
+          "item": [
+            {
+              "name": "Dueno accede a una mascota propia",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/mascotas/{{mascotaId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "mascotas",
+                    "{{mascotaId}}"
+                  ]
+                },
+                "description": "Caso de autorizacion positivo: ROLE_DUENO consultando su propia mascota. Ejecutar tras Login (dueno). Debe responder 200."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200 (dueno accediendo a su propia mascota)', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Dueno intenta acceder a una mascota ajena (403)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/mascotas/{{mascotaAjenaId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "mascotas",
+                    "{{mascotaAjenaId}}"
+                  ]
+                },
+                "description": "Caso de autorizacion por propiedad: ROLE_DUENO consultando la mascota de otro dueno. Ejecutar tras Login (dueno) y tras Crear mascota (dueno ajeno). MascotaService.verificarPropiedad lanza AccessDeniedException -> 403 via ProblemAccessDeniedHandler."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 403', function () {",
+                      "    pm.response.to.have.status(403);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type es application/problem+json', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el type esperado', function () {",
+                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:forbidden');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el title esperado', function () {",
+                      "    pm.expect(pm.response.json().title).to.eql('Acceso denegado');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene status 403', function () {",
+                      "    pm.expect(pm.response.json().status).to.eql(403);",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail incluye instance', function () {",
+                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                      "    pm.expect(pm.response.json().detail).to.eql(\"No tiene permisos suficientes para acceder a este recurso.\");",
+                      "});",
+                      "",
+                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                      "    var texto = pm.response.text();",
+                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                      "    patrones.forEach(function (p) {",
+                      "        pm.expect(texto).to.not.include(p);",
+                      "    });",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Acceso global de ADMIN/VETERINARIO/AUXILIAR a mascota de cualquier dueno",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/mascotas/{{mascotaAjenaId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "mascotas",
+                    "{{mascotaAjenaId}}"
+                  ]
+                },
+                "description": "tieneAccesoGlobal(rol) es true para ROLE_ADMIN, ROLE_VETERINARIO y ROLE_AUXILIAR: pueden consultar la mascota de cualquier dueno. Ejecutar tras Login (admin), Login (veterinario) o Login (auxiliar). Debe responder 200."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 200 (rol con acceso global)', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Usuario autenticado sin permiso de rol: dueno intenta crear mascota (403)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/mascotas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "mascotas"
+                  ]
+                },
+                "description": "ROLE_DUENO no esta en hasAnyRole('ADMIN','VETERINARIO','AUXILIAR') de POST /api/mascotas: el rechazo es por rol, no por propiedad. Ejecutar tras Login (dueno). El body es valido (mismo formato que Crear mascota); aun asi debe responder 403 antes de tocar la logica de negocio.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"duenioId\": {{duenioUsuarioId}},\n  \"nombre\": \"Firulais\",\n  \"especie\": \"Canino\",\n  \"raza\": \"Labrador\",\n  \"fechaNacimiento\": \"2021-05-10\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 403', function () {",
+                      "    pm.response.to.have.status(403);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type es application/problem+json', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el type esperado', function () {",
+                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:forbidden');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el title esperado', function () {",
+                      "    pm.expect(pm.response.json().title).to.eql('Acceso denegado');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene status 403', function () {",
+                      "    pm.expect(pm.response.json().status).to.eql(403);",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail incluye instance', function () {",
+                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                      "    pm.expect(pm.response.json().detail).to.eql(\"No tiene permisos suficientes para acceder a este recurso.\");",
+                      "});",
+                      "",
+                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                      "    var texto = pm.response.text();",
+                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                      "    patrones.forEach(function (p) {",
+                      "        pm.expect(texto).to.not.include(p);",
+                      "    });",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Usuario autenticado sin permiso de rol: dueno intenta actualizar su propia mascota (403)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/mascotas/{{mascotaId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "mascotas",
+                    "{{mascotaId}}"
+                  ]
+                },
+                "description": "PUT /api/mascotas/{id} exige hasAnyRole('ADMIN','VETERINARIO','AUXILIAR'): ROLE_DUENO recibe 403 por rol incluso sobre su propia mascota (ver duenoIntentaActualizarMascotaPropiaSigueRecibiendo403PorRol en A01-access-control.md). Ejecutar tras Login (dueno).",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"duenioId\": {{duenioUsuarioId}},\n  \"nombre\": \"Firulais Editado\",\n  \"especie\": \"Canino\",\n  \"raza\": \"Golden Retriever\",\n  \"fechaNacimiento\": \"2021-05-10\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 403', function () {",
+                      "    pm.response.to.have.status(403);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type es application/problem+json', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el type esperado', function () {",
+                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:forbidden');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el title esperado', function () {",
+                      "    pm.expect(pm.response.json().title).to.eql('Acceso denegado');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene status 403', function () {",
+                      "    pm.expect(pm.response.json().status).to.eql(403);",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail incluye instance', function () {",
+                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                      "    pm.expect(pm.response.json().detail).to.eql(\"No tiene permisos suficientes para acceder a este recurso.\");",
+                      "});",
+                      "",
+                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                      "    var texto = pm.response.text();",
+                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                      "    patrones.forEach(function (p) {",
+                      "        pm.expect(texto).to.not.include(p);",
+                      "    });",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Usuario autenticado sin permiso de rol: dueno intenta eliminar su propia mascota (403)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/mascotas/{{mascotaId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "mascotas",
+                    "{{mascotaId}}"
+                  ]
+                },
+                "description": "DELETE /api/mascotas/{id} exige hasAnyRole('ADMIN','VETERINARIO','AUXILIAR'): ROLE_DUENO recibe 403 por rol. Ejecutar tras Login (dueno)."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status 403', function () {",
+                      "    pm.response.to.have.status(403);",
+                      "});",
+                      "",
+                      "pm.test('Content-Type es application/problem+json', function () {",
+                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el type esperado', function () {",
+                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:forbidden');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el title esperado', function () {",
+                      "    pm.expect(pm.response.json().title).to.eql('Acceso denegado');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene status 403', function () {",
+                      "    pm.expect(pm.response.json().status).to.eql(403);",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail incluye instance', function () {",
+                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                      "});",
+                      "",
+                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                      "    pm.expect(pm.response.json().detail).to.eql(\"No tiene permisos suficientes para acceder a este recurso.\");",
+                      "});",
+                      "",
+                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                      "    var texto = pm.response.text();",
+                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                      "    patrones.forEach(function (p) {",
+                      "        pm.expect(texto).to.not.include(p);",
+                      "    });",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "description": "Requests reproducibles de autorizacion por rol y por propiedad, verificados contra MascotaController (@PreAuthorize) y MascotaService.verificarPropiedad. No dependen de botones ocultos del frontend: la autorizacion ocurre siempre en el backend, antes de construir la respuesta."
+        },
+        {
+          "name": "Actualizar mascota",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas/{{mascotaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas",
+                "{{mascotaId}}"
+              ]
+            },
+            "description": "PUT /api/mascotas/{id}. Rol requerido: ADMIN, VETERINARIO o AUXILIAR. Ejecutar tras Login con alguno de esos roles.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duenioId\": {{duenioUsuarioId}},\n  \"nombre\": \"Firulais Editado\",\n  \"especie\": \"Canino\",\n  \"raza\": \"Golden Retriever\",\n  \"fechaNacimiento\": \"2021-05-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('El nombre se actualizo', function () {",
+                  "    pm.expect(pm.response.json().nombre).to.eql('Firulais Editado');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar mascota (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas/{{mascotaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas",
+                "{{mascotaId}}"
+              ]
+            },
+            "description": "DELETE /api/mascotas/{id}. Rol requerido: ADMIN, VETERINARIO o AUXILIAR. MascotaService.eliminar hace un soft delete real (activo=false, sin borrar la fila); tras este request, GET por ese id respondera 404 porque findByIdAndActivoTrue ya no la encuentra. Ejecutar en ultimo lugar dentro de esta carpeta, despues de todos los casos de autorizacion que dependen de mascotaId."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "CRUD real de MascotaController + casos de autorizacion. Orden recomendado dentro de la carpeta (ya reflejado en el orden de los items): crear ambas mascotas, listar/consultar, verificar autorizacion, actualizar y, al final, eliminar (soft delete) para no invalidar mascotaId en los pasos anteriores."
+    },
+    {
+      "name": "4. Resumen o estadisticas",
+      "item": [
+        {
+          "name": "Resumen por especie (caso valido)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas/resumen-especies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas",
+                "resumen-especies"
+              ]
+            },
+            "description": "GET /api/mascotas/resumen-especies, sin parametro duenioId. Roles: ADMIN, VETERINARIO, AUXILIAR o DUENO (hasAnyRole incluye los cuatro). Usa la funcion nativa de PostgreSQL fn_resumen_mascotas_por_especie(:duenioId) (MascotaRepository.resumenPorEspecie); no existe bajo el perfil de pruebas H2 porque esa funcion solo se crea en PostgreSQL real (fuera del alcance de esta coleccion, que apunta al backend real via Docker). Para roles distintos de ADMIN, MascotaService.resumenPorEspecie ignora cualquier duenioId recibido y usa siempre el id del usuario autenticado."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta es un arreglo de {especie, total}', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.be.an('array');",
+                  "    cuerpo.forEach(function (fila) {",
+                  "        pm.expect(fila).to.have.property('especie');",
+                  "        pm.expect(fila).to.have.property('total');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resumen por especie con duenioId (ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas/resumen-especies?duenioId={{duenioUsuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas",
+                "resumen-especies"
+              ],
+              "query": [
+                {
+                  "key": "duenioId",
+                  "value": "{{duenioUsuarioId}}"
+                }
+              ]
+            },
+            "description": "GET /api/mascotas/resumen-especies?duenioId=<id>. Solo tiene efecto real cuando quien llama es ROLE_ADMIN (unico caso en el que MascotaService.resumenPorEspecie usa el duenioIdSolicitado en vez del id del usuario autenticado). Ejecutar tras Login (admin)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('La respuesta es un arreglo de {especie, total}', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resumen por especie - parametro invalido (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas/resumen-especies?duenioId=no-es-un-numero",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas",
+                "resumen-especies"
+              ],
+              "query": [
+                {
+                  "key": "duenioId",
+                  "value": "no-es-un-numero"
+                }
+              ]
+            },
+            "description": "duenioId no puede convertirse a Long -> MethodArgumentTypeMismatchException -> 400 ProblemDetail, antes de llegar al controlador o al repositorio (ver docs/mediciones/sec/A03-injection.md). El valor recibido no debe aparecer en el detail: GlobalExceptionHandler.parametroInvalido solo usa ex.getName()."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:bad-request');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('Parámetro inválido');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 400', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"El par\\u00e1metro 'duenioId' tiene un formato inv\\u00e1lido.\");",
+                  "});",
+                  "",
+                  "pm.test('El valor invalido enviado no se refleja en el detail', function () {",
+                  "    pm.expect(pm.response.json().detail).to.not.include('no-es-un-numero');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "GET /api/mascotas/resumen-especies. No existe un caso de 'peticion sin permiso' para este endpoint: hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO') incluye a los cuatro roles existentes, asi que solo aplica el 401 general (carpeta 2) y no un 403 especifico de este recurso."
+    },
+    {
+      "name": "5. Seguridad y errores",
+      "item": [
+        {
+          "name": "422 - Validacion (email invalido en registro)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "registro"
+              ]
+            },
+            "description": "POST /api/auth/registro con un email que no cumple @Email. MethodArgumentNotValidException -> 422 ProblemDetail con una propiedad 'errors' (mapa campo -> mensajes), generado por GlobalExceptionHandler.validacion. No usa ninguna cuenta real de las variables de entorno: es un dato de prueba desechable.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Prueba de validacion\",\n  \"email\": \"no-es-un-email\",\n  \"password\": \"PasswordDePrueba123\",\n  \"rol\": \"ROLE_DUENO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 422', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:validation');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('Error de validación');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 422', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(422);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"Uno o m\\u00e1s campos contienen valores inv\\u00e1lidos.\");",
+                  "});",
+                  "",
+                  "pm.test(\"El ProblemDetail incluye la propiedad 'errors' con el campo email\", function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('errors');",
+                  "    pm.expect(cuerpo.errors).to.have.property('email');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 - Parametro incompatible (id no numerico)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas/no-es-un-numero",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas",
+                "no-es-un-numero"
+              ]
+            },
+            "description": "PUT /api/mascotas/{id} sin restriccion de patron numerico en la ruta (a diferencia de GET /api/mascotas/{id:\\\\d+}): 'id' no puede convertirse a Long -> MethodArgumentTypeMismatchException -> 400 ProblemDetail. No se ejecuta ninguna instruccion peligrosa, solo un valor incompatible con el tipo esperado.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duenioId\": {{duenioUsuarioId}},\n  \"nombre\": \"Firulais\",\n  \"especie\": \"Canino\",\n  \"raza\": \"Labrador\",\n  \"fechaNacimiento\": \"2021-05-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:bad-request');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('Parámetro inválido');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 400', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"El par\\u00e1metro 'id' tiene un formato inv\\u00e1lido.\");",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 - Recurso inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas/999999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas",
+                "999999999"
+              ]
+            },
+            "description": "GET /api/mascotas/999999999: id numerico valido pero improbable de existir. MascotaRepository.findByIdAndActivoTrue no lo encuentra -> RecursoNoEncontradoException -> 404 ProblemDetail."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:not-found');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('Recurso no encontrado');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 404', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(404);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"Mascota no encontrada: 999999999\");",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "401 - No autenticado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/usuarios/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "Duplicado deliberado y liviano del caso de la carpeta 2 (Acceso SIN autenticacion), para que esta carpeta muestre el catalogo completo de errores en un solo lugar. Ejecutar con el cookie jar vacio para localhost."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 401', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(401);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"Se requiere una autenticaci\\u00f3n v\\u00e1lida para acceder a este recurso.\");",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "403 - No autorizado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas"
+              ]
+            },
+            "description": "Duplicado deliberado y liviano del caso de la carpeta 3 (dueno intenta crear mascota), para el catalogo de errores de esta carpeta. Ejecutar tras Login (dueno).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duenioId\": {{duenioUsuarioId}},\n  \"nombre\": \"Firulais\",\n  \"especie\": \"Canino\",\n  \"raza\": \"Labrador\",\n  \"fechaNacimiento\": \"2021-05-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:forbidden');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('Acceso denegado');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 403', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(403);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"No tiene permisos suficientes para acceder a este recurso.\");",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cabeceras de seguridad",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            },
+            "description": "Verifica las cabeceras de SecurityConfig sobre {{baseUrl}} (usa el valor actual de esa variable: HTTP o HTTPS segun se haya configurado). HSTS solo se exige si {{baseUrl}} es HTTPS."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('X-Frame-Options: DENY', function () {",
+                  "    pm.expect(pm.response.headers.get('X-Frame-Options')).to.eql('DENY');",
+                  "});",
+                  "",
+                  "pm.test('X-Content-Type-Options: nosniff', function () {",
+                  "    pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.eql('nosniff');",
+                  "});",
+                  "",
+                  "pm.test('Referrer-Policy: no-referrer', function () {",
+                  "    pm.expect(pm.response.headers.get('Referrer-Policy')).to.eql('no-referrer');",
+                  "});",
+                  "",
+                  "pm.test(\"Content-Security-Policy incluye default-src 'self'\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Security-Policy')).to.include(\"default-src 'self'\");",
+                  "});",
+                  "",
+                  "pm.test('HSTS presente solo si el baseUrl usado es HTTPS', function () {",
+                  "    var baseUrl = pm.collectionVariables.get('baseUrl') || '';",
+                  "    var hsts = pm.response.headers.get('Strict-Transport-Security');",
+                  "    if (baseUrl.indexOf('https://') === 0) {",
+                  "        pm.expect(hsts).to.include('max-age=31536000');",
+                  "    } else {",
+                  "        pm.expect(hsts).to.be.null;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Catalogo de errores controlados (422, 400, 404, 401, 403, cabeceras) mas verificacion de cabeceras de seguridad. El caso 429 (rate limiting) no se duplica aqui: vive unicamente en la carpeta 2 (subcarpeta 'Rate limiting (login)') para no arriesgar bloquear la IP dos veces en una misma ejecucion de la coleccion. No se incluyen solicitudes destructivas ni que intenten borrar tablas."
+    }
+  ]
+}

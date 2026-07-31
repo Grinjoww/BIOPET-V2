@@ -1,0 +1,100 @@
+\chapter{Conclusiones}
+\label{cap:conclusiones}
+
+\section{Cumplimiento t\'ecnico}
+BIOPET \texttt{v0.9.0-rc} implementa y verifica, con evidencia
+reproducible, los requisitos funcionales centrales del alcance definido en
+el SRS: autenticaci\'on, autorizaci\'on por rol y por propiedad, y un CRUD
+completo de mascotas con resumen estad\'istico por especie. La matriz de
+trazabilidad (cap\'itulo~\ref{cap:trazabilidad}) muestra la mayor\'ia de los
+requisitos funcionales y no funcionales cr\'iticos en estado
+\emph{verificado}, con las excepciones expl\'icitas de usabilidad SUS y
+accesibilidad autom\'atizada Lighthouse, ambas metodol\'ogicamente
+dise\~nadas pero a\'un no ejecutadas.
+
+\section{Seguridad}
+Las seis categor\'ias OWASP auditadas (A01, A02, A03, A05, A07, A09)
+obtuvieron resultado \textsc{pass}, respaldado por pruebas automatizadas y
+verificaci\'on en vivo, no solo por inspecci\'on de c\'odigo. El sistema
+implementa autenticaci\'on por cookies seguras, revocaci\'on real de
+tokens, rate limiting de login, cabeceras de seguridad HTTP, TLS~1.3 nativo
+y auditor\'ia estructurada sin datos sensibles. Estas evidencias no
+implican ausencia total de riesgo: las limitaciones de cada control est\'an
+documentadas expl\'icitamente en el cap\'itulo~\ref{cap:resultados-jaime} y
+en \texttt{docs/mediciones/sec/}.
+
+\section{Reproducibilidad}
+El sistema completo se reconstruye desde una clonaci\'on limpia con un
+\'unico comando (\texttt{make up}), con im\'agenes de terceros fijadas por
+digest para evitar derivas silenciosas, y con separaci\'on de privilegios
+verificada en la base de datos. Esto satisface el objetivo del bloque~B de
+la gu\'ia de la Tercera Entrega: que un tercero pueda reconstruir el
+sistema de forma id\'entica sin intervenci\'on manual.
+
+\section{Rendimiento}
+Las seis corridas de k6 realizadas mostraron una tasa de error del
+0{,}0\,\% y una latencia mediana de un d\'igito de milisegundos en
+condiciones de cach\'e caliente, con un throughput sostenido cercano a
+92~peticiones por segundo bajo 50~usuarios virtuales concurrentes. Estos
+resultados son alentadores para el alcance evaluado, pero corresponden a
+una \'unica m\'aquina de desarrollo y ventanas de tiempo cortas, seg\'un se
+detalla en el cap\'itulo~\ref{cap:amenazas-validez}.
+
+\section{Calidad}
+La suite de pruebas del backend (108 pruebas, 0 fallos, 0 errores) y la
+cobertura verificada autom\'aticamente por JaCoCo (95{,}87\,\% en l\'ineas,
+76{,}87\,\% en ramas, 80{,}00\,\% en complejidad, todas por encima del
+umbral m\'inimo del 60\,\%) respaldan un nivel de calidad de c\'odigo
+consistente con las buenas pr\'acticas exigidas por la gu\'ia. La cobertura
+mide ejecuci\'on de pruebas, no ausencia de defectos.
+
+\section{Usabilidad}
+El frontend incorpora pr\'acticas de accesibilidad verificables en el
+c\'odigo (atributos ARIA, anuncios de error para lectores de pantalla), pero
+el equipo no puede todav\'ia afirmar un nivel de usabilidad medido
+cuantitativamente: la prueba SUS con participantes externos y la auditor\'ia
+Lighthouse quedan como trabajo pendiente, documentado metodol\'ogicamente
+en este informe sin resultados inventados.
+
+\section{Limitaciones}
+Las limitaciones principales del sistema en su estado actual son: un
+certificado TLS autofirmado v\'alido solo para uso acad\'emico; un rate
+limiting de login en memoria, no distribuido; aus\'encia de integraci\'on
+con un SIEM para los logs de auditor\'ia; dependencia de Redis para la
+revocaci\'on de tokens; evaluaci\'on limitada a una sola instancia del
+backend; y mediciones de usabilidad/accesibilidad autom\'atica todav\'ia no
+ejecutadas.
+
+\section{Estado de \emph{release candidate}}
+BIOPET \texttt{v0.9.0-rc} es, como su nombre indica, una \textbf{candidata
+a versi\'on}, no una versi\'on de producci\'on. \textbf{El sistema no est\'a
+listo para producci\'on}: el certificado TLS es acad\'emico, no existen
+mediciones de usabilidad ni de accesibilidad autom\'atizada, la
+infraestructura de auditor\'ia carece de un SIEM, y toda la evaluaci\'on de
+rendimiento y seguridad se realiz\'o en un entorno local de desarrollo, no
+en un entorno equivalente a producci\'on.
+
+\section{Trabajo futuro}
+\begin{itemize}[nosep]
+  \item Ejecutar la prueba SUS con al menos diez participantes externos al
+    equipo y documentar sus resultados agregados en
+    \texttt{docs/mediciones/sus/}.
+  \item Ejecutar Lighthouse CI sobre el frontend y documentar los
+    resultados en \texttt{docs/mediciones/lighthouse/}.
+  \item Renderizar la imagen del diagrama C4 Nivel~3
+    (\texttt{c4-componentes-backend.png}) con un renderizador local de
+    Graphviz o PlantUML.
+  \item Evaluar un mecanismo de rate limiting distribuido (por ejemplo,
+    respaldado en Redis) si el sistema llegara a desplegarse con
+    m\'ultiples instancias del backend.
+  \item Integrar los logs de auditor\'ia \texttt{AUTH_AUDIT} con un
+    sistema de recolecci\'on y alertamiento centralizado (SIEM) antes de
+    cualquier despliegue m\'as all\'a del entorno acad\'emico.
+  \item Sustituir el certificado autofirmado por uno emitido por una
+    autoridad certificadora reconocida si el sistema se despliega fuera
+    del entorno acad\'emico.
+  \item Completar la migraci\'on de las capturas de evidencia
+    (\texttt{figuras/jaime/}, \texttt{figuras/fred/},
+    \texttt{figuras/zaida/}, \texttt{figuras/compartidas/}) en la fase
+    final de entrega, sin modificar el texto de este informe.
+\end{itemize}
