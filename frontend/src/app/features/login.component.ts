@@ -1,90 +1,71 @@
-import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+
 import { AuthService } from '../core/auth.service';
 import { ProblemDetailService } from '../core/problem-detail.service';
 
 @Component({
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [CommonModule, FormsModule],
   template: `
-  <div class="container">
-    <h1>Iniciar sesión</h1>
+    <div class="container">
+      <h2>Iniciar sesión</h2>
 
-    <!-- Un <form> real con (ngSubmit) permite enviar con Enter desde
-         cualquier campo, sin necesidad de manejar keydown manualmente. -->
-    <form [formGroup]="form" (ngSubmit)="login()" novalidate>
-      <div class="campo">
-        <label for="f-email">Correo electrónico</label>
-        <input
-          id="f-email"
-          type="email"
-          formControlName="email"
-          autocomplete="username"
-          [attr.aria-invalid]="tieneError('email')"
-          [attr.aria-describedby]="tieneError('email') ? 'err-email' : null" />
-        <p class="campo-error" id="err-email" *ngIf="tieneError('email')">
-          {{ mensajeErrorCampo('email') }}
-        </p>
-      </div>
+      <label for="email">Correo electrónico</label>
+      <input
+        id="email"
+        name="email"
+        type="email"
+        [(ngModel)]="email"
+        autocomplete="email"
+      />
 
-      <div class="campo">
-        <label for="f-password">Contraseña</label>
-        <input
-          id="f-password"
-          type="password"
-          formControlName="password"
-          autocomplete="current-password"
-          [attr.aria-invalid]="tieneError('password')"
-          [attr.aria-describedby]="tieneError('password') ? 'err-password' : null" />
-        <p class="campo-error" id="err-password" *ngIf="tieneError('password')">
-          {{ mensajeErrorCampo('password') }}
-        </p>
-      </div>
+      <label for="password">Contraseña</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        [(ngModel)]="password"
+        autocomplete="current-password"
+        [attr.aria-describedby]="error ? 'login-error' : null"
+      />
 
-      <button type="submit" [disabled]="cargando">
-        {{ cargando ? 'Entrando…' : 'Entrar' }}
+      <button type="button" (click)="login()" [disabled]="cargando">
+        {{ cargando ? 'Ingresando...' : 'Entrar' }}
       </button>
 
-      <!-- role="alert" + aria-live="assertive": un lector de pantalla anuncia
-           el error sin que el usuario tenga que buscarlo; el color rojo del
-           CSS es un refuerzo visual, no el único canal del mensaje. -->
-      <p class="alerta alerta-error" role="alert" aria-live="assertive" *ngIf="error">
-        <strong>Error:</strong> {{ error }}
+      <p
+        id="login-error"
+        class="error"
+        role="alert"
+        aria-live="polite"
+        *ngIf="error"
+      >
+        {{ error }}
       </p>
-    </form>
-  </div>`
+    </div>
+  `
 })
 export class LoginComponent {
+  email = '';
+  password = '';
   error = '';
   cargando = false;
-
-  form = this.fb.group({
-    email: ['jaime@biopet.com', [Validators.required, Validators.email]],
-    password: ['ClaveSegura123*', [Validators.required]]
-  });
 
   constructor(
     private auth: AuthService,
     private router: Router,
-    private problemDetail: ProblemDetailService,
-    private fb: FormBuilder
+    private problemDetail: ProblemDetailService
   ) {}
 
   login(): void {
     this.error = '';
-
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.enfocarPrimerCampoInvalido();
-      return;
-    }
-
     this.cargando = true;
-    const { email, password } = this.form.getRawValue();
 
-    this.auth.login(email as string, password as string).subscribe({
+    this.auth.login(this.email, this.password).subscribe({
       next: () => {
         this.cargando = false;
         this.router.navigate(['/mascotas']);
@@ -94,25 +75,5 @@ export class LoginComponent {
         this.error = this.problemDetail.mensaje(err);
       }
     });
-  }
-
-  tieneError(campo: string): boolean {
-    const control = this.form.get(campo);
-    return !!control && control.invalid && (control.touched || control.dirty);
-  }
-
-  mensajeErrorCampo(campo: string): string {
-    const control = this.form.get(campo);
-    if (control?.hasError('required')) return 'Este campo es obligatorio.';
-    if (control?.hasError('email')) return 'Ingresa un correo electrónico válido.';
-    return 'Valor inválido.';
-  }
-
-  private enfocarPrimerCampoInvalido(): void {
-    const orden = ['email', 'password'];
-    const primerInvalido = orden.find((c) => this.tieneError(c));
-    if (primerInvalido) {
-      queueMicrotask(() => document.getElementById(`f-${primerInvalido}`)?.focus());
-    }
   }
 }
