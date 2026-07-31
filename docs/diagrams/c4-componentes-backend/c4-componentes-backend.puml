@@ -1,0 +1,89 @@
+@startuml
+!define RECTANGLE class
+skinparam packageStyle rectangle
+title BIOPET - C4 Nivel 3: Componentes del Backend
+
+rectangle "Frontend BIOPET\nAngular + Nginx :4200" as frontend
+rectangle "PostgreSQL 16 :5432" as postgres
+rectangle "Redis 7 :6379" as redis
+rectangle "Logs locales del proceso" as logs
+
+package "API REST / Controladores" {
+  rectangle "AuthController\n/api/auth/*" as AuthController
+  rectangle "MascotaController\n/api/mascotas/*" as MascotaController
+  rectangle "UsuarioController\n/api/usuarios/me" as UsuarioController
+}
+
+package "Servicios de aplicación" {
+  rectangle "AuthService" as AuthService
+  rectangle "MascotaService" as MascotaService
+}
+
+package "Seguridad y autenticación" {
+  rectangle "SecurityConfig" as SecurityConfig
+  rectangle "JwtAuthenticationFilter" as JwtAuthFilter
+  rectangle "JwtService" as JwtService
+  rectangle "JwtCookieService" as JwtCookieService
+  rectangle "UserDetailsServiceImpl" as UserDetailsSvc
+  rectangle "LoginRateLimiterService\n(memoria, por IP)" as RateLimiter
+  rectangle "TokenBlacklistService" as Blacklist
+  rectangle "AuthenticationAuditService" as AuditService
+  rectangle "ProblemAuthenticationEntryPoint (401)" as AuthEntryPoint
+  rectangle "ProblemAccessDeniedHandler (403)" as AccessDeniedHandler
+}
+
+package "Manejo de errores" {
+  rectangle "GlobalExceptionHandler" as GlobalExceptionHandler
+  rectangle "ProblemDetailFactory" as ProblemDetailFactory
+}
+
+package "Persistencia (Spring Data JPA)" {
+  rectangle "UsuarioRepository" as UsuarioRepo
+  rectangle "MascotaRepository\n(+ @Query nativa resumenPorEspecie)" as MascotaRepo
+}
+
+package "Infraestructura del servidor" {
+  rectangle "TomcatDualConnectorConfig\nperfil 'tls'" as TomcatDual
+}
+
+frontend --> AuthController : HTTPS/JSON + cookies\naccess_token, refresh_token
+frontend --> MascotaController : HTTPS/JSON + cookie access_token
+frontend --> UsuarioController : HTTPS/JSON + cookie access_token
+frontend --> TomcatDual : HTTPS :8443 (público)\nHTTP :8080 (interno)
+
+AuthController --> AuthService : registro/login/refresh/logout
+AuthController --> JwtCookieService : lee/escribe cookies
+MascotaController --> MascotaService : listar/buscar/crear/actualizar/eliminar
+UsuarioController --> AuthService : perfil(email)
+
+AuthService --> UsuarioRepo : consulta/crea usuario
+AuthService --> JwtService : genera/valida JWT
+AuthService --> RateLimiter : verificarPermitido / registrarFallo
+AuthService --> AuditService : LOGIN_*/REFRESH_*/LOGOUT_SUCCESS
+AuthService --> Blacklist : revoke / isRevoked (refresh, logout)
+
+MascotaService --> MascotaRepo : CRUD
+MascotaService --> UsuarioRepo : valida dueño/rol
+MascotaService ..> redis : caché @Cacheable/@CacheEvict\n(Spring Cache Abstraction)
+
+JwtAuthFilter --> JwtCookieService : lee cookie access_token
+JwtAuthFilter --> JwtService : valida firma/claims/tipo
+JwtAuthFilter --> Blacklist : isRevoked(jti)
+JwtAuthFilter --> AuditService : TOKEN_REVOKED
+JwtAuthFilter --> UserDetailsSvc : loadUserByUsername
+
+SecurityConfig --> JwtAuthFilter : registra en la cadena de filtros
+SecurityConfig --> AuthEntryPoint : entry point 401
+SecurityConfig --> AccessDeniedHandler : access denied handler 403
+SecurityConfig --> UserDetailsSvc : DaoAuthenticationProvider
+
+AuthEntryPoint --> ProblemDetailFactory : construye 401
+AccessDeniedHandler --> ProblemDetailFactory : construye 403
+GlobalExceptionHandler --> ProblemDetailFactory : construye 4xx/429
+
+Blacklist --> redis : StringRedisTemplate
+UsuarioRepo --> postgres : JDBC/JPA
+MascotaRepo --> postgres : JDBC/JPA
+
+AuditService --> logs : AUTH_AUDIT timestamp/event/result/ip/subject
+@enduml

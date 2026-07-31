@@ -1,0 +1,96 @@
+digraph C4L3 {
+  graph [rankdir=TB, dpi=200, bgcolor="white", fontname="Arial", label="BIOPET - C4 Nivel 3: Componentes del Backend", labelloc=t, fontsize=22, nodesep=0.5, ranksep=0.8, compound=true];
+  node [shape=box, style="rounded,filled", fillcolor="#F8FAFC", color="#334155", fontname="Arial", fontsize=11];
+  edge [fontname="Arial", fontsize=9, color="#475569"];
+
+  frontend [label="Frontend BIOPET\nAngular + Nginx :4200", shape=box, style="rounded,filled", fillcolor="#DCFCE7", color="#166534"];
+
+  subgraph cluster_controllers {
+    label="API REST / Controladores"; style="rounded,filled"; fillcolor="#E0E7FF"; color="#3730A3"; fontname="Arial"; fontsize=13;
+    AuthController [label="AuthController\n/api/auth/*", fillcolor="#C7D2FE"];
+    MascotaController [label="MascotaController\n/api/mascotas/*", fillcolor="#C7D2FE"];
+    UsuarioController [label="UsuarioController\n/api/usuarios/me", fillcolor="#C7D2FE"];
+  }
+
+  subgraph cluster_services {
+    label="Servicios de aplicación"; style="rounded,filled"; fillcolor="#DBEAFE"; color="#1D4ED8"; fontname="Arial"; fontsize=13;
+    AuthService [label="AuthService", fillcolor="#BFDBFE"];
+    MascotaService [label="MascotaService", fillcolor="#BFDBFE"];
+  }
+
+  subgraph cluster_security {
+    label="Seguridad y autenticación"; style="rounded,filled"; fillcolor="#FEE2E2"; color="#B91C1C"; fontname="Arial"; fontsize=13;
+    SecurityConfig [label="SecurityConfig", fillcolor="#FECACA"];
+    JwtAuthFilter [label="JwtAuthenticationFilter", fillcolor="#FECACA"];
+    JwtService [label="JwtService", fillcolor="#FECACA"];
+    JwtCookieService [label="JwtCookieService", fillcolor="#FECACA"];
+    UserDetailsSvc [label="UserDetailsServiceImpl", fillcolor="#FECACA"];
+    RateLimiter [label="LoginRateLimiterService\n(memoria, por IP)", fillcolor="#FECACA"];
+    Blacklist [label="TokenBlacklistService", fillcolor="#FECACA"];
+    AuditService [label="AuthenticationAuditService", fillcolor="#FECACA"];
+    AuthEntryPoint [label="ProblemAuthenticationEntryPoint\n(401)", fillcolor="#FCA5A5"];
+    AccessDeniedHandler [label="ProblemAccessDeniedHandler\n(403)", fillcolor="#FCA5A5"];
+  }
+
+  subgraph cluster_errors {
+    label="Manejo de errores"; style="rounded,filled"; fillcolor="#FEF3C7"; color="#92400E"; fontname="Arial"; fontsize=13;
+    GlobalExceptionHandler [label="GlobalExceptionHandler", fillcolor="#FDE68A"];
+    ProblemDetailFactory [label="ProblemDetailFactory", fillcolor="#FDE68A"];
+  }
+
+  subgraph cluster_persistence {
+    label="Persistencia (Spring Data JPA)"; style="rounded,filled"; fillcolor="#E9D5FF"; color="#6B21A8"; fontname="Arial"; fontsize=13;
+    UsuarioRepo [label="UsuarioRepository", fillcolor="#DDD6FE"];
+    MascotaRepo [label="MascotaRepository\n(+ @Query nativa\nresumenPorEspecie)", fillcolor="#DDD6FE"];
+  }
+
+  subgraph cluster_infra {
+    label="Infraestructura del servidor"; style="rounded,filled"; fillcolor="#E2E8F0"; color="#334155"; fontname="Arial"; fontsize=13;
+    TomcatDual [label="TomcatDualConnectorConfig\nperfil 'tls'", fillcolor="#CBD5E1"];
+  }
+
+  postgres [label="PostgreSQL 16\n:5432", shape=box, style="rounded,filled", fillcolor="#FDE68A", color="#92400E"];
+  redis [label="Redis 7\n:6379", shape=box, style="rounded,filled", fillcolor="#FECACA", color="#B91C1C"];
+  logs [label="Logs locales del proceso\n(stdout / contenedor)", shape=note, style="filled", fillcolor="#F1F5F9", color="#334155"];
+
+  frontend -> AuthController [label="HTTPS/JSON + cookies\naccess_token, refresh_token"];
+  frontend -> MascotaController [label="HTTPS/JSON + cookie access_token"];
+  frontend -> UsuarioController [label="HTTPS/JSON + cookie access_token"];
+
+  AuthController -> AuthService [label="registro/login/refresh/logout"];
+  AuthController -> JwtCookieService [label="lee/escribe cookies"];
+  MascotaController -> MascotaService [label="listar/buscar/crear/actualizar/eliminar"];
+  UsuarioController -> AuthService [label="perfil(email)"];
+
+  AuthService -> UsuarioRepo [label="consulta/crea usuario"];
+  AuthService -> JwtService [label="genera/valida JWT"];
+  AuthService -> RateLimiter [label="verificarPermitido / registrarFallo"];
+  AuthService -> AuditService [label="LOGIN_*/REFRESH_*/LOGOUT_SUCCESS"];
+  AuthService -> Blacklist [label="revoke / isRevoked\n(refresh, logout)"];
+
+  MascotaService -> MascotaRepo [label="CRUD"];
+  MascotaService -> UsuarioRepo [label="valida dueño/rol"];
+  MascotaService -> redis [label="caché @Cacheable/@CacheEvict\n(Spring Cache Abstraction)", style=dashed];
+
+  JwtAuthFilter -> JwtCookieService [label="lee cookie access_token"];
+  JwtAuthFilter -> JwtService [label="valida firma/claims/tipo"];
+  JwtAuthFilter -> Blacklist [label="isRevoked(jti)"];
+  JwtAuthFilter -> AuditService [label="TOKEN_REVOKED"];
+  JwtAuthFilter -> UserDetailsSvc [label="loadUserByUsername"];
+
+  SecurityConfig -> JwtAuthFilter [label="registra en la cadena de filtros"];
+  SecurityConfig -> AuthEntryPoint [label="entry point 401"];
+  SecurityConfig -> AccessDeniedHandler [label="access denied handler 403"];
+  SecurityConfig -> UserDetailsSvc [label="DaoAuthenticationProvider"];
+
+  AuthEntryPoint -> ProblemDetailFactory [label="construye 401"];
+  AccessDeniedHandler -> ProblemDetailFactory [label="construye 403"];
+  GlobalExceptionHandler -> ProblemDetailFactory [label="construye 4xx/429"];
+
+  Blacklist -> redis [label="StringRedisTemplate"];
+  UsuarioRepo -> postgres [label="JDBC/JPA"];
+  MascotaRepo -> postgres [label="JDBC/JPA"];
+
+  AuditService -> logs [label="AUTH_AUDIT\ntimestamp/event/result/ip/subject"];
+  frontend -> TomcatDual [label="HTTPS :8443 (público)\nHTTP :8080 (interno)", style=dashed];
+}
