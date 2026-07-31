@@ -15,7 +15,7 @@ mvn clean verify
 ## Resultado real (reejecutado el 2026-07-31)
 
 ```
-[INFO] Tests run: 107, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 108, Failures: 0, Errors: 0, Skipped: 0
 ...
 [INFO] --- jacoco:0.8.12:check (check) @ biopet-backend ---
 [INFO] Analyzed bundle 'biopet-backend' with 26 classes
