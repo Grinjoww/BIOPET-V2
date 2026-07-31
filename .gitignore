@@ -15,6 +15,10 @@ frontend/dist/
 Backend/certs/*
 !Backend/certs/.gitkeep
 
+# Resultados crudos locales de evidencias de seguridad (scripts/security-evidence.*)
+docs/mediciones/sec/raw/*
+!docs/mediciones/sec/raw/.gitkeep
+
 # IDE
 .idea/
 .vscode/
