@@ -47,7 +47,7 @@ docker compose ps
 | `make up` | Levanta el sistema completo, construyendo imágenes si hace falta. |
 | `make down` | Detiene los contenedores **sin borrar volúmenes** (los datos de Postgres/Redis se conservan). |
 | `make test` | Ejecuta las pruebas del backend (`mvn test`). |
-| `make bench` | Ejecuta las pruebas de rendimiento con k6 (pendiente de implementar). |
+| `make bench` | Ejecuta una corrida rápida de k6 (50 VUs/30s) contra `/api/mascotas`. Para las 6 corridas oficiales (frío/caliente), ver `docs/mediciones/perf/REPORT.md`. |
 | `make audit` | Ejecuta la auditoría automatizada de seguridad OWASP (pendiente de implementar). |
 | `make clean` | Detiene contenedores y elimina huérfanos, conservando los datos. |
 | `make reset-db` | **Destructivo.** Elimina también los volúmenes (borra los datos de Postgres y Redis) para reiniciar el sistema desde cero. |
