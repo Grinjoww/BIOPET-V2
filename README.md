@@ -306,7 +306,7 @@ el flujo principal):
 
 | Documento | Contenido |
 |---|---|
-| [`docs/adr/`](docs/adr/) | Decisiones de arquitectura (ADR-002 a ADR-006); ver especialmente [`ADR-006-autenticacion-seguridad.md`](docs/adr/ADR-006-autenticacion-seguridad.md) (autenticación y seguridad). |
+| [`docs/adr/`](docs/adr/) | Decisiones de arquitectura (ADR-002 a ADR-007); ver especialmente [`ADR-006-autenticacion-seguridad.md`](docs/adr/ADR-006-autenticacion-seguridad.md) (autenticación y seguridad) y [`ADR-007-acceso-datos.md`](docs/adr/ADR-007-acceso-datos.md) (estrategia híbrida de acceso a datos). |
 | [`docs/diagrams/c4-componentes-backend/C4-L3-backend.md`](docs/diagrams/c4-componentes-backend/C4-L3-backend.md) | C4 Nivel 3: componentes del backend. |
 | [`docs/mediciones/sec/`](docs/mediciones/sec/) | Evidencia OWASP (A01, A02, A03, A05, A07, A09) y resumen JaCoCo, con [`REPORT.md`](docs/mediciones/sec/REPORT.md) como índice. |
 | [`docs/mediciones/DATA-DICTIONARY.md`](docs/mediciones/DATA-DICTIONARY.md) | Diccionario de datos de todas las mediciones (seguridad, cobertura, rendimiento, usabilidad). |
