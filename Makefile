@@ -3,10 +3,11 @@
 
 .PHONY: up down test bench audit clean reset-db
 BASH ?= bash
+SHELL := $(BASH)
 # Levanta el sistema completo incluyendo el modulo TLS.
 # Requiere que docker-compose.tls.yml exista en la raiz del repositorio.
 up:
-	$(BASH) scripts/generate-dev-keystore.sh
+	"$(BASH)" scripts/generate-dev-keystore.sh
 	docker compose -f docker-compose.yml -f docker-compose.tls.yml up --build -d
 
 # Detiene los contenedores SIN borrar volumenes.
@@ -25,11 +26,10 @@ test:
 bench:
 	k6 run k6/listado-mascotas.js
 
-# Pendiente: aun no existe auditoria de seguridad automatizada.
-# Ejecuta la auditoria de seguridad OWASP y evidencia asociada (Jaime).
+# Ejecuta la auditoria de seguridad OWASP y evidencia asociada.
 audit:
 	@if [ -f scripts/security-evidence.sh ]; then \
-		$(BASH) scripts/security-evidence.sh; \
+		"$(BASH)" scripts/security-evidence.sh; \
 	else \
 		echo "[audit] Pendiente: falta scripts/security-evidence.sh (Jaime)."; \
 	fi
