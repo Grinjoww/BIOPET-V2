@@ -6,6 +6,7 @@ title BIOPET - C4 Nivel 3: Componentes del Backend
 rectangle "Frontend BIOPET\nAngular + Nginx :4200" as frontend
 rectangle "PostgreSQL 16 :5432" as postgres
 rectangle "Redis 7 :6379" as redis
+rectangle "Flyway 9.22.3\nclasspath:db/migration\nV1__schema_inicial.sql" as flyway
 rectangle "Logs locales del proceso" as logs
 
 package "API REST / Controladores" {
@@ -86,4 +87,5 @@ UsuarioRepo --> postgres : JDBC/JPA
 MascotaRepo --> postgres : JDBC/JPA
 
 AuditService --> logs : AUTH_AUDIT timestamp/event/result/ip/subject
+flyway ..> postgres : aplica esquema al iniciar\n(una vez, antes de servir tráfico)
 @enduml

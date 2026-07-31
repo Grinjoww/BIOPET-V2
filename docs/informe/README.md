@@ -155,7 +155,7 @@ encontrará y la figura seguirá sin aparecer.
 | 07 | `figuras/jaime/07-rate-limit-429.png` | Sexto intento de login con 429 y `Retry-After`. |
 | 08 | `figuras/jaime/08-cookie-attributes.png` | Atributos de cookies, sin exponer valores. |
 | 09 | `figuras/jaime/09-auth-audit.png` | Log `AUTH_AUDIT` sin secretos. |
-| 10 | `figuras/jaime/10-c4-nivel-3.png` | C4 Nivel 3 renderizado (aún no existe ningún renderizador local de Graphviz/PlantUML disponible; generar con `dot -Tpng` o PlantUML cuando se disponga de la herramienta). |
+| 10 | `figuras/jaime/10-c4-nivel-3.png` | C4 Nivel 3 renderizado. Ya existe una imagen renderizada en `docs/diagrams/c4-componentes-backend/c4-componentes-backend.png`; solo falta copiarla a esta ruta. |
 
 ### Fred
 | # | Ruta esperada | Descripción |

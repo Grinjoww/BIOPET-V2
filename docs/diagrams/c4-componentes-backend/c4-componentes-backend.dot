@@ -51,6 +51,7 @@ digraph C4L3 {
 
   postgres [label="PostgreSQL 16\n:5432", shape=box, style="rounded,filled", fillcolor="#FDE68A", color="#92400E"];
   redis [label="Redis 7\n:6379", shape=box, style="rounded,filled", fillcolor="#FECACA", color="#B91C1C"];
+  flyway [label="Flyway 9.22.3\nclasspath:db/migration\nV1__schema_inicial.sql", shape=box, style="rounded,filled", fillcolor="#FEF9C3", color="#92400E"];
   logs [label="Logs locales del proceso\n(stdout / contenedor)", shape=note, style="filled", fillcolor="#F1F5F9", color="#334155"];
 
   frontend -> AuthController [label="HTTPS/JSON + cookies\naccess_token, refresh_token"];
@@ -93,4 +94,5 @@ digraph C4L3 {
 
   AuditService -> logs [label="AUTH_AUDIT\ntimestamp/event/result/ip/subject"];
   frontend -> TomcatDual [label="HTTPS :8443 (público)\nHTTP :8080 (interno)", style=dashed];
+  flyway -> postgres [label="aplica esquema al iniciar\n(una vez, antes de servir tráfico)", style=dotted];
 }
