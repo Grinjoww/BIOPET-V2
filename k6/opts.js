@@ -5,6 +5,7 @@
 // controlado externamente antes de cada corrida (ver README de esta carpeta).
 
 export const options = {
+    insecureSkipTLSVerify: true,
     stages: [
         { duration: '5s', target: 50 },   // ramp-up
         { duration: '30s', target: 50 },  // carga sostenida (medicion real)

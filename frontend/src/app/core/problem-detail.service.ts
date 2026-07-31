@@ -40,8 +40,8 @@ export class ProblemDetailService {
    * "detail". Si existe, arma un resumen más útil que el detail genérico.
    */
   private mensajeValidacion(problem: ProblemDetail | null): string | null {
-    const errores = (problem as any)?.errors as Record<string, string[]> | undefined;
-    if (!errores || Object.keys(errores).length === 0) return null;
+    const errores = this.erroresPorCampo(err_(problem));
+    if (!errores) return null;
 
     const partes = Object.entries(errores).map(
       ([campo, mensajes]) => `${campo}: ${mensajes.join(', ')}`
@@ -68,4 +68,10 @@ export class ProblemDetailService {
     const mensajes = errores?.[campo];
     return mensajes && mensajes.length ? mensajes[0] : null;
   }
+}
+
+/** Helper interno: castea un ProblemDetail suelto a la forma que espera erroresPorCampo. */
+function err_(problem: ProblemDetail | null): HttpErrorResponse | null {
+  if (!problem) return null;
+  return { status: 422, error: problem } as HttpErrorResponse;
 }
