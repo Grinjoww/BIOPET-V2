@@ -1,29 +1,21 @@
-# Java
+﻿# Java
 backend/target/
 *.class
 *.jar
-
 # Node
 frontend/node_modules/
 frontend/dist/
-
 # Env
 .env
 *.log
-
 # Certificados de desarrollo local (HTTPS/TLS BIOPET) - nunca versionar el keystore real
 Backend/certs/*
 !Backend/certs/.gitkeep
-
-# Resultados crudos locales de evidencias de seguridad (scripts/security-evidence.*)
-docs/mediciones/sec/raw/*
-!docs/mediciones/sec/raw/.gitkeep
-
 # IDE
 .idea/
 .vscode/
 *.iml
-
 # OS
 .DS_Store
 Thumbs.db
+cookies.txt
