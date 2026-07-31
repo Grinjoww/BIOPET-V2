@@ -1,0 +1,35 @@
+id_requisito,tipo,prioridad_moscow,historia_usuario,caso_de_uso,modulo_codigo,endpoint_api,prueba_automatizada,tipo_acceso,evidencia_empirica,estado
+REQ-F-001,funcional,Must,HU-001,CU-01,AuthController/AuthService,POST /api/auth/registro,AuthControllerTest,CRUD-ORM,,verificado
+REQ-F-002,funcional,Must,HU-001,CU-01,GlobalExceptionHandler,POST /api/auth/registro (409),AuthControllerTest,CRUD-ORM,,verificado
+REQ-F-003,funcional,Must,HU-002,CU-02,AuthController/JwtService,POST /api/auth/login,AuthControllerTest + JwtServiceTest,CRUD-ORM,,verificado
+REQ-F-004,funcional,Must,HU-003,CU-03,AuthController/AuthService,POST /api/auth/refresh,AuthControllerTest,CRUD-ORM,,verificado
+REQ-F-005,funcional,Must,HU-004,CU-04,AuthController/TokenBlacklistService,POST /api/auth/logout,AuthControllerTest,CRUD-ORM,,verificado
+REQ-F-006,funcional,Must,HU-005,CU-05,SecurityConfig/MascotaController,"@PreAuthorize en /api/mascotas/**",MascotaControllerTest,CRUD-ORM,docs/mediciones/sec/ (A01 - pendiente),verificado
+REQ-F-007,funcional,Should,HU-006,CU-06,UsuarioController,GET /api/usuarios/me,Inspeccion / prueba manual Postman,CRUD-ORM,,implementado
+REQ-F-008,funcional,Must,HU-007,CU-07,MascotaController/MascotaService,POST /api/mascotas,MascotaControllerTest,CRUD-ORM,,verificado
+REQ-F-009,funcional,Must,HU-008,CU-08,MascotaController/MascotaService,GET /api/mascotas,MascotaControllerTest,CRUD-ORM,,verificado
+REQ-F-010,funcional,Must,HU-009,CU-09,MascotaController/MascotaService,GET /api/mascotas/{id},MascotaControllerTest,CRUD-ORM,,verificado
+REQ-F-011,funcional,Must,HU-010,CU-10,MascotaController/MascotaService,PUT /api/mascotas/{id},MascotaControllerTest,CRUD-ORM,,verificado
+REQ-F-012,funcional,Must,HU-011,CU-11,MascotaController/MascotaService,DELETE /api/mascotas/{id},MascotaControllerTest,CRUD-ORM,,verificado
+REQ-F-013,funcional,Should,HU-012,CU-12,,,,,,pendiente
+REQ-F-014,funcional,Could,HU-013,CU-13,,,,,,pendiente
+REQ-F-015,funcional,Should,HU-014,CU-14,,,,,,pendiente
+REQ-F-016,funcional,Could,HU-015,CU-15,,,,,,pendiente
+REQ-F-017,funcional,Could,HU-016,CU-16,,,,,,pendiente
+REQ-F-018,funcional,Should,HU-017,CU-17,,,,,,pendiente
+REQ-F-019,funcional,Could,HU-018,CU-18,,,,,,pendiente
+REQ-F-020,funcional,Should,HU-019,CU-19,,,,,,pendiente
+REQ-F-021,funcional,Should,HU-021,CU-021,MascotaController/MascotaRepository,GET /api/mascotas/resumen-especies,ResumenEspecieIntegrationTest,SP,,implementado
+REQ-NF-001,no funcional,Must,,,Cache Redis (listado mascotas),GET /api/mascotas,k6 (pendiente de ejecutar),CRUD-ORM,docs/mediciones/perf/ (pendiente),pendiente
+REQ-NF-002,no funcional,Must,,,Cache Redis (listado mascotas),GET /api/mascotas,k6 (pendiente de ejecutar),CRUD-ORM,docs/mediciones/perf/ (pendiente),pendiente
+REQ-NF-003,no funcional,Must,,,Nginx / despliegue TLS,N/A,curl -v (pendiente),,docs/mediciones/sec/ (A02 - pendiente),pendiente
+REQ-NF-004,no funcional,Must,,,JwtService,N/A,JwtServiceTest,CRUD-ORM,,verificado
+REQ-NF-005,no funcional,Must,,,UserDetailsServiceImpl,N/A,Inspeccion de BD,CRUD-ORM,,verificado
+REQ-NF-006,no funcional,Must,,,GlobalExceptionHandler/ProblemDetailFactory,Todos los endpoints,Coleccion Postman,CRUD-ORM,,verificado
+REQ-NF-007,no funcional,Should,,,Frontend Angular,N/A,Lighthouse (pendiente),,docs/mediciones/lighthouse/ (pendiente),pendiente
+REQ-NF-008,no funcional,Should,,,Frontend Angular,N/A,Prueba manual exploratoria (pendiente),,,pendiente
+REQ-NF-009,no funcional,Must,,,Logging de autenticacion,N/A,Auditoria OWASP A09 (pendiente),,docs/mediciones/sec/ (A09 - pendiente),pendiente
+REQ-NF-010,no funcional,Should,,,Rate limiting (no implementado),POST /api/auth/login,Auditoria OWASP A07 (pendiente),,docs/mediciones/sec/ (A07 - pendiente),pendiente
+REQ-NF-011,no funcional,Must,,,Makefile/docker-compose.yml,N/A,Validacion por tercero (pendiente),,,implementado
+REQ-NF-012,no funcional,Must,,,Estructura de paquetes backend,N/A,Revision de codigo,CRUD-ORM,,verificado
+REQ-NF-013,no funcional,Must,,,MascotaRepository (fn_resumen_mascotas_por_especie),GET /api/mascotas/resumen-especies,ResumenEspeciesIntegrationTest,SP,docs/basedatos/CATALOGO-SP.md,verificado
