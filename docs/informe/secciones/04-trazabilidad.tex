@@ -46,7 +46,7 @@ Requisito & Responsable & Implementaci\'on & Archivo / componente & Prueba & Med
 \bottomrule
 \endfoot
 
-REQ-F-001 & Jaime & Registro de usuario (siempre \texttt{ROLE_DUENO}) & \texttt{AuthController}/\texttt{AuthService} & \texttt{AuthControllerTest} & 107 pruebas, 0 fallos & Postman: Registro (due\~no) & Verificado \\
+REQ-F-001 & Jaime & Registro de usuario (siempre \texttt{ROLE_DUENO}) & \texttt{AuthController}/\texttt{AuthService} & \texttt{AuthControllerTest} & 108 pruebas, 0 fallos & Postman: Registro (due\~no) & Verificado \\
 REQ-F-002 & Jaime & Conflicto de email duplicado (409) & \texttt{GlobalExceptionHandler} & \texttt{AuthControllerTest} & \texttt{ProblemDetail} 409 & \texttt{docs/mediciones/DATA-DICTIONARY.md} & Verificado \\
 REQ-F-003 & Jaime & Login por cookies + JWT & \texttt{AuthController}/\texttt{JwtService} & \texttt{AuthControllerTest}, \texttt{JwtServiceTest} & 10 claims JWT & ADR-006 & Verificado \\
 REQ-F-004 & Jaime & Refresh de access token & \texttt{AuthController}/\texttt{AuthService} & \texttt{AuthControllerTest} & Cookie renovada & \texttt{A07-authentication.md} & Verificado \\
