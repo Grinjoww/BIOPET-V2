@@ -1,0 +1,103 @@
+\chapter{Arquitectura C4}
+\label{cap:arquitectura-c4}
+
+Este cap\'itulo integra la documentaci\'on arquitect\'onica ya versionada en
+\texttt{docs/diagrams/} (Nivel 2 y Nivel 3 del modelo C4~\cite{c4-model}) y las decisiones
+de arquitectura relevantes (\texttt{docs/adr/}). Las fuentes de diagrama
+son Graphviz (\texttt{.dot}) y PlantUML (\texttt{.puml}) planos, sin macros
+de C4-PlantUML, siguiendo la convenci\'on ya establecida en el repositorio.
+
+\section{C4 Nivel 2 --- Contenedores}
+\label{sec:c4-nivel-2}
+
+El diagrama de contenedores (\texttt{docs/diagrams/c4-contenedores/})
+describe los cuatro contenedores del sistema: el \emph{frontend} Angular, el
+\emph{backend} Spring Boot, PostgreSQL y Redis, junto con los protocolos
+reales entre ellos (HTTPS/JSON con cookies entre frontend y backend; JDBC
+entre backend y PostgreSQL; el cliente Redis de Spring Data entre backend y
+Redis). Su fuente ya cuenta con una imagen renderizada en el repositorio
+(\texttt{docs/diagrams/c4-contenedores/c4-contenedores.png}).
+
+% EVIDENCIA-COMPARTIDA-C4-L2
+% Ruta esperada: figuras/compartidas/c4-contenedores.png
+\evidencia{figuras/compartidas/c4-contenedores.png}%
+{Diagrama C4 Nivel 2 (contenedores) de BIOPET: frontend, backend, PostgreSQL y Redis, con los protocolos reales entre ellos.}%
+{fig:c4-nivel-2}
+
+\section{C4 Nivel 3 --- Componentes del backend}
+\label{sec:c4-nivel-3}
+
+El diagrama de componentes del backend
+(\texttt{docs/diagrams/c4-componentes-backend/}) fue elaborado mediante
+inspecci\'on directa del c\'odigo fuente (constructores, llamadas
+directas, configuraci\'on de Spring), no por convenci\'on de nombres.
+Documenta 20~componentes reales agrupados en seis \'areas y 4~elementos
+externos:
+
+\begin{itemize}[nosep]
+  \item \textbf{API REST / Controladores:} \texttt{AuthController},
+    \texttt{MascotaController}, \texttt{UsuarioController}.
+  \item \textbf{Servicios de aplicaci\'on:} \texttt{AuthService},
+    \texttt{MascotaService}.
+  \item \textbf{Seguridad y autenticaci\'on:} \texttt{SecurityConfig},
+    \texttt{JwtAuthenticationFilter}, \texttt{JwtService},
+    \texttt{JwtCookieService}, \texttt{UserDetailsServiceImpl},
+    \texttt{LoginRateLimiterService}, \texttt{TokenBlacklistService},
+    \texttt{AuthenticationAuditService},
+    \texttt{ProblemAuthenticationEntryPoint},
+    \texttt{ProblemAccessDeniedHandler}.
+  \item \textbf{Manejo de errores:} \texttt{GlobalExceptionHandler},
+    \texttt{ProblemDetailFactory}.
+  \item \textbf{Persistencia:} \texttt{UsuarioRepository},
+    \texttt{MascotaRepository}.
+  \item \textbf{Infraestructura del servidor:} \texttt{TomcatDualConnectorConfig}.
+  \item \textbf{Elementos externos:} Frontend BIOPET, PostgreSQL, Redis,
+    logs locales del proceso.
+\end{itemize}
+
+Este diagrama no es un diagrama de clases: no representa atributos,
+m\'etodos ni constructores; los DTO y entidades se mencionan \'unicamente
+en prosa. Su documento completo, con las siete relaciones principales
+(login, autenticaci\'on de una solicitud protegida, consulta/modificaci\'on
+de mascotas, logout y revocaci\'on, rate limiting, manejo de errores v\'ia
+\texttt{ProblemDetail} y registro de auditor\'ia), est\'a en
+\texttt{docs/diagrams/c4-componentes-backend/C4-L3-backend.md}.
+
+\textbf{Nota sobre el renderizado:} a la fecha de este informe no exist\'ia
+en el entorno de trabajo un renderizador local de Graphviz ni de PlantUML,
+por lo que la fuente \texttt{c4-componentes-backend.dot} a\'un no cuenta con
+una imagen \texttt{.png} generada (validada \'unicamente de forma manual:
+balance de llaves/corchetes/comillas y verificaci\'on cruzada de que cada
+arista referencia un nodo declarado). Cuando se genere esa imagen, debe
+copiarse a \texttt{figuras/jaime/c4-componentes-backend.png} para que
+aparezca autom\'aticamente en este informe.
+
+% EVIDENCIA-JAIME-C4-L3
+% Ruta esperada: figuras/jaime/c4-componentes-backend.png
+\evidencia{figuras/jaime/c4-componentes-backend.png}%
+{Diagrama C4 Nivel 3 (componentes) del backend de BIOPET: controladores, servicios, seguridad, manejo de errores, persistencia e infraestructura del servidor.}%
+{fig:c4-nivel-3}
+
+\section{Decisiones de arquitectura relevantes (ADR)}
+\label{sec:adr-relevantes}
+
+\begin{table}[H]
+  \centering
+  \caption{ADR vigentes del repositorio y su relaci\'on con la arquitectura descrita.}
+  \label{tab:adr-relevantes}
+  \begin{tabular}{@{}p{2cm}p{9.5cm}p{2.5cm}@{}}
+    \toprule
+    ADR & Decisi\'on & Estado \\
+    \midrule
+    ADR-002 & Migraci\'on de la pila de backend de ASP.NET Core~8 a Java~21 / Spring Boot~3.2. & Aceptado \\
+    ADR-003 & Revocaci\'on de JWT mediante lista negra en Redis, indexada por \texttt{jti}. & Aceptado \\
+    ADR-004 & Estrategia de base de datos reproducible: Flyway como fuente de verdad del esquema, m\'as \texttt{db/schema.sql}/\texttt{db/roles.sql}/\texttt{db/seed.sql} para inicializaci\'on de Docker con privilegios m\'inimos. & Aceptado \\
+    ADR-005 & Reproducibilidad del despliegue: \texttt{Makefile} y pinning de im\'agenes por digest \texttt{sha256}. & Aceptado \\
+    ADR-006 & Decisiones de autenticaci\'on y seguridad: JWT por cookies, claims, revocaci\'on, rate limiting, cabeceras, TLS. & Aceptado \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+ADR-001 (selecci\'on inicial de ASP.NET Core~8 en la Entrega~1A) qued\'o
+formalmente superado por ADR-002 y se conserva \'unicamente como registro
+hist\'orico fuera de este repositorio de la Tercera Entrega.

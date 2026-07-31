@@ -139,6 +139,7 @@ lleguen al logger (`A09-logging.md`, `noRegistraDatosSensibles`).
 | Variable | Tipo de dato | Unidad | Rango esperado | Significado |
 |---|---|---|---|---|
 | security_tests_run | Entero | pruebas | 107 | Total de pruebas ejecutadas por `mvn clean verify` (suite completa del módulo, no solo las clases de seguridad; es la única cifra agregada real disponible — ver también la sección de JaCoCo). |
+| security_tests_run | Entero | pruebas | 108 | Total de pruebas ejecutadas por `mvn clean verify` (suite completa del módulo, no solo las clases de seguridad; es la única cifra agregada real disponible — ver también la sección de JaCoCo). |
 | failures | Entero | pruebas | 0 | Aserciones fallidas reportadas por Surefire/Failsafe. |
 | errors | Entero | pruebas | 0 | Errores no controlados durante la ejecución de pruebas. |
 | skipped | Entero | pruebas | 0 | Pruebas omitidas. |
@@ -215,6 +216,7 @@ contra `docs/mediciones/sec/jacoco-summary.md`:
 | Variable | Tipo de dato | Unidad | Rango esperado | Significado |
 |---|---|---|---|---|
 | tests_run | Entero | pruebas | 107 | Total de pruebas ejecutadas por `mvn clean verify`, verificado sumando `Tests run:` de todos los `Backend/target/surefire-reports/*.txt` generados localmente. |
+| tests_run | Entero | pruebas | 108 | Total de pruebas ejecutadas por `mvn clean verify`, verificado sumando `Tests run:` de todos los `Backend/target/surefire-reports/*.txt` generados localmente. |
 | test_failures | Entero | pruebas | 0 | Suma de `Failures:` de los mismos reportes. |
 | test_errors | Entero | pruebas | 0 | Suma de `Errors:` de los mismos reportes. |
 | test_skipped | Entero | pruebas | 0 | Suma de `Skipped:` de los mismos reportes. |

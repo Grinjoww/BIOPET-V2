@@ -1,0 +1,183 @@
+% informe-entrega-3.tex
+%
+% Documento maestro del Informe Final de la Tercera Entrega de BIOPET.
+% Clase: report. Idioma: espanol (babel). Codificacion: UTF-8.
+% Compilacion clasica BibTeX (ver docs/informe/README.md):
+%   pdflatex informe-entrega-3.tex
+%   bibtex informe-entrega-3
+%   pdflatex informe-entrega-3.tex
+%   pdflatex informe-entrega-3.tex
+% o, si esta disponible, latexmk -pdf -interaction=nonstopmode -halt-on-error informe-entrega-3.tex
+%
+% Este documento debe compilar aunque ninguna imagen de figuras/ exista
+% todavia: cada figura de evidencia esta protegida con \IfFileExists (ver
+% el comando \evidencia definido mas abajo), de forma que la ausencia de
+% una captura no deja huecos visibles ni texto de marcador en el PDF.
+
+\documentclass[12pt,a4paper]{report}
+
+% --- Idioma y codificacion --------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[spanish]{babel}
+
+% --- Geometria de pagina -------------------------------------------------
+\usepackage[a4paper,margin=2.5cm]{geometry}
+
+% --- Manejo seguro de guion bajo en modo texto (identificadores de
+%     codigo como ROLE_ADMIN, http_status, LOGIN_SUCCESS, etc. se pueden
+%     escribir tal cual dentro de \texttt{} sin necesidad de escapar "_")
+\usepackage{underscore}
+
+% --- Tablas, figuras, listados --------------------------------------------
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage{amssymb} % \checkmark (tabla CRediT) y simbolos matematicos estandar
+\usepackage{pdflscape} % pagina en apaisado solo para la matriz de trazabilidad
+
+% --- Encabezados/pies de pagina -------------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{BIOPET --- Informe final, Tercera Entrega}
+\fancyhead[R]{\leftmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Enlaces internos ------------------------------------------------------
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  pdftitle={BIOPET -- Sistema web de gestion veterinaria: Informe final de la Tercera Entrega v0.9.0-rc},
+  pdfauthor={Mariscal Cabrera Jaime Josue; Beltran Montiel Fred Adrian; Taipe Mora Zaida Melissa},
+  pdfsubject={Informe final de la Tercera Entrega -- Aplicaciones Web},
+  bookmarksnumbered=true,
+  breaklinks=true,
+  colorlinks=false
+}
+
+% --- Bibliografia estilo IEEE (numerico), via BibTeX clasico -------------
+% "ieeetr" es una hoja de estilo BibTeX estandar (numeros entre corchetes,
+% orden de aparicion), disponible en cualquier instalacion completa de
+% TeX Live o MiKTeX sin paquetes adicionales.
+
+% --- Comando auxiliar para evidencias condicionales -----------------------
+% Uso: \evidencia{ruta/relativa.png}{Caption academico}{fig:label-unico}
+% Si el archivo no existe todavia, no se imprime nada (ni hueco, ni texto
+% de marcador): \IfFileExists es un comando nativo del nucleo de LaTeX.
+\newcommand{\evidencia}[3]{%
+  \IfFileExists{#1}{%
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.82\textwidth]{#1}
+      \caption{#2}
+      \label{#3}
+    \end{figure}
+  }{}%
+}
+
+% --- Metadatos institucionales (usados en la portada) ---------------------
+\newcommand{\universidad}{Universidad T\'ecnica Estatal de Quevedo}
+\newcommand{\facultad}{Facultad de Ciencias de la Computaci\'on}
+\newcommand{\carrera}{Carrera de Software}
+\newcommand{\asignatura}{Aplicaciones Web}
+\newcommand{\docente}{Guerrero Ulloa Gleiston Ciceron}
+\newcommand{\periodoacademico}{2025 -- 2026}
+\newcommand{\cursoparalelo}{A}
+\newcommand{\equipo}{BMT}
+\newcommand{\tituloinforme}{BIOPET --- Sistema web de gesti\'on veterinaria:\\ Informe final de la Tercera Entrega v0.9.0-rc}
+\newcommand{\ciudadfecha}{Quevedo, 30 de julio de 2026}
+
+\begin{document}
+
+% ===========================================================================
+% PORTADA
+% ===========================================================================
+\begin{titlepage}
+  \centering
+  \vspace*{0.5cm}
+
+  {\large \universidad \par}
+  {\large \facultad \par}
+  \vspace{0.3cm}
+  {\normalsize \carrera \par}
+  {\normalsize Asignatura: \asignatura \par}
+
+  \vspace{2.2cm}
+  {\Huge \bfseries BIOPET \par}
+  \vspace{0.4cm}
+  {\Large Sistema web de gesti\'on veterinaria \par}
+  \vspace{0.6cm}
+  {\Large\itshape Informe final de la Tercera Entrega v0.9.0-rc \par}
+
+  \vspace{2.0cm}
+  {\large Equipo \textbf{\equipo} \par}
+  \vspace{0.6cm}
+
+  {\normalsize
+    \begin{tabular}{c}
+      Mariscal Cabrera Jaime Josu\'e \\
+      Beltr\'an Montiel Fred Adri\'an \\
+      Taipe Mora Zaida Melissa \\
+    \end{tabular}
+    \par
+  }
+
+  \vspace{2.2cm}
+  {\normalsize Docente: \docente \par}
+  \vspace{0.3cm}
+  {\normalsize Per\'iodo acad\'emico: \periodoacademico \quad --- \quad Curso/paralelo: \cursoparalelo \par}
+
+  \vfill
+
+  {\normalsize \ciudadfecha \par}
+  \vspace{0.5cm}
+
+\end{titlepage}
+
+% ===========================================================================
+% MATERIA PRELIMINAR
+% ===========================================================================
+\pagenumbering{roman}
+
+\tableofcontents
+\clearpage
+\listoffigures
+\clearpage
+\listoftables
+\clearpage
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+% ===========================================================================
+% CAPITULOS (uno por archivo de docs/informe/secciones/)
+% ===========================================================================
+\input{secciones/01-resumen-ejecutivo}
+\input{secciones/02-estado-sistema}
+\input{secciones/03-arquitectura-c4}
+\input{secciones/04-trazabilidad}
+\input{secciones/05-protocolo-experimental}
+\input{secciones/06-resultados-jaime}
+\input{secciones/07-resultados-fred}
+\input{secciones/08-resultados-zaida}
+\input{secciones/09-amenazas-validez}
+\input{secciones/10-etica}
+\input{secciones/11-credit}
+\input{secciones/12-conclusiones}
+\input{secciones/13-anexos}
+
+% ===========================================================================
+% BIBLIOGRAFIA (IEEE, BibTeX clasico)
+% ===========================================================================
+\bibliographystyle{ieeetr}
+\bibliography{referencias}
+
+\end{document}

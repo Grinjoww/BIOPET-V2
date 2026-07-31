@@ -1,0 +1,148 @@
+\chapter{Estado actual del sistema}
+\label{cap:estado-sistema}
+
+Este cap\'itulo documenta el estado real del sistema BIOPET en la versi\'on
+\texttt{v0.9.0-rc}, usando \'unicamente informaci\'on verificable en el
+repositorio (c\'odigo fuente, configuraci\'on, documentos de evidencia y
+ADR). No se describe ninguna funcionalidad planeada que no est\'e ya
+implementada.
+
+\section{Versi\'on y alcance}
+La versi\'on etiquetada del repositorio es \texttt{v0.9.0-rc} (candidata a
+release de la Tercera Entrega, no una versi\'on de producci\'on). El alcance
+funcional cubre autenticaci\'on de usuarios, un CRUD de mascotas con
+autorizaci\'on por rol y por propietario, y un endpoint de resumen
+estad\'istico por especie.
+
+\section{Frontend}
+Aplicaci\'on Angular~17.3 (componentes \emph{standalone}, sin
+\texttt{NgModule}), con TypeScript~5.4. Los m\'odulos funcionales
+verificados en \texttt{frontend/src/app/} son:
+\begin{itemize}[nosep]
+  \item \texttt{core/auth.service.ts}, \texttt{core/auth.guard.ts}: sesi\'on
+    basada en cookies (sin JWT en \texttt{localStorage}) y protecci\'on de
+    rutas.
+  \item \texttt{core/http-error.interceptor.ts},
+    \texttt{core/problem-detail.service.ts}: interpretaci\'on uniforme de
+    errores \texttt{ProblemDetail} del backend.
+  \item \texttt{features/login.component.ts}: formulario reactivo con
+    validaci\'on y atributos de accesibilidad (\texttt{aria-invalid},
+    \texttt{aria-describedby}, \texttt{role="alert"},
+    \texttt{aria-live="assertive"}).
+  \item \texttt{features/mascotas.component.ts},
+    \texttt{features/mascota-api.service.ts}: listado, alta, edici\'on y
+    baja de mascotas contra la API real.
+\end{itemize}
+El detalle funcional y de accesibilidad del frontend se ampl\'ia en el
+cap\'itulo~\ref{cap:resultados-zaida}.
+
+\section{Backend}
+API REST en Java~21 con Spring~Boot~3.2.12~\cite{spring-boot-docs} (\texttt{Backend/pom.xml}),
+organizada en los paquetes \texttt{controller}, \texttt{service},
+\texttt{security}, \texttt{repository}, \texttt{exception} y
+\texttt{config}. Los tres controladores REST expuestos son
+\texttt{AuthController} (\texttt{/api/auth/*}), \texttt{MascotaController}
+(\texttt{/api/mascotas/*}) y \texttt{UsuarioController}
+(\texttt{/api/usuarios/me}).
+
+\section{PostgreSQL}
+PostgreSQL~16, esquema versionado con Flyway
+(\texttt{V1__schema_inicial.sql}: tablas \texttt{usuarios} y
+\texttt{mascotas}, con \emph{constraint} de rol v\'alido y disparadores de
+\texttt{actualizado_en}). Para la reconstrucci\'on reproducible desde
+Docker, el esquema se replica en \texttt{db/schema.sql} y la cuenta de
+aplicaci\'on (\texttt{biopet_app}) se crea con privilegios m\'inimos en
+\texttt{db/roles.sql} (sin \texttt{SUPERUSER}, \texttt{CREATEDB} ni
+\texttt{CREATEROLE}), conforme a ADR-004. La funci\'on nativa
+\texttt{fn_resumen_mascotas_por_especie} respalda el endpoint de resumen
+por especie (cat\'alogo completo en
+\texttt{docs/basedatos/CATALOGO-SP.md}).
+
+\section{Redis}
+Redis~7, con dos usos reales confirmados en el c\'odigo: lista negra de
+JWT revocados (\texttt{TokenBlacklistService}, con TTL igual al tiempo de
+vida restante del token) y cach\'e declarativa de lecturas de mascotas
+(\texttt{@Cacheable}/\texttt{@CacheEvict} en \texttt{MascotaService}, v\'ia
+la abstracci\'on de cach\'e de Spring).
+
+\section{Docker Compose}
+Orquestaci\'on de cuatro servicios (\texttt{postgres}, \texttt{redis},
+\texttt{backend}, \texttt{frontend}) mediante \texttt{docker-compose.yml},
+con un \emph{overlay} opcional \texttt{docker-compose.tls.yml} para activar
+el perfil HTTPS. Las im\'agenes de terceros est\'an fijadas por digest
+\texttt{sha256}; el arranque completo se realiza con \texttt{make up}
+(ADR-005).
+
+\section{HTTPS/TLS}
+Perfil Spring \texttt{tls} (\texttt{application-tls.yml}), que activa un
+conector HTTPS adicional en el puerto~8443 (TLS~1.3 \'unicamente) junto al
+conector HTTP interno en el puerto~8080
+(\texttt{TomcatDualConnectorConfig}). El certificado es PKCS12,
+autofirmado, generado localmente y nunca versionado.
+
+\section{Autenticaci\'on}
+JWT firmado con HMAC-SHA256 (\texttt{jjwt}~0.12.6), transportado en cookies
+\texttt{HttpOnly}+\texttt{Secure}+\texttt{SameSite=Strict}
+(\texttt{access_token}, \texttt{refresh_token}), con revocaci\'on real v\'ia
+Redis, rate limiting de login en memoria y auditor\'ia estructurada. El
+detalle completo se documenta en ADR-006 y en el
+cap\'itulo~\ref{cap:resultados-jaime}.
+
+\section{Mascotas}
+CRUD completo (\texttt{GET}/\texttt{POST}/\texttt{PUT}/\texttt{DELETE}
+sobre \texttt{/api/mascotas} y \texttt{/api/mascotas/\{id\}}) con
+autorizaci\'on por rol (\texttt{ADMIN}/\texttt{VETERINARIO}/\texttt{AUXILIAR}
+para escritura; los cuatro roles para lectura) y por propiedad (un
+\texttt{ROLE_DUENO} solo accede a sus propias mascotas). La eliminaci\'on es
+l\'ogica (\texttt{activo=false}), no f\'isica.
+
+\section{Cobertura}
+Verificada autom\'aticamente con \texttt{jacoco-maven-plugin}~0.8.12
+(ejecuci\'on \texttt{check} ligada a la fase \texttt{verify}), con una
+regla \texttt{BUNDLE} y un umbral m\'inimo del 60\,\% sobre l\'ineas, ramas
+y complejidad. El estado medido actual es \textsc{pass}, con cifras
+detalladas en el cap\'itulo~\ref{cap:resultados-jaime}.
+
+\section{Rendimiento}
+Medido con k6 contra el endpoint cacheado de mascotas, en tres corridas
+fr\'ias y tres calientes, sobre HTTPS/TLS~1.3 real. Tasa de error del
+0{,}0\,\% en todas las corridas. Detalle en el
+cap\'itulo~\ref{cap:resultados-fred}.
+
+\section{Documentaci\'on}
+El repositorio incluye seis ADR (\texttt{docs/adr/}), diagramas C4 de
+contenedores y de componentes del backend (\texttt{docs/diagrams/}), un
+diagrama entidad-relaci\'on, un diagrama de clases, documentos de evidencia
+OWASP y JaCoCo (\texttt{docs/mediciones/sec/}), un reporte de rendimiento
+(\texttt{docs/mediciones/perf/}), un diccionario de datos de mediciones
+(\texttt{docs/mediciones/DATA-DICTIONARY.md}), una colecci\'on Postman
+reproducible (\texttt{docs/postman/}), y documentos de ingenier\'ia de
+requisitos (SRS, historias de usuario, casos de uso, matriz de
+trazabilidad en \texttt{docs/trazabilidad/matriz.csv}).
+
+\section{Estado de las pruebas}
+\begin{table}[H]
+  \centering
+  \caption{Resultado real de la suite de pruebas del backend (\texttt{mvn clean verify}, reejecutado el 2026-07-31).}
+  \label{tab:estado-pruebas}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    M\'etrica & Valor \\
+    \midrule
+    Pruebas ejecutadas & 108 \\
+    Fallos & 0 \\
+    Errores & 0 \\
+    Omitidas & 0 \\
+    Cobertura LINE & 95{,}87\,\% \\
+    Cobertura BRANCH & 76{,}87\,\% \\
+    Cobertura COMPLEXITY & 80{,}00\,\% \\
+    Umbral autom\'atico (\texttt{jacoco:check}) & \(\geq\) 60\,\% \\
+    Resultado del build & \texttt{BUILD SUCCESS} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Fuente: \texttt{docs/mediciones/sec/jacoco-summary.md} y verificaci\'on
+directa contra \texttt{Backend/target/site/jacoco/jacoco.xml} y
+\texttt{Backend/target/surefire-reports/*.txt} generados localmente (no
+versionados).

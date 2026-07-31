@@ -1,0 +1,95 @@
+\chapter{Amenazas a la validez}
+\label{cap:amenazas-validez}
+
+Este cap\'itulo documenta, sin minimizarlas, las limitaciones metodol\'ogicas
+que afectan la interpretaci\'on de los resultados presentados en los
+cap\'itulos~\ref{cap:resultados-jaime}--\ref{cap:resultados-zaida}. Ninguna
+medici\'on de este informe se presenta como libre de amenazas a su
+validez.
+
+\section{Validez interna}
+
+\begin{itemize}[nosep]
+  \item Todas las mediciones de seguridad y rendimiento se ejecutaron en
+    \textbf{una sola m\'aquina de desarrollo} y contra \textbf{una \'unica
+    instancia} del backend; no se control\'o la interferencia de otros
+    procesos del sistema operativo durante las corridas.
+  \item El certificado TLS es \textbf{autofirmado}, generado localmente
+    para esta evaluaci\'on; el protocolo y el cifrado negociados
+    (TLSv1.3, \texttt{TLS\_AES\_256\_GCM\_SHA384}) son reales, pero el
+    canal de confianza del certificado en s\'i no lo es.
+  \item El hit ratio de cach\'e se midi\'o con dos m\'etodos que producen
+    cifras distintas ($\approx$49{,}98\,\% global frente a $\approx$100\,\%
+    aislado); la elecci\'on del m\'etodo aislado como el m\'as
+    representativo es una decisi\'on metodol\'ogica del equipo, documentada
+    expl\'icitamente para que un lector externo pueda juzgarla.
+  \item El rate limiting de login se evalu\'o \'unicamente en su
+    implementaci\'on en memoria, por instancia \'unica; su comportamiento
+    bajo m\'ultiples instancias del backend no fue evaluado porque no est\'a
+    implementado (no es distribuido).
+\end{itemize}
+
+\section{Validez externa}
+
+\begin{itemize}[nosep]
+  \item Todas las pruebas se ejecutaron en un \textbf{entorno acad\'emico
+    local}, no en un entorno de producci\'on ni de \emph{staging}
+    equivalente a producci\'on; los resultados de rendimiento y seguridad
+    no deben extrapolarse directamente a un despliegue en la nube con
+    m\'ultiples usuarios concurrentes reales.
+  \item Los usuarios de prueba (administrador sembrado, cuentas de
+    registro) son \textbf{cuentas acad\'emicas de desarrollo}, no usuarios
+    reales de una cl\'inica veterinaria; el comportamiento observado del
+    sistema frente a datos de producci\'on reales (volumen, variedad,
+    calidad de los datos) no fue evaluado.
+  \item Lighthouse, cuando se ejecute, depender\'a del entorno de ejecuci\'on
+    (hardware, red, versi\'on del navegador) en que se corra: sus
+    puntuaciones no son un valor absoluto reproducible en cualquier
+    m\'aquina, sino una medici\'on dependiente del entorno.
+  \item Un posible \textbf{sesgo de participantes} en la prueba SUS
+    (cuando se ejecute) es previsible si los diez participantes m\'inimos
+    provienen mayoritariamente del entorno acad\'emico del equipo
+    (compa\~neros, familiares con perfil t\'ecnico), en lugar de usuarios
+    finales representativos de una cl\'inica veterinaria real.
+\end{itemize}
+
+\section{Validez de constructo}
+
+\begin{itemize}[nosep]
+  \item Las pruebas de integraci\'on que ejercitan la funci\'on nativa
+    \texttt{fn_resumen_mascotas_por_especie}
+    (\texttt{ResumenEspeciesIntegrationTest}) usan Testcontainers con
+    PostgreSQL real; sin embargo, otras pruebas del backend usan H2 como
+    base de datos en memoria bajo el perfil de pruebas, cuyo comportamiento
+    \textbf{no es id\'entico} al de PostgreSQL real para funciones nativas
+    PL/pgSQL --- por eso el resumen por especie se prob\'o expl\'icitamente
+    con Testcontainers en vez de H2.
+  \item \texttt{TokenBlacklistService} se prueba siempre con
+    \texttt{@MockBean} en las pruebas unitarias/MockMvc; su comportamiento
+    real contra una instancia de Redis en condiciones de fallo (ca\'ida de
+    red, memoria llena) no se re-verific\'o en esta entrega.
+  \item La ausencia de un SIEM centralizado significa que la
+    ``auditor\'ia'' medida en este informe es la \textbf{emisi\'on
+    correcta} de las l\'ineas de log \texttt{AUTH_AUDIT}, no su
+    recolecci\'on, alertamiento o retenci\'on a largo plazo, que son
+    aspectos distintos de un programa de auditor\'ia de seguridad.
+\end{itemize}
+
+\section{Validez de conclusi\'on}
+
+\begin{itemize}[nosep]
+  \item El tama\~no de muestra de cada corrida de k6 ($\sim$3\,200
+    peticiones) es adecuado para el c\'alculo de percentiles e intervalos
+    de confianza reportados, pero corresponde a una \'unica ventana de
+    tiempo corta ($\sim$30--35~s); no se midieron tendencias a lo largo de
+    per\'iodos prolongados (horas o d\'ias).
+  \item Las 108 pruebas automatizadas del backend y la cobertura JaCoCo
+    miden \textbf{cobertura de ejecuci\'on}, no ausencia de defectos: una
+    l\'inea cubierta por una prueba no implica que est\'e libre de errores
+    l\'ogicos no contemplados por esa prueba.
+  \item Algunas evidencias (verificaci\'on manual de privilegios con
+    \texttt{psql}, ejecuci\'on manual de \texttt{fn_resumen_mascotas_por_especie})
+    se realizaron de forma manual y puntual, no como parte de un pipeline
+    de integraci\'on continua que las reejecute autom\'aticamente en cada
+    cambio.
+\end{itemize}

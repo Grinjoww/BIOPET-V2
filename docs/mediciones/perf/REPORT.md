@@ -4,19 +4,27 @@ Metodo de intervalo de confianza: distribucion t de Student (scipy.stats.t), apr
 
 | Corrida | n | Media (ms) | Mediana (ms) | DE (ms) | IC95% (ms) | p50 | p90 | p95 | p99 | Error (%) | Throughput (req/s) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| k6-run1-frio.json | 3204 | 10.68 | 8.78 | 7.56 | [10.42, 10.94] | 8.78 | 16.71 | 20.97 | 32.41 | 0.0 | 91.47 |
-| k6-run2-frio.json | 3216 | 8.09 | 7.39 | 5.81 | [7.89, 8.29] | 7.39 | 10.05 | 11.87 | 22.97 | 0.0 | 91.87 |
-| k6-run3-frio.json | 3226 | 6.97 | 6.26 | 5.73 | [6.77, 7.16] | 6.26 | 8.5 | 10.31 | 22.16 | 0.0 | 92.08 |
-| k6-run1-caliente.json | 3231 | 6.01 | 5.48 | 5.9 | [5.8, 6.21] | 5.48 | 7.3 | 8.82 | 16.28 | 0.0 | 92.17 |
-| k6-run2-caliente.json | 3226 | 6.87 | 5.75 | 8.0 | [6.59, 7.14] | 5.75 | 9.45 | 12.04 | 28.42 | 0.0 | 92.17 |
-| k6-run3-caliente.json | 3236 | 5.53 | 5.13 | 4.77 | [5.36, 5.69] | 5.13 | 6.76 | 7.82 | 12.59 | 0.0 | 92.46 |
+| k6-run1-caliente.json | 3233 | 6.38 | 5.83 | 5.89 | [6.18, 6.58] | 5.83 | 7.92 | 9.41 | 14.41 | 0.0 | 92.14 |
+| k6-run1-frio.json | 3197 | 12.14 | 9.39 | 9.57 | [11.81, 12.47] | 9.39 | 20.9 | 26.45 | 44.66 | 0.0 | 91.21 |
+| k6-run2-caliente.json | 3211 | 9.09 | 6.39 | 11.29 | [8.7, 9.48] | 6.39 | 13.62 | 21.09 | 59.77 | 0.0 | 91.63 |
+| k6-run2-frio.json | 3191 | 11.89 | 9.37 | 9.86 | [11.55, 12.24] | 9.37 | 18.66 | 27.35 | 49.01 | 0.0 | 91.02 |
+| k6-run3-caliente.json | 3236 | 6.45 | 5.73 | 5.88 | [6.25, 6.66] | 5.73 | 8.07 | 10.62 | 21.08 | 0.0 | 92.34 |
+| k6-run3-frio.json | 3226 | 7.83 | 6.84 | 6.03 | [7.62, 8.04] | 6.84 | 11.29 | 13.74 | 21.81 | 0.0 | 92.05 |
 
 ## Metadata de la medición
 
-- **Rango de fecha/hora (ISO 8601):** `2026-07-30T19:54:37-05:00` – `2026-07-30T20:11:42-05:00`
-- **Commit:** `eddc354`
+- **Rango de fecha/hora (ISO 8601):** corridas ejecutadas el 2026-07-30, culminando
+  aproximadamente a las `2026-07-30T22:06:56-05:00`.
+- **Commit:** `a6a8905`
 - **Herramientas:**
   - k6 v2.1.0 (commit 83a87a41e2, go1.26.4, windows/amd64)
-- **Hit ratio de Redis:** `3223 / (3223 + 3227) ≈ 49.98%`
-  (medido con `CONFIG RESETSTAT` inmediatamente antes de la corrida `k6-run2-caliente.json`, aislado de actividad previa del contenedor)
-  - ⚠️ Nota: el hit ratio (~50%) es más bajo de lo esperado para una corrida en caché caliente. Es consistente entre la medición sin aislar y la aislada, por lo que no es un artefacto de acumulación de stats — sugiere que el TTL configurado expira claves a un ritmo comparable al de las peticiones, o que la clave de caché varía entre iteraciones del script k6 (p. ej. por parámetros de paginación/orden). Queda como hallazgo a investigar fuera del alcance de esta entrega.
+- **Protocolo:** HTTPS con TLS 1.3 real (`https://localhost:8443`), a diferencia de la
+  primera medición (HTTP plano), corregido tras habilitarse el módulo de seguridad de Jaime.
+- **Hit ratio de Redis (caché `mascotas`):** verificado de forma aislada, no con
+  `keyspace_hits`/`keyspace_misses` globales de Redis (que también cuentan lecturas
+  ajenas al caché, como la verificación de blacklist de JWT en cada petición autenticada).
+  Con `redis-cli DBSIZE` se confirmó una única clave (`mascotas::admin@biopet.ec-0-10-UNSORTED`)
+  estable durante una corrida completa de 50 VUs / 30s, sin evicción por memoria
+  (`maxmemory-policy: noeviction`) ni expiración prematura (TTL decreciente de forma
+  consistente). El hit ratio real del endpoint cacheado es efectivamente cercano al
+  100% tras la primera petición de calentamiento.

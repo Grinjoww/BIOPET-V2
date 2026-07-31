@@ -1,0 +1,112 @@
+\chapter{Resumen ejecutivo}
+\label{cap:resumen-ejecutivo}
+
+\section*{Prop\'osito de BIOPET}
+BIOPET es un sistema web de gesti\'on veterinaria desarrollado como Proyecto
+Fin de Curso de la asignatura \asignatura. Permite el registro de usuarios,
+el inicio de sesi\'on, y la administraci\'on (alta, consulta, actualizaci\'on
+y baja l\'ogica) de mascotas asociadas a un due\~no, con control de acceso
+diferenciado por rol (\texttt{ROLE_ADMIN}, \texttt{ROLE_VETERINARIO},
+\texttt{ROLE_AUXILIAR}, \texttt{ROLE_DUENO}). El sistema no gestiona datos
+cl\'inicos reales ni historiales m\'edicos de mascotas: su alcance actual
+cubre identificaci\'on, autenticaci\'on y un cat\'alogo b\'asico de mascotas
+por due\~no.
+
+\section*{Arquitectura general}
+El sistema sigue una arquitectura de tres niveles, documentada formalmente
+mediante el modelo C4 (cap\'itulo~\ref{cap:arquitectura-c4}): un
+\emph{frontend} Angular~17 (aplicaci\'on de p\'agina \'unica, componentes
+\emph{standalone}), un \emph{backend} Spring~Boot~3.2 sobre Java~21 que
+expone una API REST, una base de datos relacional PostgreSQL~16 gestionada
+con Flyway, y Redis~7 usado tanto para la lista negra de tokens JWT
+revocados como para la cach\'e de lecturas de mascotas. Todo el sistema se
+levanta mediante Docker Compose y un \texttt{Makefile} con un \'unico
+comando reproducible (\texttt{make up}), sin pasos manuales adicionales.
+
+\section*{Principales mejoras de la Tercera Entrega}
+Respecto a la Entrega~1B, la Tercera Entrega incorpor\'o, con evidencia
+verificable en el repositorio:
+\begin{itemize}[nosep]
+  \item Migraci\'on completa del flujo de autenticaci\'on de tokens en el
+    cuerpo de la respuesta a cookies \texttt{HttpOnly}+\texttt{Secure}+
+    \texttt{SameSite=Strict}, con revocaci\'on real v\'ia Redis, rate
+    limiting de login, auditor\'ia estructurada y cabeceras de seguridad
+    (Jaime; cap\'itulo~\ref{cap:resultados-jaime}).
+  \item HTTPS/TLS~1.3 nativo en el backend, con certificado autofirmado
+    acad\'emico y verificaci\'on en vivo del protocolo y el cifrado
+    negociados (Jaime).
+  \item Separaci\'on de privilegios en PostgreSQL (cuenta de aplicaci\'on
+    \texttt{biopet_app} sin permisos de DDL), pinning de im\'agenes Docker
+    por digest \texttt{sha256}, y medici\'on de rendimiento y cach\'e con
+    k6 y Redis (Fred; cap\'itulo~\ref{cap:resultados-fred}).
+  \item Integraci\'on del frontend con el nuevo esquema de cookies, CRUD de
+    mascotas accesible (atributos ARIA, manejo de errores anunciado a
+    lectores de pantalla) y consolidaci\'on de la ingenier\'ia de
+    requisitos (SRS, historias de usuario, casos de uso) (Zaida;
+    cap\'itulo~\ref{cap:resultados-zaida}).
+  \item Cobertura de pruebas verificada autom\'aticamente con JaCoCo
+    (umbral m\'inimo del 60\,\% sobre l\'ineas, ramas y complejidad,
+    aplicado a todo el m\'odulo del backend).
+\end{itemize}
+
+\section*{Seguridad}
+El backend fue auditado contra seis categor\'ias aplicables de OWASP~Top~10
+(A01, A02, A03, A05, A07, A09), con evidencia reproducible en
+\texttt{docs/mediciones/sec/}: autorizaci\'on por rol y por propietario,
+HTTPS/TLS~1.3 real, protecci\'on estructural contra inyecci\'on SQL,
+cabeceras de seguridad HTTP, autenticaci\'on por cookies con rate limiting y
+revocaci\'on, y auditor\'ia de eventos sin datos sensibles. Las seis
+categor\'ias auditadas obtuvieron resultado \textsc{pass}, respaldado por
+pruebas automatizadas reales (no solo inspecci\'on manual). El detalle
+completo, con limitaciones expl\'icitas por categor\'ia, se presenta en el
+cap\'itulo~\ref{cap:resultados-jaime}.
+
+\section*{Reproducibilidad}
+El sistema completo se reconstruye desde una clonaci\'on limpia con
+\texttt{make up}, sin intervenci\'on manual. Las im\'agenes de terceros
+(PostgreSQL, Redis, Maven, Eclipse Temurin) est\'an fijadas por digest
+\texttt{sha256} para evitar derivas silenciosas entre reconstrucciones. La
+inicializaci\'on de la base de datos usa un mecanismo doble documentado en
+ADR-004: Flyway como \'unica fuente de verdad del esquema de aplicaci\'on, y
+scripts de \texttt{docker-entrypoint-initdb.d} para crear roles con
+privilegios m\'inimos y sembrar datos deterministas.
+
+\section*{Rendimiento}
+Se ejecutaron tres corridas de k6 en fr\'io y tres en caliente contra el
+endpoint cacheado \texttt{GET /api/mascotas}, sobre HTTPS/TLS~1.3 real. La
+tasa de error fue del 0{,}0\,\% en las seis corridas, con un throughput
+sostenido de aproximadamente 91--92 peticiones por segundo y una mediana de
+latencia de 5{,}7 a 9{,}4~ms seg\'un la corrida. El detalle estad\'istico
+completo (intervalos de confianza al 95\,\% con la distribuci\'on t de
+Student, percentiles p50/p90/p95/p99) se presenta en el
+cap\'itulo~\ref{cap:resultados-fred}.
+
+\section*{Accesibilidad y usabilidad}
+El frontend incorpora atributos ARIA (\texttt{aria-invalid},
+\texttt{aria-describedby}, \texttt{role="alert"}, \texttt{aria-live}) en los
+formularios de autenticaci\'on y en el CRUD de mascotas, verificables
+directamente en el c\'odigo fuente. \textbf{Las mediciones cuantitativas de
+usabilidad (System Usability Scale) y de accesibilidad automatizada
+(Lighthouse) todav\'ia no se han ejecutado a la fecha de este informe}: no
+existe en el repositorio ni \texttt{docs/mediciones/sus/} ni
+\texttt{docs/mediciones/lighthouse/}. Este informe documenta la
+metodolog\'ia prevista para ambas mediciones (cap\'itulo~\ref{cap:protocolo-experimental})
+sin reportar resultados que a\'un no existen.
+
+\section*{Resultados generales}
+La suite de pruebas del backend ejecuta 108 pruebas reales, con 0 fallos, 0
+errores y 0 omitidas (\texttt{BUILD SUCCESS}), verificado en esta misma
+fase directamente contra los reportes de Surefire y el reporte JaCoCo
+local. La cobertura medida fue del 95{,}87\,\% en l\'ineas, 76{,}87\,\% en
+ramas y 80{,}00\,\% en complejidad ciclom\'atica, todas por encima del
+umbral autom\'atico configurado del 60\,\%.
+
+\section*{Limitaciones principales}
+El certificado TLS es autofirmado y exclusivamente acad\'emico; el rate
+limiting de login es en memoria y por instancia, no distribuido; los logs
+de auditor\'ia no est\'an integrados con un SIEM; la revocaci\'on de tokens
+depende de la disponibilidad de Redis; y toda la evaluaci\'on se realiz\'o
+sobre una \'unica instancia del backend en un entorno local. Las mediciones
+de usabilidad y accesibilidad automatizada quedan pendientes de ejecuci\'on.
+Ninguna de estas limitaciones se presenta como resuelta en este informe; se
+detallan con su alcance exacto en el cap\'itulo~\ref{cap:amenazas-validez}.

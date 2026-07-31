@@ -1,0 +1,265 @@
+\chapter{Resultados --- Jaime (seguridad y backend)}
+\label{cap:resultados-jaime}
+
+Este cap\'itulo documenta, con evidencia verificable en el c\'odigo y en
+\texttt{docs/mediciones/sec/}, el trabajo de seguridad, autenticaci\'on,
+pruebas y cobertura desarrollado por Jaime durante la Tercera Entrega. La
+auditor\'ia se organiz\'o sobre las categor\'ias aplicables de OWASP Top~10~\cite{owasp-top10}.
+
+\section{Autenticaci\'on JWT por cookies}
+
+El backend emite JWT firmados con HMAC-SHA256 (\texttt{jjwt}~0.12.6). Cada
+token contiene \textbf{10 claims}: los \textbf{7 claims est\'andar}
+registrados por RFC~7519~\cite{rfc7519} (\texttt{iss}, \texttt{sub}, \texttt{aud},
+\texttt{iat}, \texttt{nbf}, \texttt{exp}, \texttt{jti}) y \textbf{3 claims
+personalizados} (\texttt{email}, \texttt{rol}, \texttt{typ}). El tipo de
+token (\texttt{access} o \texttt{refresh}) se distingue \'unicamente por el
+valor del claim \texttt{typ}: ambos comparten el mismo conjunto de nombres
+de claims, generados por el mismo m\'etodo (\texttt{buildToken}), y solo
+difieren en su tiempo de vida y en ese valor (ADR-006).
+
+Los tokens se transportan en cookies \texttt{access_token} y
+\texttt{refresh_token}, ambas con los atributos
+\texttt{HttpOnly}+\texttt{Secure}+\texttt{SameSite=Strict}
+(\texttt{JwtCookieService}), con rutas diferenciadas
+(\texttt{Path=/} para el access token, \texttt{Path=/api/auth} para el
+refresh token). El frontend nunca almacena el JWT en \texttt{localStorage};
+el navegador env\'ia las cookies autom\'aticamente
+(\texttt{credentials: include}). El header \texttt{Authorization: Bearer}
+sigue soport\'andose como mecanismo secundario en
+\texttt{JwtAuthenticationFilter}, pero el flujo web principal de BIOPET no
+lo utiliza.
+
+% EVIDENCIA-JAIME-08
+% Captura: atributos de cookies ocultando completamente sus valores.
+% Ruta esperada: figuras/jaime/08-cookie-attributes.png
+\evidencia{figuras/jaime/08-cookie-attributes.png}%
+{Atributos reales de las cookies de sesi\'on (\texttt{HttpOnly}, \texttt{Secure}, \texttt{SameSite=Strict}) inspeccionados en el navegador, sin exponer el valor del token.}%
+{fig:jaime-cookie-attributes}
+
+\subsection{Logout y revocaci\'on en Redis}
+
+El logout (\texttt{POST /api/auth/logout}) es idempotente: responde
+\texttt{204} incluso sin cookies previas. Cuando hay un token v\'alido, se
+extrae su \texttt{jti} y se marca como revocado en Redis
+(\texttt{TokenBlacklistService}) con un TTL igual al tiempo de vida
+restante del token. En cada solicitud protegida,
+\texttt{JwtAuthenticationFilter} consulta esa lista negra \'unicamente para
+tokens de tipo \texttt{access}, evitando consultas innecesarias a Redis
+para refresh tokens.
+
+\section{Autorizaci\'on por rol y por propietario}
+
+La autorizaci\'on combina dos niveles: por \textbf{rol}
+(\texttt{@PreAuthorize} en \texttt{MascotaController}, con
+\texttt{ADMIN}/\texttt{VETERINARIO}/\texttt{AUXILIAR} habilitados para
+escritura y los cuatro roles habilitados para lectura), y por
+\textbf{propiedad} (\texttt{MascotaService.verificarPropiedad}, que lanza
+\texttt{AccessDeniedException} cuando un \texttt{ROLE_DUENO} intenta
+acceder a una mascota que no le pertenece). Las respuestas se diferencian
+correctamente: \textbf{401} cuando no hay autenticaci\'on v\'alida
+(\texttt{ProblemAuthenticationEntryPoint}), \textbf{403} cuando hay
+autenticaci\'on pero no autorizaci\'on (\texttt{ProblemAccessDeniedHandler}).
+Ambos casos producen un \texttt{ProblemDetail} real, sin exposici\'on de
+\emph{stack trace}.
+
+% EVIDENCIA-JAIME-05
+% Captura: Postman con respuesta 401 ProblemDetail.
+% Ruta esperada: figuras/jaime/05-postman-401.png
+\evidencia{figuras/jaime/05-postman-401.png}%
+{Respuesta 401 (\texttt{ProblemDetail}, \texttt{type=urn:biopet:error:unauthorized}) capturada desde la colecci\'on Postman de BIOPET.}%
+{fig:jaime-postman-401}
+
+% EVIDENCIA-JAIME-06
+% Captura: Postman con respuesta 403 ProblemDetail.
+% Ruta esperada: figuras/jaime/06-postman-403.png
+\evidencia{figuras/jaime/06-postman-403.png}%
+{Respuesta 403 (\texttt{ProblemDetail}, \texttt{type=urn:biopet:error:forbidden}) capturada desde la colecci\'on Postman de BIOPET.}%
+{fig:jaime-postman-403}
+
+\section{Rate limiting de login}
+
+\texttt{LoginRateLimiterService} mantiene, en memoria
+(\texttt{ConcurrentHashMap}) y por IP, un contador de intentos fallidos con
+ventana y bloqueo de 15~minutos por defecto (\texttt{maxAttempts=6}): los
+primeros 5~fallos consecutivos responden \texttt{401}, el 6.\textsuperscript{o}
+responde \texttt{429} con cabecera \texttt{Retry-After} (entero positivo de
+segundos). El contador se reinicia tras un login exitoso y es
+completamente independiente entre IP distintas. Al ser en memoria y por
+instancia, no es distribuido entre m\'ultiples r\'eplicas del backend
+(limitaci\'on documentada desde la Fase~6).
+
+% EVIDENCIA-JAIME-07
+% Captura: sexto intento de login con 429 y Retry-After.
+% Ruta esperada: figuras/jaime/07-rate-limit-429.png
+\evidencia{figuras/jaime/07-rate-limit-429.png}%
+{Sexto intento fallido de login consecutivo: respuesta 429 con cabecera \texttt{Retry-After}.}%
+{fig:jaime-rate-limit-429}
+
+\section{\texttt{ProblemDetail} uniforme}
+
+Todos los errores de la API usan el formato RFC~7807~\cite{rfc7807}
+(\texttt{application/problem+json}), con los campos \texttt{type},
+\texttt{title}, \texttt{status}, \texttt{detail} e \texttt{instance}
+(\texttt{GlobalExceptionHandler}, \texttt{ProblemDetailFactory},
+\texttt{ProblemType}). El \texttt{detail} nunca incluye \emph{stack trace}
+ni el valor bruto de un par\'ametro inv\'alido: para
+\texttt{MethodArgumentTypeMismatchException}, el mensaje se construye
+\'unicamente con el nombre del par\'ametro (\texttt{ex.getName()}), nunca
+con el valor recibido.
+
+\section{Auditor\'ia A09}
+
+\texttt{AuthenticationAuditService} registra siete eventos estructurados en
+una sola l\'inea de log (\texttt{AUTH\_AUDIT
+timestamp=<UTC> event=<EVENTO> result=<RESULTADO> ip=<IP> subject=<SUJETO>}):
+\texttt{LOGIN_SUCCESS}, \texttt{LOGIN_FAILURE}, \texttt{LOGIN_RATE_LIMITED},
+\texttt{REFRESH_SUCCESS}, \texttt{REFRESH_FAILURE}, \texttt{LOGOUT_SUCCESS}
+y \texttt{TOKEN_REVOKED}, con nivel \texttt{INFO} para los eventos de
+resultado esperado y \texttt{WARN} para los fallidos o bloqueados. El
+servicio sanitiza \texttt{ip}/\texttt{subject} (elimina caracteres de
+control, trunca a 200 caracteres, sustituye valores ausentes por
+\texttt{"unknown"}) y \textbf{nunca} recibe como argumento una contrase\~na,
+un JWT completo, una cookie ni el encabezado \texttt{Authorization}: la
+firma de sus m\'etodos p\'ublicos solo acepta \texttt{ip} y \texttt{subject}.
+
+% EVIDENCIA-JAIME-09
+% Captura: log AUTH_AUDIT sin secretos.
+% Ruta esperada: figuras/jaime/09-auth-audit.png
+\evidencia{figuras/jaime/09-auth-audit.png}%
+{L\'inea real de log \texttt{AUTH\_AUDIT} generada durante una prueba de login, sin contrase\~nas ni tokens.}%
+{fig:jaime-auth-audit}
+
+\section{Cabeceras de seguridad y TLS}
+
+\texttt{SecurityConfig} (Spring Security~\cite{spring-security-docs}) fija cinco cabeceras en todas las respuestas
+(incluidas las p\'ublicas): \texttt{X-Frame-Options: DENY},
+\texttt{X-Content-Type-Options: nosniff}, \texttt{Content-Security-Policy:
+default-src 'self'; frame-ancestors 'none'; object-src 'none'},
+\texttt{Referrer-Policy: no-referrer}, y
+\texttt{Strict-Transport-Security} \'unicamente sobre HTTPS
+(\texttt{max-age=31536000 ; includeSubDomains ; preload}; ausente sobre
+HTTP, comportamiento correcto y verificado).
+
+% EVIDENCIA-JAIME-04
+% Captura: curl HTTPS con HSTS y cabeceras de seguridad.
+% Ruta esperada: figuras/jaime/04-security-headers.png
+\evidencia{figuras/jaime/04-security-headers.png}%
+{Cabeceras de seguridad reales capturadas con \texttt{curl.exe -i} contra \texttt{https://localhost:8443/actuator/health}.}%
+{fig:jaime-security-headers}
+
+El perfil \texttt{tls} activa un conector HTTPS en el puerto~8443
+(\texttt{TLSv1.3} \'unicamente) junto al conector HTTP interno en el
+puerto~8080. Verificado en vivo con \texttt{openssl s\_client}: protocolo
+\textbf{TLSv1.3}, cifrado \textbf{\texttt{TLS\_AES\_256\_GCM\_SHA384}}
+(suite AEAD), certificado autofirmado (\texttt{verify error:num=18:
+self-signed certificate}) con SAN \texttt{DNS:localhost,
+IP Address:127.0.0.1} --- exclusivamente acad\'emico, nunca v\'alido para
+producci\'on.
+
+% EVIDENCIA-JAIME-03
+% Captura: OpenSSL mostrando TLSv1.3 y TLS_AES_256_GCM_SHA384.
+% Ruta esperada: figuras/jaime/03-tls-openssl.png
+\evidencia{figuras/jaime/03-tls-openssl.png}%
+{Salida de \texttt{openssl s\_client -connect localhost:8443 -tls1\_3}: protocolo TLSv1.3 y cifrado \texttt{TLS\_AES\_256\_GCM\_SHA384} negociados.}%
+{fig:jaime-tls-openssl}
+
+\section{Protecci\'on estructural contra inyecci\'on (A03)}
+
+Todos los m\'etodos de \texttt{UsuarioRepository} y \texttt{MascotaRepository}
+son consultas derivadas de Spring Data, con par\'ametros enlazados. La
+\'unica \texttt{@Query} nativa del proyecto
+(\texttt{fn\_resumen\_mascotas\_por\_especie}) usa un par\'ametro
+\texttt{:duenioId} enlazado y fuertemente tipado como \texttt{Long}. Los
+payloads de inyecci\'on probados (\texttt{1 OR 1=1},
+\texttt{1; DROP TABLE usuarios; --}, \texttt{\%' UNION SELECT NULL --})
+nunca llegan a ejecutarse como SQL: son rechazados en la capa de conversi\'on
+de Spring MVC (\texttt{MethodArgumentTypeMismatchException}, 400) antes de
+alcanzar el repositorio, verificado en
+\texttt{SqlInjectionSecurityTest} (incluye la comprobaci\'on de que
+\texttt{usuarioRepository.count()} y \texttt{mascotaRepository.count()}
+permanecen id\'enticos antes y despu\'es de cada payload).
+
+\section{Postman}
+
+La colecci\'on \texttt{docs/postman/BIOPET.postman\_collection.json}
+(Schema~v2.1.0, 40~requests en 5~carpetas) cubre estado del servicio,
+autenticaci\'on (incluida la secuencia completa de rate limiting),
+mascotas, resumen por especie, y un cat\'alogo de errores controlados
+(422, 400, 404, 401, 403, 429). Depende exclusivamente del \emph{cookie
+jar} autom\'atico de Postman: ning\'un script guarda un JWT o el valor de
+una cookie en una variable, y ning\'un request agrega
+\texttt{Authorization: Bearer} al flujo principal.
+
+\section{Cobertura JaCoCo y resultado de pruebas}
+
+JaCoCo~\cite{jacoco-docs} es la herramienta usada para medir y verificar
+autom\'aticamente esta cobertura.
+
+\begin{table}[H]
+  \centering
+  \caption{Cobertura medida por \texttt{jacoco:check} (\texttt{Backend/target/site/jacoco/jacoco.xml}, verificado en esta fase).}
+  \label{tab:jacoco-jaime}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    Contador & Cubierto & No cubierto & Total & Porcentaje \\
+    \midrule
+    LINE & 534 & 23 & 557 & 95{,}87\,\% \\
+    BRANCH & 103 & 31 & 134 & 76{,}87\,\% \\
+    COMPLEXITY & 172 & 43 & 215 & 80{,}00\,\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Umbral autom\'atico configurado: \(\geq\) 60\,\% para los tres contadores
+anteriores (regla \texttt{BUNDLE} de \texttt{jacoco-maven-plugin}). Los 108
+pruebas de la suite completa terminaron con 0~fallos, 0~errores y
+0~omitidas (\texttt{BUILD SUCCESS}).
+
+% EVIDENCIA-JAIME-01
+% Captura: mvn clean verify con 108 pruebas y BUILD SUCCESS.
+% Ruta esperada: figuras/jaime/01-maven-verify.png
+\evidencia{figuras/jaime/01-maven-verify.png}%
+{Salida real de \texttt{mvn clean verify}: 108 pruebas, 0 fallos, 0 errores, 0 omitidas, \texttt{BUILD SUCCESS}.}%
+{fig:jaime-maven-verify}
+
+% EVIDENCIA-JAIME-02
+% Captura: resumen HTML de JaCoCo.
+% Ruta esperada: figuras/jaime/02-jacoco-resumen.png
+\evidencia{figuras/jaime/02-jacoco-resumen.png}%
+{Resumen navegable de JaCoCo (\texttt{Backend/target/site/jacoco/index.html}) con la cobertura por paquete.}%
+{fig:jaime-jacoco-resumen}
+
+\section{C4 Nivel 3 y ADR-006}
+
+El diagrama de componentes del backend (cap\'itulo~\ref{cap:arquitectura-c4})
+y ADR-006 (\emph{Decisiones de autenticaci\'on y seguridad}) documentan
+formalmente las decisiones descritas en este cap\'itulo: cookies frente a
+almacenamiento en el cliente, revocaci\'on v\'ia Redis, rate limiting en
+memoria, y el formato \texttt{ProblemDetail} para todos los errores.
+
+% EVIDENCIA-JAIME-10
+% Captura: C4 Nivel 3 renderizado.
+% Ruta esperada: figuras/jaime/10-c4-nivel-3.png
+\evidencia{figuras/jaime/10-c4-nivel-3.png}%
+{Diagrama C4 Nivel 3 (componentes del backend) renderizado, referenciado tambi\'en en la secci\'on~\ref{sec:c4-nivel-3}.}%
+{fig:jaime-c4-nivel-3-resultados}
+
+\section{Limitaciones reales de este bloque}
+
+\begin{itemize}[nosep]
+  \item El certificado TLS es autofirmado y exclusivamente acad\'emico/local;
+    no representa una cadena de confianza v\'alida para producci\'on.
+  \item El rate limiting de login es en memoria y por instancia: no es
+    distribuido entre m\'ultiples r\'eplicas del backend.
+  \item Los logs \texttt{AUTH_AUDIT} se escriben \'unicamente en el log
+    local del proceso; no existe integraci\'on con un SIEM centralizado ni
+    alertas autom\'aticas.
+  \item La revocaci\'on de tokens depende de la disponibilidad de Redis; si
+    Redis no est\'a disponible, debe tratarse como error de infraestructura,
+    no como sesi\'on v\'alida (ADR-003).
+  \item Toda la evidencia de este cap\'itulo se recolect\'o contra
+    \textbf{una sola instancia} del backend en un entorno local; no se
+    evalu\'o comportamiento bajo m\'ultiples r\'eplicas ni balanceo de
+    carga.
+\end{itemize}
