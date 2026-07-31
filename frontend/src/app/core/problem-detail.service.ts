@@ -40,7 +40,7 @@ export class ProblemDetailService {
    * "detail". Si existe, arma un resumen más útil que el detail genérico.
    */
   private mensajeValidacion(problem: ProblemDetail | null): string | null {
-    const errores = (problem as any)?.errors as Record<string, string[]> | undefined;
+    const errores = this.erroresPorCampo(err_(problem));
     if (!errores) return null;
 
     const partes = Object.entries(errores).map(
@@ -48,4 +48,30 @@ export class ProblemDetailService {
     );
     return partes.length ? partes.join(' · ') : null;
   }
+
+  /**
+   * Expone el mapa crudo campo -> mensajes del 422, para que los
+   * formularios (p. ej. el de mascotas) puedan pintar el mensaje debajo
+   * del campo exacto en lugar de solo mostrar un resumen general.
+   * Devuelve null si el error no es un 422 con `errors` o si no hay error.
+   */
+  erroresPorCampo(err: HttpErrorResponse | null): Record<string, string[]> | null {
+    if (!err || err.status !== 422) return null;
+    const problem = err.error as ProblemDetail | null;
+    const errores = (problem as any)?.errors as Record<string, string[]> | undefined;
+    return errores && Object.keys(errores).length ? errores : null;
+  }
+
+  /** Primer mensaje de error para un campo concreto, o null si no aplica. */
+  primerErrorDeCampo(err: HttpErrorResponse | null, campo: string): string | null {
+    const errores = this.erroresPorCampo(err);
+    const mensajes = errores?.[campo];
+    return mensajes && mensajes.length ? mensajes[0] : null;
+  }
+}
+
+/** Helper interno: castea un ProblemDetail suelto a la forma que espera erroresPorCampo. */
+function err_(problem: ProblemDetail | null): HttpErrorResponse | null {
+  if (!problem) return null;
+  return { status: 422, error: problem } as HttpErrorResponse;
 }
