@@ -1,0 +1,11 @@
+codigo_participante,fecha_iso8601,edad,sexo,experiencia_web,dispositivo,Q1_usaria_frecuentemente,Q2_innecesariamente_complejo,Q3_facil_de_usar,Q4_necesito_soporte_tecnico,Q5_funciones_bien_integradas,Q6_demasiada_inconsistencia,Q7_aprendizaje_rapido,Q8_engorroso_de_usar,Q9_confianza_al_usar,Q10_necesito_aprender_mucho_antes,sus_score
+P01,2026-07-18,22,F,avanzada,laptop,5,1,5,1,4,2,5,1,5,1,95.0
+P02,2026-07-18,35,M,intermedia,computador de escritorio,4,2,4,2,4,2,4,2,4,2,75.0
+P03,2026-07-18,19,F,basica,laptop,4,2,4,1,4,1,5,2,4,2,82.5
+P04,2026-07-18,41,M,basica,laptop,3,3,3,3,3,3,3,3,3,4,47.5
+P05,2026-07-18,27,F,avanzada,laptop,5,1,5,2,5,1,5,1,5,1,97.5
+P06,2026-07-18,24,M,intermedia,laptop,4,2,4,2,3,2,4,2,4,2,72.5
+P07,2026-07-18,30,F,intermedia,computador de escritorio,4,1,5,1,4,2,4,1,5,2,87.5
+P08,2026-07-18,52,M,ninguna,tablet,2,4,2,4,2,4,2,4,2,5,22.5
+P09,2026-07-18,26,F,avanzada,laptop,5,1,4,1,5,1,5,2,5,1,95.0
+P10,2026-07-18,33,M,intermedia,laptop,4,2,4,2,4,3,4,2,4,2,72.5

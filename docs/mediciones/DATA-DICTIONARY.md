@@ -138,17 +138,31 @@ lleguen al logger (`A09-logging.md`, `noRegistraDatosSensibles`).
 
 | Variable | Tipo de dato | Unidad | Rango esperado | Significado |
 |---|---|---|---|---|
+| security_tests_run | Entero | pruebas | 107 | Total de pruebas ejecutadas por `mvn clean verify` (suite completa del módulo, no solo las clases de seguridad; es la única cifra agregada real disponible — ver también la sección de JaCoCo). |
 | security_tests_run | Entero | pruebas | 108 | Total de pruebas ejecutadas por `mvn clean verify` (suite completa del módulo, no solo las clases de seguridad; es la única cifra agregada real disponible — ver también la sección de JaCoCo). |
 | failures | Entero | pruebas | 0 | Aserciones fallidas reportadas por Surefire/Failsafe. |
 | errors | Entero | pruebas | 0 | Errores no controlados durante la ejecución de pruebas. |
 | skipped | Entero | pruebas | 0 | Pruebas omitidas. |
 | test_result | Texto (categórico) | — | {BUILD SUCCESS} | Resultado agregado final de `mvn clean verify`, reejecutado el 2026-07-31 (`jacoco-summary.md`). |
 
-## Usabilidad SUS (`docs/mediciones/sus/`) — responsable: Zaida
+## Usabilidad SUS (`docs/mediciones/sus/sus-raw.csv`) — responsable: Zaida
 
-_Pendiente: sección a completar por Zaida con las variables del instrumento SUS
-(puntuación por ítem, escala 1–5, puntuación agregada 0–100, IC 95%, perfil de
-participantes)._
+Datos crudos de la prueba de usabilidad System Usability Scale (Brooke, 1996),
+aplicada a diez participantes externos al equipo (P01–P10). Instrumento
+detallado en `docs/mediciones/sus/instrumento-sus.md`; análisis y cálculo del
+puntaje agregado en `scripts/analisis-sus.py`, reporte en
+`docs/mediciones/sus/REPORT.md`.
+
+| Variable | Tipo de dato | Unidad | Rango esperado | Significado |
+|---|---|---|---|---|
+| codigo_participante | Texto (categórico) | — | P01–P10 | Identificador anonimizado del participante; no permite identificarlo individualmente. |
+| fecha_iso8601 | Fecha (ISO 8601) | — | AAAA-MM-DD | Fecha en que el participante realizó la prueba. |
+| edad | Entero | años | 18–99 | Edad declarada por el participante, con fines demográficos agregados. |
+| sexo | Texto (categórico) | — | {F, M} | Sexo declarado por el participante. |
+| experiencia_web | Texto (categórico) | — | {ninguna, basica, intermedia, avanzada} | Experiencia previa autodeclarada con aplicaciones web. |
+| dispositivo | Texto (categórico) | — | {laptop, computador de escritorio, tablet, celular} | Dispositivo utilizado por el participante durante la prueba. Todos los participantes de esta corrida usaron equipos de escritorio o laptop, salvo P08 (tablet). |
+| Q1_usaria_frecuentemente … Q10_necesito_aprender_mucho_antes | Entero | puntos Likert | 1–5 | Respuesta a cada uno de los diez ítems originales del instrumento SUS (1 = totalmente en desacuerdo, 5 = totalmente de acuerdo). Ítems impares redactados en sentido positivo, pares en sentido negativo, según Brooke (1996). |
+| sus_score | Decimal | puntos SUS | 0.0–100.0 | Puntaje SUS agregado por participante, calculado según el método estándar de Brooke: suma de contribuciones de los diez ítems × 2.5. |
 
 ## Accesibilidad / Lighthouse (`docs/mediciones/lighthouse/`) — responsable: Zaida
 
@@ -201,6 +215,7 @@ contra `docs/mediciones/sec/jacoco-summary.md`:
 
 | Variable | Tipo de dato | Unidad | Rango esperado | Significado |
 |---|---|---|---|---|
+| tests_run | Entero | pruebas | 107 | Total de pruebas ejecutadas por `mvn clean verify`, verificado sumando `Tests run:` de todos los `Backend/target/surefire-reports/*.txt` generados localmente. |
 | tests_run | Entero | pruebas | 108 | Total de pruebas ejecutadas por `mvn clean verify`, verificado sumando `Tests run:` de todos los `Backend/target/surefire-reports/*.txt` generados localmente. |
 | test_failures | Entero | pruebas | 0 | Suma de `Failures:` de los mismos reportes. |
 | test_errors | Entero | pruebas | 0 | Suma de `Errors:` de los mismos reportes. |
