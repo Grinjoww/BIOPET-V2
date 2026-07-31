@@ -1,0 +1,80 @@
+\chapter{Matriz de trazabilidad}
+\label{cap:trazabilidad}
+
+La matriz cruda de requisitos vive en
+\texttt{docs/trazabilidad/matriz.csv} (id de requisito, tipo, prioridad
+MoSCoW, historia de usuario, caso de uso, m\'odulo, endpoint, prueba
+autom\'atizada, tipo de acceso, evidencia emp\'irica y estado). Esta secci\'on
+selecciona y presenta las filas m\'as representativas de las tres \'areas
+de trabajo del equipo, con el estado corregido cuando la evidencia
+disponible en el repositorio en el momento de este informe difiere de la
+del CSV base.
+
+\textbf{Nota de correcci\'on.} El CSV base marca como \emph{pendiente}
+varios requisitos no funcionales de seguridad (TLS, rate limiting,
+auditor\'ia) y de rendimiento (cach\'e Redis, k6) porque fue generado antes
+de que esas fases de evidencia se fusionaran a \texttt{main}. En esta
+matriz esos estados se corrigen a \emph{verificado} \'unicamente cuando
+existe un documento de evidencia real y fechado que lo respalda
+(\texttt{docs/mediciones/sec/A0X-*.md}, \texttt{docs/mediciones/perf/REPORT.md}).
+Ning\'un estado se marca como superado sin esa referencia expl\'icita, y los
+requisitos gen\'uinamente pendientes (usabilidad SUS, Lighthouse) se
+mantienen como tales.
+
+\begin{landscape}
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{1.6cm}
+  >{\raggedright\arraybackslash}p{2.0cm}
+  >{\raggedright\arraybackslash}p{3.6cm}
+  >{\raggedright\arraybackslash}p{3.6cm}
+  >{\raggedright\arraybackslash}p{3.6cm}
+  >{\raggedright\arraybackslash}p{3.4cm}
+  >{\raggedright\arraybackslash}p{3.6cm}
+  >{\raggedright\arraybackslash}p{1.8cm}
+@{}}
+\caption{Matriz de trazabilidad (selecci\'on representativa de \texttt{docs/trazabilidad/matriz.csv} y evidencia posterior).}
+\label{tab:trazabilidad} \\
+\toprule
+Requisito & Responsable & Implementaci\'on & Archivo / componente & Prueba & Medici\'on & Evidencia & Estado \\
+\midrule
+\endfirsthead
+\multicolumn{8}{c}{\tablename\ \thetable\ -- continuaci\'on} \\
+\toprule
+Requisito & Responsable & Implementaci\'on & Archivo / componente & Prueba & Medici\'on & Evidencia & Estado \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+REQ-F-001 & Jaime & Registro de usuario (siempre \texttt{ROLE_DUENO}) & \texttt{AuthController}/\texttt{AuthService} & \texttt{AuthControllerTest} & 107 pruebas, 0 fallos & Postman: Registro (due\~no) & Verificado \\
+REQ-F-002 & Jaime & Conflicto de email duplicado (409) & \texttt{GlobalExceptionHandler} & \texttt{AuthControllerTest} & \texttt{ProblemDetail} 409 & \texttt{docs/mediciones/DATA-DICTIONARY.md} & Verificado \\
+REQ-F-003 & Jaime & Login por cookies + JWT & \texttt{AuthController}/\texttt{JwtService} & \texttt{AuthControllerTest}, \texttt{JwtServiceTest} & 10 claims JWT & ADR-006 & Verificado \\
+REQ-F-004 & Jaime & Refresh de access token & \texttt{AuthController}/\texttt{AuthService} & \texttt{AuthControllerTest} & Cookie renovada & \texttt{A07-authentication.md} & Verificado \\
+REQ-F-005 & Jaime & Logout con revocaci\'on Redis & \texttt{AuthController}/\texttt{TokenBlacklistService} & \texttt{AuthControllerTest} & 204 idempotente & \texttt{A07-authentication.md} & Verificado \\
+REQ-F-006 & Jaime & Autorizaci\'on por rol (\texttt{@PreAuthorize}) & \texttt{SecurityConfig}/\texttt{MascotaController} & \texttt{MascotaControllerTest} & 401/403 & \texttt{A01-access-control.md} & Verificado \\
+REQ-F-007 & Zaida (frontend) / Jaime (endpoint) & Perfil de usuario autenticado & \texttt{UsuarioController} & Postman & \texttt{GET /api/usuarios/me} & \texttt{docs/postman/} & Verificado \\
+REQ-F-008--012 & Equipo (base Entrega~1B); accesibilidad: Zaida & CRUD completo de mascotas & \texttt{MascotaController}/\texttt{MascotaService} & \texttt{MascotaControllerTest} & 201/200/204 & \texttt{docs/postman/} & Verificado \\
+REQ-F-021 & Fred & Resumen de mascotas por especie (funci\'on nativa) & \texttt{MascotaRepository}, \texttt{fn_resumen_mascotas_por_especie} & \texttt{ResumenEspeciesIntegrationTest} (Testcontainers) & Funci\'on PL/pgSQL & \texttt{docs/basedatos/CATALOGO-SP.md} & Verificado \\
+REQ-NF-001/002 & Fred & Cach\'e Redis en listado de mascotas & \texttt{MascotaService} (\texttt{@Cacheable}) & k6 (6 corridas) & Hit ratio cercano al 100\,\% tras calentamiento & \texttt{docs/mediciones/perf/REPORT.md} & Verificado (corrige ``pendiente'' del CSV base) \\
+REQ-NF-003 & Jaime & HTTPS/TLS~1.3 nativo & \texttt{TomcatDualConnectorConfig}, \texttt{application-tls.yml} & Verificaci\'on en vivo (\texttt{curl}, \texttt{openssl s\_client}) & TLSv1.3, \texttt{TLS\_AES\_256\_GCM\_SHA384} & \texttt{A02-cryptography-tls.md} & Verificado (corrige ``pendiente'' del CSV base) \\
+REQ-NF-004 & Jaime & Generaci\'on/validaci\'on de JWT & \texttt{JwtService} & \texttt{JwtServiceTest} & 10 claims (7 est\'andar + 3 propios) & ADR-006 & Verificado \\
+REQ-NF-005 & Jaime & Hash de contrase\~nas (BCrypt) & \texttt{UserDetailsServiceImpl} & Inspecci\'on de BD & Costo BCrypt~12 & \texttt{A07-authentication.md} & Verificado \\
+REQ-NF-006 & Jaime & Formato uniforme de error (\texttt{ProblemDetail}) & \texttt{GlobalExceptionHandler}/\texttt{ProblemDetailFactory} & Colecci\'on Postman (40 requests) & RFC~7807 & \texttt{docs/postman/} & Verificado \\
+REQ-NF-009 & Jaime & Auditor\'ia estructurada \texttt{AUTH\_AUDIT} & \texttt{AuthenticationAuditService} & \texttt{AuthenticationAuditServiceTest} (10 pruebas) & 7 eventos, INFO/WARN & \texttt{A09-logging.md} & Verificado (corrige ``pendiente'' del CSV base) \\
+REQ-NF-010 & Jaime & Rate limiting de login & \texttt{LoginRateLimiterService} & \texttt{AuthControllerTest} (6 pruebas dedicadas) & 5$\times$401, 6.\textsuperscript{o} 429 & \texttt{A07-authentication.md} & Verificado (corrige ``pendiente'' del CSV base) \\
+REQ-NF-011 & Fred & Arranque reproducible en un comando & \texttt{Makefile}, \texttt{docker-compose.yml} & \texttt{docker compose ps} (4 servicios \texttt{healthy}) & Digest \texttt{sha256} fijado & ADR-005 & Implementado \\
+REQ-NF-012 & Equipo & Estructura de paquetes del backend & \texttt{Backend/src/main/java/com/biopet/**} & Revisi\'on de c\'odigo & --- & C4 Nivel 3 & Verificado \\
+REQ-NF-013 & Fred & Privilegios m\'inimos de la cuenta de aplicaci\'on & \texttt{db/roles.sql}, \texttt{biopet_app} & Verificaci\'on manual con \texttt{psql} & Sin \texttt{SUPERUSER}/\texttt{CREATEDB} & ADR-004 & Verificado \\
+REQ-NF-007 & Zaida & Accesibilidad/rendimiento del frontend (Lighthouse) & Frontend Angular & Lighthouse CI (pendiente de ejecuci\'on) & --- & --- & Pendiente \\
+REQ-NF-008 & Zaida & Usabilidad (SUS) & Frontend Angular & Instrumento SUS, m\'inimo 10 participantes (pendiente) & --- & \texttt{docs/etica/ETHICS.md} & Pendiente \\
+\end{longtable}
+\end{landscape}
+
+Cobertura de contribuciones reales por integrante en esta matriz: Jaime
+(seguridad, autenticaci\'on, autorizaci\'on, TLS, auditor\'ia, formato de
+error), Fred (persistencia reproducible, funci\'on nativa de resumen,
+cach\'e y rendimiento), y Zaida (accesibilidad del frontend, endpoint de
+perfil integrado en la UI, mediciones de usabilidad/accesibilidad a\'un
+pendientes de ejecuci\'on). Ning\'un requisito se marca \textsc{pass} o
+\emph{verificado} sin una prueba automatizada o un documento de evidencia
+citado en la columna correspondiente.

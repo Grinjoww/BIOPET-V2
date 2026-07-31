@@ -1,0 +1,199 @@
+\chapter{Resultados --- Fred (base de datos, reproducibilidad y rendimiento)}
+\label{cap:resultados-fred}
+
+Este cap\'itulo integra la informaci\'on real disponible en
+\texttt{docs/adr/ADR-004-postgresql.md},
+\texttt{docs/adr/ADR-005-despliegue.md},
+\texttt{docs/basedatos/CATALOGO-SP.md} y
+\texttt{docs/mediciones/perf/REPORT.md} sobre el trabajo de Fred. Ninguna
+cifra de este cap\'itulo se invent\'o: todas provienen de esos documentos o
+de \texttt{docs/mediciones/perf/k6-runN-\{frio,caliente\}.json}.
+
+\section{Base de datos y PostgreSQL}
+
+El esquema de PostgreSQL~16~\cite{postgresql-docs} se gestiona con Flyway
+(\texttt{V1__schema_inicial.sql}) como \'unica fuente de verdad para la
+aplicaci\'on en tiempo de ejecuci\'on. Para permitir que Docker reconstruya
+el sistema de forma id\'entica desde una clonaci\'on limpia sin depender de
+que Spring Boot arranque primero, ADR-004 introduce un mecanismo doble:
+
+\begin{itemize}[nosep]
+  \item \texttt{db/schema.sql}: r\'eplica exacta del esquema de Flyway,
+    montada en \texttt{docker-entrypoint-initdb.d} para que Postgres cree
+    las tablas en el primer arranque del contenedor.
+  \item \texttt{db/roles.sql}: crea el rol \texttt{biopet_app}
+    (\texttt{LOGIN}, sin \texttt{SUPERUSER}/\texttt{CREATEDB}/\texttt{CREATEROLE})
+    con privilegios m\'inimos: \texttt{SELECT/INSERT/UPDATE/DELETE}
+    \'unicamente sobre \texttt{usuarios} y \texttt{mascotas}.
+  \item \texttt{db/seed.sql}: siembra el usuario administrador de forma
+    idempotente (\texttt{WHERE NOT EXISTS}).
+\end{itemize}
+
+Hibernate/JPA se conecta en tiempo de ejecuci\'on con \texttt{biopet_app};
+Flyway sigue usando la cuenta propietaria \texttt{biopet_user}, separando
+la conexi\'on que aplica migraciones de la que sirve tr\'afico de la
+aplicaci\'on. Gracias a \texttt{spring.flyway.baseline-on-migrate: true},
+Flyway reconoce el esquema ya creado por \texttt{db/schema.sql} y establece
+un baseline en la versi\'on~1, sin reintentar la migraci\'on original.
+Verificado con \texttt{psql}: \texttt{biopet_app} no tiene atributos de
+\texttt{Superuser}, \texttt{Create role} ni \texttt{Create DB}; verificado
+con \texttt{flyway_schema_history}: una \'unica fila
+\texttt{version~1, type=BASELINE, success=true}.
+
+% EVIDENCIA-FRED-02
+% Ruta esperada: figuras/fred/02-postgresql-procedimiento.png
+\evidencia{figuras/fred/02-postgresql-procedimiento.png}%
+{Ejecuci\'on real de \texttt{fn\_resumen\_mascotas\_por\_especie} conectado como \texttt{biopet\_app}, sin GRANT adicional.}%
+{fig:fred-postgresql-procedimiento}
+
+\section{Funci\'on de resumen y procedimientos almacenados}
+
+\texttt{docs/basedatos/CATALOGO-SP.md} documenta dos objetos PL/pgSQL:
+
+\begin{itemize}[nosep]
+  \item \textbf{\texttt{fn_resumen_mascotas_por_especie}}: funci\'on (no
+    procedimiento, para permitir invocaci\'on directa v\'ia
+    \texttt{@Query(nativeQuery=true)}), par\'ametro opcional
+    \texttt{p_duenio_id BIGINT}, devuelve \texttt{especie}/\texttt{total}
+    de mascotas activas. Expuesta por
+    \texttt{GET /api/mascotas/resumen-especies}. Verificada con
+    Testcontainers (\texttt{ResumenEspeciesIntegrationTest}) y de forma
+    manual: \texttt{Perro~|~1} (29/07/2026).
+  \item \textbf{\texttt{set_actualizado_en}}: funci\'on \emph{trigger}
+    (\texttt{RETURNS TRIGGER}), sincroniza \texttt{actualizado_en} en cada
+    \texttt{UPDATE} sobre \texttt{usuarios} y \texttt{mascotas}, sin que el
+    backend deba setear ese campo manualmente.
+\end{itemize}
+
+\section{Reproducibilidad y Docker}
+
+ADR-005 formaliza el arranque en un solo comando (\texttt{make up}) y el
+pinning de im\'agenes de terceros por digest \texttt{sha256}
+(\texttt{postgres:16-alpine}, \texttt{redis:7-alpine} en
+\texttt{docker-compose.yml}; \texttt{maven:3.9-eclipse-temurin-21},
+\texttt{eclipse-temurin:21-jre-alpine} en \texttt{Backend/Dockerfile}), de
+forma que una reconstrucci\'on futura no use, sin darse cuenta, una versi\'on
+distinta de una imagen si su \emph{tag} se actualiza silenciosamente en
+Docker Hub. El \texttt{Makefile} separa expl\'icitamente operaciones
+seguras (\texttt{up}, \texttt{down}, \texttt{clean}, que preservan datos)
+de la \'unica operaci\'on destructiva (\texttt{reset-db}, que borra
+vol\'umenes, con advertencia expl\'icita antes de ejecutarse).
+
+% EVIDENCIA-FRED-01
+% Ruta esperada: figuras/fred/01-docker-healthy.png
+\evidencia{figuras/fred/01-docker-healthy.png}%
+{Los cuatro servicios (\texttt{postgres}, \texttt{redis}, \texttt{backend}, \texttt{frontend}) en estado \texttt{healthy}/\texttt{started} tras \texttt{make up} desde una clonaci\'on limpia.}%
+{fig:fred-docker-healthy}
+
+\section{Redis y cach\'e}
+
+Redis~\cite{redis-docs} respalda tanto la lista negra de JWT como la
+cach\'e de lecturas. La cach\'e declarativa de Spring
+(\texttt{@Cacheable}/\texttt{@CacheEvict} en \texttt{MascotaService})
+respalda las lecturas de \texttt{GET /api/mascotas}. El hit ratio se midi\'o
+de dos formas distintas, documentadas ambas por transparencia
+metodol\'ogica:
+
+\begin{itemize}[nosep]
+  \item \textbf{Global} (\texttt{redis-cli INFO stats},
+    \texttt{keyspace_hits}/\texttt{keyspace_misses}, con
+    \texttt{CONFIG RESETSTAT} previo): $\approx$49{,}98\,\%. Esta cifra
+    cuenta \emph{todas} las lecturas a Redis, incluida la verificaci\'on de
+    lista negra de JWT en cada petici\'on autenticada (m\'odulo de Jaime),
+    no solo la cach\'e de mascotas --- documentado como hallazgo abierto en
+    la primera medici\'on.
+  \item \textbf{Aislada} (\texttt{redis-cli DBSIZE} sobre la clave espec\'ifica
+    de cach\'e \texttt{mascotas::admin@biopet.ec-0-10-UNSORTED}, estable
+    durante una corrida completa de 50~VUs/30~s, sin evicci\'on por memoria
+    ni expiraci\'on prematura): cercana al \textbf{100\,\%} tras la primera
+    petici\'on de calentamiento, que es la medici\'on m\'as representativa
+    del comportamiento real de la cach\'e de mascotas espec\'ificamente.
+\end{itemize}
+
+% EVIDENCIA-FRED-05
+% Ruta esperada: figuras/fred/05-redis-stats.png
+\evidencia{figuras/fred/05-redis-stats.png}%
+{\texttt{redis-cli DBSIZE} confirmando una \'unica clave de cach\'e estable durante la corrida de referencia.}%
+{fig:fred-redis-stats}
+
+\section{Rendimiento (k6)}
+\label{sec:rendimiento-k6}
+
+Herramienta de carga: k6~\cite{k6-docs}.
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Resultado real de las seis corridas de k6 contra \texttt{GET /api/mascotas} (HTTPS/TLS~1.3, commit \texttt{a6a8905}). Fuente: \texttt{docs/mediciones/perf/REPORT.md}.}
+  \label{tab:k6-resultados}
+  \begin{tabular}{@{}lrrrrrrr@{}}
+    \toprule
+    Corrida & n & Media & Mediana & p95 & p99 & Error & Throughput \\
+    & & (ms) & (ms) & (ms) & (ms) & (\%) & (req/s) \\
+    \midrule
+    run1-caliente & 3233 & 6{,}38 & 5{,}83 & 9{,}41 & 14{,}41 & 0{,}0 & 92{,}14 \\
+    run1-fr\'io & 3197 & 12{,}14 & 9{,}39 & 26{,}45 & 44{,}66 & 0{,}0 & 91{,}21 \\
+    run2-caliente & 3211 & 9{,}09 & 6{,}39 & 21{,}09 & 59{,}77 & 0{,}0 & 91{,}63 \\
+    run2-fr\'io & 3191 & 11{,}89 & 9{,}37 & 27{,}35 & 49{,}01 & 0{,}0 & 91{,}02 \\
+    run3-caliente & 3236 & 6{,}45 & 5{,}73 & 10{,}62 & 21{,}08 & 0{,}0 & 92{,}34 \\
+    run3-fr\'io & 3226 & 7{,}83 & 6{,}84 & 13{,}74 & 21{,}81 & 0{,}0 & 92{,}05 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Intervalos de confianza al 95\,\% (distribuci\'on t de Student) para la
+media, por ejemplo run1-caliente: $[6{,}18,\ 6{,}58]$~ms; run1-fr\'io:
+$[11{,}81,\ 12{,}47]$~ms. La tasa de error fue \textbf{0{,}0\,\%} en las
+seis corridas, sin excepci\'on.
+
+% EVIDENCIA-FRED-03
+% Ruta esperada: figuras/fred/03-k6-cold.png
+\evidencia{figuras/fred/03-k6-cold.png}%
+{Salida de consola de una corrida de k6 en fr\'io.}%
+{fig:fred-k6-cold}
+
+% EVIDENCIA-FRED-04
+% Ruta esperada: figuras/fred/04-k6-warm.png
+\evidencia{figuras/fred/04-k6-warm.png}%
+{Salida de consola de una corrida de k6 en caliente.}%
+{fig:fred-k6-warm}
+
+% EVIDENCIA-FRED-06
+% Ruta esperada: figuras/fred/06-performance-report.png
+\evidencia{figuras/fred/06-performance-report.png}%
+{Vista del reporte agregado de rendimiento (\texttt{docs/mediciones/perf/REPORT.md}).}%
+{fig:fred-performance-report}
+
+\section{An\'alisis estad\'istico}
+
+La agregaci\'on de cada corrida (\texttt{scripts/perf-analysis.py}) calcula
+media, mediana, desviaci\'on est\'andar muestral, intervalo de confianza al
+95\,\% por distribuci\'on t de Student, y los percentiles p50/p90/p95/p99
+de \texttt{http_req_duration} directamente sobre los datos crudos de cada
+archivo \texttt{k6-runN-\{frio,caliente\}.json}, sin mezclar corridas entre
+s\'i.
+
+\section{Limitaciones registradas}
+
+\begin{itemize}[nosep]
+  \item Las corridas de k6 se ejecutaron en una \'unica m\'aquina de
+    desarrollo, con duraci\'on limitada ($\sim$30--35~s por corrida, 50~VUs);
+    no se evalu\'o comportamiento bajo cargas sostenidas de mayor duraci\'on
+    ni con m\'as usuarios virtuales.
+  \item El hit ratio ``global'' de Redis ($\approx$49{,}98\,\%) mezcla
+    lecturas de cach\'e con lecturas de lista negra de JWT; se documenta la
+    medici\'on aislada como la m\'as representativa, sin ocultar la
+    primera cifra.
+  \item La contrase\~na de desarrollo de \texttt{biopet_app} queda en texto
+    plano en \texttt{db/roles.sql} y \texttt{.env.example} porque los
+    scripts de inicializaci\'on de Postgres no pueden leer variables de
+    entorno de Spring Boot; se documenta como valor exclusivamente de
+    desarrollo (ADR-004).
+  \item \texttt{db/schema.sql} es una copia manual de
+    \texttt{V1__schema_inicial.sql}: si se agrega una nueva migraci\'on
+    Flyway, debe actualizarse manualmente para no quedar desfasada en una
+    clonaci\'on limpia.
+  \item El trigger \texttt{set_actualizado_en} no cuenta con un test de
+    integraci\'on dedicado exclusivamente a \'el; se verifica de forma
+    impl\'icita en las pruebas que hacen \texttt{UPDATE}.
+\end{itemize}

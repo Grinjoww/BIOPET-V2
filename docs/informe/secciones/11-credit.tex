@@ -1,0 +1,77 @@
+\chapter{Contribuciones (taxonom\'ia CRediT)}
+\label{cap:credit}
+
+La siguiente tabla asigna categor\'ias de la taxonom\'ia CRediT
+(\emph{Contributor Roles Taxonomy})~\cite{credit-taxonomy} a cada
+integrante del equipo, \'unicamente sobre el trabajo efectivamente
+documentado en el repositorio (c\'odigo, ADR, evidencia de mediciones,
+Postman, requisitos). Ninguna categor\'ia se asigna sin respaldo
+verificable.
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Contribuciones CRediT del equipo BMT en la Tercera Entrega de BIOPET.}
+  \label{tab:credit}
+  \begin{tabular}{@{}p{4.2cm}ccc@{}}
+    \toprule
+    Categor\'ia CRediT & Jaime & Fred & Zaida \\
+    \midrule
+    Conceptualization & \checkmark & \checkmark & \checkmark \\
+    Methodology & \checkmark & \checkmark & \checkmark \\
+    Software & \checkmark & \checkmark & \checkmark \\
+    Validation & \checkmark & \checkmark & \\
+    Formal analysis & & \checkmark & \\
+    Investigation & \checkmark & \checkmark & \checkmark \\
+    Data curation & \checkmark & \checkmark & \\
+    Writing -- Original Draft & \checkmark & & \checkmark \\
+    Writing -- Review \& Editing & \checkmark & \checkmark & \checkmark \\
+    Visualization & \checkmark & \checkmark & \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Detalle por integrante}
+
+\subsection*{Jaime Josu\'e Mariscal Cabrera}
+Seguridad del backend (OWASP A01, A02, A03, A05, A07, A09); dise\~no e
+implementaci\'on de la autenticaci\'on por cookies, revocaci\'on de tokens,
+rate limiting de login y auditor\'ia estructurada; formato uniforme de
+error \texttt{ProblemDetail}; pruebas automatizadas asociadas
+(\texttt{AuthControllerTest}, \texttt{JwtCookieAuthenticationTest},
+\texttt{SqlInjectionSecurityTest}, \texttt{SecurityHeadersTest},
+\texttt{AuthenticationAuditServiceTest}, entre otras); integraci\'on y
+umbral autom\'atico de cobertura JaCoCo; colecci\'on y entorno Postman
+reproducibles; diagrama C4 Nivel~3 de componentes del backend; ADR-006; y
+la documentaci\'on de seguridad de \texttt{docs/mediciones/sec/} y de las
+secciones de Seguridad y Cobertura JaCoCo del diccionario de datos.
+
+\subsection*{Fred Adri\'an Beltr\'an Montiel}
+Estrategia de base de datos reproducible con PostgreSQL (ADR-004):
+separaci\'on de privilegios (\texttt{biopet_app}), scripts de
+inicializaci\'on de Docker (\texttt{db/schema.sql}, \texttt{db/roles.sql},
+\texttt{db/seed.sql}); reproducibilidad del despliegue (ADR-005):
+\texttt{Makefile} y pinning de im\'agenes por digest \texttt{sha256};
+funci\'on nativa \texttt{fn_resumen_mascotas_por_especie} y su prueba de
+integraci\'on con Testcontainers; cach\'e Redis del listado de mascotas;
+dise\~no, ejecuci\'on y an\'alisis estad\'istico de las corridas de
+rendimiento con k6 (intervalos de confianza, percentiles, tasa de error,
+throughput, hit ratio).
+
+\subsection*{Zaida Melissa Taipe Mora}
+Consolidaci\'on de la ingenier\'ia de requisitos (SRS, historias de
+usuario, casos de uso, \texttt{CHANGELOG-REQ.md}); desarrollo del frontend
+Angular (autenticaci\'on por cookies, guardas de ruta, interceptor de
+errores); CRUD de mascotas accesible en la interfaz (atributos ARIA,
+manejo de foco y anuncios de error para lectores de pantalla); dise\~no
+metodol\'ogico de las mediciones de usabilidad (SUS) y accesibilidad
+autom\'atica (Lighthouse), pendientes de ejecuci\'on; documentaci\'on
+funcional del sistema.
+
+\bigskip
+\noindent\textit{Nota:} las tareas de base compartidas de la Entrega~1B
+(estructura inicial del CRUD de mascotas en el backend, esquema JWT
+original) no se atribuyen individualmente en esta tabla por no existir en
+el repositorio de la Tercera Entrega un registro de autor\'ia expl\'icito
+por commit que permita separarlas con certeza; se documentan como trabajo
+de equipo en la matriz de trazabilidad (cap\'itulo~\ref{cap:trazabilidad}).
