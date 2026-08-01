@@ -1,0 +1,17 @@
+﻿{
+    "schema":  "biopet-newman-summary-v1",
+    "generatedAt":  "2026-07-31T23:37:43.4717942-05:00",
+    "newmanVersion":  "6.2.2",
+    "collection":  null,
+    "environment":  "BIOPET - Local academico (plantilla sin secretos)",
+    "result":  "SUCCESS",
+    "requests":  {
+                     "total":  46,
+                     "failed":  0
+                 },
+    "assertions":  {
+                       "total":  234,
+                       "failed":  0
+                   },
+    "failures":  0
+}
