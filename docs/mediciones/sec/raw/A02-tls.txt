@@ -1,0 +1,29 @@
+# A02 - Cryptographic Failures - evidencia real
+# Generado: 2026-08-01T00:02:02Z
+
+## openssl s_client -connect localhost:8443 -tls1_3
+Protocol: TLSv1.3
+    Cipher    : TLS_AES_256_GCM_SHA384
+
+## Certificado servido (subject/SAN, autofirmado academico)
+        Issuer: C=EC, ST=Local, L=Local, O=BIOPET, OU=BIOPET Dev, CN=localhost
+        Subject: C=EC, ST=Local, L=Local, O=BIOPET, OU=BIOPET Dev, CN=localhost
+                DNS:localhost, IP Address:127.0.0.1
+
+## HTTP 8080 (conector interno, sin TLS) - cabeceras
+HTTP/1.1 200 
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+X-Frame-Options: DENY
+Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 'none'
+Referrer-Policy: no-referrer
+Content-Type: application/vnd.spring-boot.actuator.v3+json
+Transfer-Encoding: chunked
+Date: Sat, 01 Aug 2026 00:02:05 GMT
+

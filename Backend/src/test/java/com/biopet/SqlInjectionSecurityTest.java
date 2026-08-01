@@ -24,7 +24,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -53,6 +52,7 @@ class SqlInjectionSecurityTest {
     private static final String IP_LOGIN_POSTERIOR = "203.0.113.202";
 
     private static final String PAYLOAD_EMAIL_INYECCION = "admin@biopet.com' OR '1'='1";
+    private static final String PAYLOAD_EMAIL_LITERAL_GUIA = "' OR '1'='1";
     private static final String PAYLOAD_OR = "1 OR 1=1";
     private static final String PAYLOAD_DROP = "1; DROP TABLE usuarios; --";
     private static final String PAYLOAD_UNION = "%' UNION SELECT NULL --";
@@ -93,15 +93,19 @@ class SqlInjectionSecurityTest {
 
     @Test
     void loginConEmailDeInyeccionNoAutentica() throws Exception {
+        // Confirmado empiricamente (curl real contra el stack Docker, ver
+        // docs/mediciones/sec/raw/A03-injection.txt): @Email (Bean Validation)
+        // rechaza este payload de forma deterministica con 422, siempre antes
+        // de que AuthService intente autenticar. Ya no se acepta 401 como
+        // alternativa valida: eso dejaba sin resolver cual de los dos
+        // mecanismos realmente se ejecuta.
         MvcResult result = loginDesde(PAYLOAD_EMAIL_INYECCION, "ClaveCualquiera123*", IP_LOGIN_INYECCION)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:validation"))
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.errors.email").exists())
                 .andReturn();
-
-        int status = result.getResponse().getStatus();
-        assertNotEquals(200, status,
-                "Un email con sintaxis de inyeccion SQL nunca debe autenticar.");
-        assertTrue(status == 401 || status == 422,
-                "Se esperaba 401 (rechazo de autenticacion) o 422 (rechazo de @Email), pero fue " + status
-                        + ". Documentar cual ocurrio realmente.");
 
         List<String> cookies = result.getResponse().getHeaders(HttpHeaders.SET_COOKIE);
         assertTrue(cookies.stream().noneMatch(c -> c.startsWith("access_token=")));
@@ -112,6 +116,33 @@ class SqlInjectionSecurityTest {
         // La base de datos sigue operativa: un login valido posterior funciona con normalidad.
         loginDesde(EMAIL_VALIDO, PASSWORD_VALIDO, IP_LOGIN_POSTERIOR)
                 .andExpect(status().isOk());
+    }
+
+    /**
+     * Usa el payload EXACTO citado por la guia de la Tercera Entrega
+     * (Bloque C.2, control A03): {@code ' OR '1'='1}, sin arroba, en el
+     * campo email de POST /api/auth/login — la interpretacion literal de
+     * "un campo de busqueda". Bean Validation (@Email) lo rechaza con 422
+     * antes de llegar a AuthService, cerrando la discrepancia 400 vs 422
+     * detectada originalmente contra /api/mascotas/resumen-especies (un
+     * endpoint y payload distintos, con un mecanismo de rechazo distinto).
+     */
+    @Test
+    void loginConPayloadLiteralDeLaGuiaDevuelve422() throws Exception {
+        MvcResult result = loginDesde(PAYLOAD_EMAIL_LITERAL_GUIA, "ClaveCualquiera123*", IP_LOGIN_INYECCION)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:validation"))
+                .andExpect(jsonPath("$.title").value("Error de validación"))
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.instance").value("/api/auth/login"))
+                .andExpect(jsonPath("$.errors.email").exists())
+                .andReturn();
+
+        String body = result.getResponse().getContentAsString();
+        assertFalse(body.contains(PAYLOAD_EMAIL_LITERAL_GUIA),
+                "El body no debe reflejar el payload completo enviado.");
+        assertSinFugaDeInformacionInterna(body);
     }
 
     @Test

@@ -12,16 +12,24 @@ cd Backend
 mvn clean verify
 ```
 
-## Resultado real (reejecutado el 2026-07-31)
+## Resultado real (reejecutado el 2026-08-01)
 
 ```
-[INFO] Tests run: 108, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 109, Failures: 0, Errors: 0, Skipped: 0
 ...
 [INFO] --- jacoco:0.8.12:check (check) @ biopet-backend ---
 [INFO] Analyzed bundle 'biopet-backend' with 26 classes
 [INFO] All coverage checks have been met.
 [INFO] BUILD SUCCESS
 ```
+
+El total sube de 108 a 109 respecto de la evidencia anterior (2026-07-31):
+se reemplazó la aserción ambigua de `SqlInjectionSecurityTest.loginConEmailDeInyeccionNoAutentica`
+(antes aceptaba 401 **o** 422 sin resolver cuál ocurría realmente) por una
+aserción exacta de 422, y se añadió `loginConPayloadLiteralDeLaGuiaDevuelve422`
+con el payload literal exigido por la guía para el control A03 — ver
+`A03-injection.md`. La cobertura no cambia porque ambas pruebas ejercitan
+rutas de código ya cubiertas.
 
 ## Cobertura global (calculada como `covered / (covered + missed)` sobre `target/site/jacoco/jacoco.xml`)
 
@@ -47,7 +55,7 @@ regla.
   para calcular las cifras de este documento)
 
 **`Backend/target/` no se versiona** (excluido en `.gitignore` bajo el
-patrón `backend/target/`); estos reportes se generan localmente en cada
+patrón `Backend/target/`); estos reportes se generan localmente en cada
 ejecución de `mvn clean verify` y deben reproducirse, no copiarse al
 repositorio.
 

@@ -77,11 +77,52 @@ prueba):
 con cabecera `Retry-After: <segundos>` — nunca se copia un token real en este
 documento; el valor de `Retry-After` es un entero de segundos, no un secreto.
 
+## Evidencia HTTP real (curl, no solo prueba JUnit)
+
+Generada el 2026-08-01 (commit `136b707`, cambios de esta tarea aún sin
+confirmar) contra el stack Docker real
+(perfil `tls`) con `scripts/security-evidence.sh`, guardada íntegra y
+sanitizada en [`raw/A07-auth-rate-limit.txt`](raw/A07-auth-rate-limit.txt):
+
+- **Atributos de cookie reales** (valor redactado, atributos visibles):
+  ```
+  Set-Cookie: access_token=[REDACTADO]; Path=/; Max-Age=3600; Expires=...; Secure; HttpOnly; SameSite=Strict
+  Set-Cookie: refresh_token=[REDACTADO]; Path=/api/auth; Max-Age=604800; Expires=...; Secure; HttpOnly; SameSite=Strict
+  ```
+- **Refresh real** con la cookie de refresh válida → `200`, nueva cookie de
+  access emitida.
+- **Logout real** → `204`.
+- **Prueba de la blacklist Redis sin exponer el token:** antes del logout se
+  guarda una copia local (nunca impresa) de la cookie de access; tras el
+  logout, esa misma cookie se reenvía contra `GET /api/usuarios/me` →
+  **401** — el JTI ya está en la blacklist de Redis (`TokenBlacklistService`),
+  confirmado también por el evento `TOKEN_REVOKED` en `A09-audit-logs.txt`.
+- **Rate limiting real, misma IP, sin carga agresiva** (6 peticiones en
+  total, no más): 5 intentos fallidos con credenciales inválidas → `401`
+  cada uno; el 6º → **`429`** con cabecera real `Retry-After: 900`.
+- **Cuenta usada para el rate limiting:** una dirección ficticia
+  (`example.test`) que nunca llegó a registrarse — el bloqueo es por IP
+  (`LoginRateLimiterService`), no por cuenta, así que no hizo falta una
+  cuenta real ni una contraseña real equivocada.
+
+**Limitación de esta ejecución (documentada, no oculta):** no se esperó la
+ventana de bloqueo de 15 minutos (`security.rate-limit.login.block-duration`)
+para demostrar un login exitoso posterior desde la misma IP — excede el
+alcance de una ejecución automatizada de este script. La IP usada queda
+bloqueada por ~15 minutos tras cada corrida.
+
 ## Reproducción
 
 ```bash
 cd Backend
 mvn -Dtest=AuthControllerTest,JwtCookieAuthenticationTest test
+```
+
+Evidencia HTTP real (end-to-end, requiere el stack Docker levantado; la
+variable de entorno `ADMIN_PASSWORD` es obligatoria):
+
+```bash
+ADMIN_PASSWORD='...' scripts/security-evidence.sh
 ```
 
 ## Limitaciones

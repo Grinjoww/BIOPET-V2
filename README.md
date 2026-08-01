@@ -137,7 +137,7 @@ Resultado real más reciente:
 
 | Métrica | Valor |
 |---|---|
-| Pruebas ejecutadas | 108 |
+| Pruebas ejecutadas | 109 |
 | Fallos | 0 |
 | Errores | 0 |
 | Omitidas | 0 |
@@ -355,8 +355,6 @@ nueva imagen.
   (`docker-compose.yml`, sin réplicas).
 - Los logs de auditoría (`AUTH_AUDIT`) son locales al proceso/contenedor,
   sin integración con un SIEM centralizado.
-- `make bench` y `make audit` no están implementados (ver
-  [Comandos del Makefile](#comandos-del-makefile)).
 - Las mediciones de usabilidad (SUS) y de accesibilidad automatizada
   (Lighthouse) todavía no se han ejecutado y no tienen resultados
   versionados.

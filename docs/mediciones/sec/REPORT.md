@@ -28,9 +28,20 @@ en fases anteriores (7A–7E, 8A–8B) del proyecto.
 
 ## Fecha y commit
 
-- Fecha (ISO 8601, UTC): `2026-07-31`
-- Commit corto usado como base de esta evidencia: `a781fcf`
-- Rama: `jaime/evidencias-owasp` (creada desde `main` actualizado)
+- Fecha (ISO 8601, UTC) de la evidencia de código/pruebas original: `2026-07-31`
+- Commit corto usado como base de esa evidencia: `a781fcf`
+- Rama original: `jaime/evidencias-owasp` (creada desde `main` actualizado)
+- **Actualización con evidencia HTTP real (A01, A03, A07, A09) y ejecución
+  automatizada completa de los seis controles**: fecha `2026-07-31`, commit
+  `136b707`, rama `jaime/owasp-evidencias-reales`, generada con
+  `scripts/security-evidence.sh` contra el stack Docker real (perfil `tls`).
+- **Cierre de la discrepancia A03 (400 vs. 422)**: fecha `2026-08-01`, misma
+  rama. Se determinó que el endpoint y payload correctos para demostrar el
+  caso exigido por la guía (Bloque C.2, "un campo de búsqueda") es el campo
+  `email` de `POST /api/auth/login`, no `duenioId` en
+  `/api/mascotas/resumen-especies`. Confirmado con **422** real y
+  determinístico en tres payloads distintos, sin modificar código
+  productivo — ver `A03-injection.md`.
 
 ## Entorno de ejecución
 
@@ -79,17 +90,59 @@ en fases anteriores (7A–7E, 8A–8B) del proyecto.
 
 | Categoría | Control comprobado | Evidencia | Resultado |
 |---|---|---|---|
-| A01 | Autorización por propietario (`ROLE_DUENO`) y acceso global por rol (`ADMIN`/`VETERINARIO`/`AUXILIAR`); 401 sin autenticación, 403 con autenticación pero sin permiso | `docs/mediciones/sec/A01-access-control.md`, `MascotaControllerTest` | PASS |
-| A02 | HTTPS real en `https://localhost:8443` con TLS 1.3 y cifrado AEAD; cookies `HttpOnly`+`Secure`+`SameSite=Strict` | `docs/mediciones/sec/A02-cryptography-tls.md`, ejecución real con `curl.exe`/`openssl s_client` | PASS |
-| A03 | Consultas parametrizadas (Spring Data + `@Query` nativa con `:duenioId` enlazado); payloads de inyección tratados como texto/tipo inválido, nunca como SQL | `docs/mediciones/sec/A03-injection.md`, `SqlInjectionSecurityTest` | PASS |
-| A05 | Cabeceras HTTP (`X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, CSP, HSTS condicional a HTTPS), CORS con origen concreto | `docs/mediciones/sec/A05-security-headers.md`, `SecurityHeadersTest` | PASS |
-| A07 | Login/refresh/logout por cookies, revocación de tokens, rate limiting 401→429 con `Retry-After`, reinicio de contador tras éxito | `docs/mediciones/sec/A07-authentication.md`, `AuthControllerTest`, `JwtCookieAuthenticationTest` | PASS |
-| A09 | Eventos `AUTH_AUDIT` estructurados, sin contraseñas/JWT/cookies/JTI, con sanitización anti log-forging | `docs/mediciones/sec/A09-logging.md`, `AuthenticationAuditServiceTest` | PASS |
+| A01 | Autorización por propietario (`ROLE_DUENO`) y acceso global por rol (`ADMIN`/`VETERINARIO`/`AUXILIAR`); 401 sin autenticación, 403 con autenticación pero sin permiso | `docs/mediciones/sec/A01-access-control.md`, `MascotaControllerTest`, **evidencia HTTP real** `raw/A01-access-control.txt` | PASS |
+| A02 | HTTPS real en `https://localhost:8443` con TLS 1.3 y cifrado AEAD; cookies `HttpOnly`+`Secure`+`SameSite=Strict` | `docs/mediciones/sec/A02-cryptography-tls.md`, ejecución real con `curl.exe`/`openssl s_client`, `raw/A02-tls.txt` | PASS |
+| A03 | Consultas parametrizadas (Spring Data + `@Query` nativa con `:duenioId` enlazado); payload de inyección en el campo `email` de login rechazado por Bean Validation con 422 real | `docs/mediciones/sec/A03-injection.md`, `SqlInjectionSecurityTest`, **evidencia HTTP real** `raw/A03-injection.txt` | PASS |
+| A05 | Cabeceras HTTP (`X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, CSP, HSTS condicional a HTTPS), CORS con origen concreto | `docs/mediciones/sec/A05-security-headers.md`, `SecurityHeadersTest`, `raw/A05-security-headers.txt` | PASS |
+| A07 | Login/refresh/logout por cookies, revocación de tokens, rate limiting 401→429 con `Retry-After`, reinicio de contador tras éxito | `docs/mediciones/sec/A07-authentication.md`, `AuthControllerTest`, `JwtCookieAuthenticationTest`, **evidencia HTTP real** `raw/A07-auth-rate-limit.txt` | PASS |
+| A09 | Eventos `AUTH_AUDIT` estructurados, sin contraseñas/JWT/cookies/JTI, con sanitización anti log-forging | `docs/mediciones/sec/A09-logging.md`, `AuthenticationAuditServiceTest`, **evidencia real de contenedor** `raw/A09-audit-logs.txt` | PASS |
 
 "PASS" indica que las pruebas y evidencias referenciadas se ejecutaron
-realmente y su resultado coincide con el comportamiento documentado — no
-implica ausencia total de riesgo residual, que se detalla en cada documento
-individual y en las limitaciones de cada categoría.
+realmente y su resultado coincide **exactamente** con el comportamiento que
+exige la guía — no implica ausencia total de riesgo residual, que se
+detalla en cada documento individual y en las limitaciones de cada
+categoría.
+
+**Historial de A03 (transparencia del proceso, no un problema abierto):**
+la primera ronda de evidencia HTTP real (2026-07-31) probó los payloads de
+inyección contra `duenioId` (`GET /api/mascotas/resumen-especies`), un
+parámetro `Long`, obteniendo **400** (rechazo en el *binding* de Spring MVC)
+en vez del **422** que exige la guía — documentado en su momento como
+discrepancia conocida, sin ocultarla ni marcarla como PASS. El 2026-08-01 se
+determinó que el endpoint correcto para el caso que pide la guía ("un campo
+de búsqueda") es el campo `email` de `POST /api/auth/login`: un payload de
+inyección ahí no tiene forma de correo válida y es rechazado por Bean
+Validation (`@Email`) con **422** real, verificado con tres payloads
+distintos. No se modificó código productivo; el cambio fue de endpoint y
+payload elegidos para la evidencia. El caso `duenioId`/400 se conserva en
+`raw/A03-injection.txt` como evidencia adicional de defensa en profundidad
+(un mecanismo de rechazo distinto, igualmente seguro), sin contar como
+verificación pass/fail.
+
+## Ejecución automatizada de los seis controles (`scripts/security-evidence.sh`)
+
+El 2026-08-01 (commit `136b707`, con cambios de esta tarea aún sin
+confirmar/`commit`) se ejecutó `scripts/security-evidence.sh` de punta a
+punta contra el stack Docker real (perfil `tls`): `mvn -B clean verify`
+(**109/109 pruebas**, 0 fallos, 0 errores; JaCoCo `LINE 95.87%`/`BRANCH
+76.87%`/`COMPLEXITY 80.00%`, todas por encima del umbral 60%),
+levantamiento del stack sin `down -v` ni `reset-db`, y una secuencia real
+de peticiones HTTP para cada uno de los seis controles, usando dos cuentas
+académicas temporales (`example.test`, contraseña aleatoria nunca impresa)
+y la cuenta admin semilla (leída obligatoriamente de la variable de entorno
+`ADMIN_PASSWORD`, sin valor por defecto en el script). **Las 28 de 28
+verificaciones puntuales automatizadas resultaron `CUMPLE`**; el script
+terminó con código de salida **0**. El frontend quedó en estado `starting`
+durante la ejecución (limitación registrada en `raw/frontend-limitacion.txt`,
+sin afectar ninguno de los controles del backend evaluados aquí).
+
+Nota sobre el total de verificaciones: la ronda anterior (2026-07-31)
+reportó incorrectamente "21" verificaciones por un error de conteo en el
+resumen final del script (un identificador duplicado —`A07.5`— y varias
+verificaciones omitidas de la lista impresa, aunque sí se habían ejecutado y
+contado correctamente para el código de salida). Se corrigió el script
+(identificadores únicos, enumeración completa) antes de esta ejecución; el
+total real y verificado es **28**.
 
 ## Documentos de esta carpeta
 

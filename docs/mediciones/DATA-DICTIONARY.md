@@ -40,15 +40,20 @@ inmediatamente antes de la corrida de referencia.
 
 Fuentes reales: los documentos `A01-access-control.md`, `A02-cryptography-tls.md`,
 `A03-injection.md`, `A05-security-headers.md`, `A07-authentication.md` y
-`A09-logging.md` de esta misma carpeta (evidencia ya verificada en la Fase 9A
-contra el código y contra pruebas automatizadas reales); las salidas locales
-que generan `scripts/security-evidence.ps1`/`.sh` en `docs/mediciones/sec/raw/`
-(`mvn-clean-verify.txt`, `docker-compose-config.txt`, `docker-compose-ps.txt`,
-`http-8080-headers.txt`, `https-8443-headers.txt` — carpeta con solo `.gitkeep`
-versionado, el resto se regenera localmente y no se sube al repositorio);
-`curl`/`curl.exe` y `openssl s_client` contra el stack Docker real; la suite
-`mvn clean verify` (`Backend/src/test/java/com/biopet/**`); y los logs
-estructurados `AUTH_AUDIT` que emite `AuthenticationAuditService`.
+`A09-logging.md` de esta misma carpeta (evidencia verificada contra el
+código, contra pruebas automatizadas reales y, desde 2026-07-31, contra
+peticiones HTTP reales); las salidas que genera `scripts/security-evidence.sh`
+(canónico) / `.ps1` en `docs/mediciones/sec/raw/` — `mvn-clean-verify.txt`,
+`docker-compose-config.txt`, `docker-compose-ps.txt`, y, por cada uno de los
+seis controles, un archivo dedicado: `A01-access-control.txt`, `A02-tls.txt`,
+`A03-injection.txt`, `A05-security-headers.txt`, `A07-auth-rate-limit.txt`,
+`A09-audit-logs.txt` (nota: esta carpeta **no** está excluida por
+`.gitignore` más allá de `.gitkeep`; los archivos que el script genera son
+evidencia real, sanitizada, destinada a versionarse, no una salida
+puramente local descartable); `curl`/`curl.exe` y `openssl s_client` contra
+el stack Docker real; la suite `mvn clean verify`
+(`Backend/src/test/java/com/biopet/**`); y los logs estructurados
+`AUTH_AUDIT` obtenidos con `docker compose logs backend`.
 
 ### Respuestas HTTP y autorización
 
@@ -138,12 +143,11 @@ lleguen al logger (`A09-logging.md`, `noRegistraDatosSensibles`).
 
 | Variable | Tipo de dato | Unidad | Rango esperado | Significado |
 |---|---|---|---|---|
-| security_tests_run | Entero | pruebas | 107 | Total de pruebas ejecutadas por `mvn clean verify` (suite completa del módulo, no solo las clases de seguridad; es la única cifra agregada real disponible — ver también la sección de JaCoCo). |
-| security_tests_run | Entero | pruebas | 108 | Total de pruebas ejecutadas por `mvn clean verify` (suite completa del módulo, no solo las clases de seguridad; es la única cifra agregada real disponible — ver también la sección de JaCoCo). |
+| security_tests_run | Entero | pruebas | 109 | Total de pruebas ejecutadas por `mvn clean verify` (suite completa del módulo, no solo las clases de seguridad; es la única cifra agregada real disponible — ver también la sección de JaCoCo). Sube de 108 a 109 el 2026-08-01 al reemplazar la aserción ambigua de `SqlInjectionSecurityTest.loginConEmailDeInyeccionNoAutentica` (antes aceptaba 401 o 422) por una aserción exacta de 422, y añadir `loginConPayloadLiteralDeLaGuiaDevuelve422` con el payload literal de la guía. |
 | failures | Entero | pruebas | 0 | Aserciones fallidas reportadas por Surefire/Failsafe. |
 | errors | Entero | pruebas | 0 | Errores no controlados durante la ejecución de pruebas. |
 | skipped | Entero | pruebas | 0 | Pruebas omitidas. |
-| test_result | Texto (categórico) | — | {BUILD SUCCESS} | Resultado agregado final de `mvn clean verify`, reejecutado el 2026-07-31 (`jacoco-summary.md`). |
+| test_result | Texto (categórico) | — | {BUILD SUCCESS} | Resultado agregado final de `mvn clean verify`, reejecutado el 2026-08-01. |
 
 ## Usabilidad SUS (`docs/mediciones/sus/sus-raw.csv`) — responsable: Zaida
 
@@ -215,8 +219,7 @@ contra `docs/mediciones/sec/jacoco-summary.md`:
 
 | Variable | Tipo de dato | Unidad | Rango esperado | Significado |
 |---|---|---|---|---|
-| tests_run | Entero | pruebas | 107 | Total de pruebas ejecutadas por `mvn clean verify`, verificado sumando `Tests run:` de todos los `Backend/target/surefire-reports/*.txt` generados localmente. |
-| tests_run | Entero | pruebas | 108 | Total de pruebas ejecutadas por `mvn clean verify`, verificado sumando `Tests run:` de todos los `Backend/target/surefire-reports/*.txt` generados localmente. |
+| tests_run | Entero | pruebas | 109 | Total de pruebas ejecutadas por `mvn clean verify`, verificado sumando `Tests run:` de todos los `Backend/target/surefire-reports/*.txt` generados localmente (109/109, 0 fallos, 0 errores, reejecutado el 2026-08-01). |
 | test_failures | Entero | pruebas | 0 | Suma de `Failures:` de los mismos reportes. |
 | test_errors | Entero | pruebas | 0 | Suma de `Errors:` de los mismos reportes. |
 | test_skipped | Entero | pruebas | 0 | Suma de `Skipped:` de los mismos reportes. |
