@@ -62,11 +62,29 @@ con credenciales.
 | `preflightCorsDesdeOrigenPermitidoAceptaCredenciales` | Preflight `OPTIONS /api/auth/login` con `Origin: http://localhost:4200` responde `Access-Control-Allow-Origin: http://localhost:4200` (nunca `*`), `Access-Control-Allow-Credentials: true`, y `POST` incluido en `Access-Control-Allow-Methods` |
 | `preflightCorsDesdeOrigenNoPermitidoEsRechazado` | Preflight con `Origin: https://evil.example` no recibe `Access-Control-Allow-Origin` ni `Access-Control-Allow-Credentials: true` |
 
+## Evidencia automatizada (2026-08-01, commit `136b707`)
+
+`scripts/security-evidence.sh` verifica en vivo, contra el stack Docker real
+(perfil `tls`), la presencia de las cinco cabeceras de la tabla anterior en
+`POST https://localhost:8443/api/auth/login` (endpoint público), la ausencia
+correcta de `Strict-Transport-Security` en `http://localhost:8080` y la
+ausencia de una cabecera `Server` con versión de software. Evidencia cruda
+en [`raw/A05-security-headers.txt`](raw/A05-security-headers.txt); las 7
+verificaciones automatizadas correspondientes (`A05.1`–`A05.7`) resultaron
+`CUMPLE`.
+
 ## Reproducción
 
 ```bash
 cd Backend
 mvn -Dtest=SecurityHeadersTest test
+```
+
+Evidencia HTTP real (end-to-end, requiere el stack Docker levantado; la
+variable de entorno `ADMIN_PASSWORD` es obligatoria):
+
+```bash
+ADMIN_PASSWORD='...' scripts/security-evidence.sh
 ```
 
 ## Limitaciones

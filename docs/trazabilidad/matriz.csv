@@ -20,6 +20,7 @@ REQ-F-018,funcional,Should,HU-017,CU-17,,,,,,pendiente
 REQ-F-019,funcional,Could,HU-018,CU-18,,,,,,pendiente
 REQ-F-020,funcional,Should,HU-019,CU-19,,,,,,pendiente
 REQ-F-021,funcional,Should,HU-020,CU-20,MascotaController/MascotaRepository,GET /api/mascotas/resumen-especies,ResumenEspeciesIntegrationTest,SP,,verificado
+REQ-F-022,funcional,Could,HU-021,CU-21,,,,,,pendiente
 REQ-NF-001,no funcional,Must,,,Cache Redis (listado mascotas),GET /api/mascotas,k6 (pendiente de ejecutar),CRUD-ORM,docs/mediciones/perf/ (pendiente),pendiente
 REQ-NF-002,no funcional,Must,,,Cache Redis (listado mascotas),GET /api/mascotas,k6 (pendiente de ejecutar),CRUD-ORM,docs/mediciones/perf/ (pendiente),pendiente
 REQ-NF-003,no funcional,Must,,,Nginx / despliegue TLS,N/A,curl -v (pendiente),,docs/mediciones/sec/ (A02 - pendiente),pendiente

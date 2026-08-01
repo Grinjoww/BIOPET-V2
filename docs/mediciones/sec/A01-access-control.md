@@ -61,11 +61,53 @@ la interfaz. Esto se confirma porque las propias pruebas (`MascotaControllerTest
 `AuthControllerTest`) llaman a la API vía `MockMvc`, sin ningún componente de
 frontend involucrado.
 
+## Evidencia HTTP real (curl, no solo prueba JUnit)
+
+Generada el 2026-08-01 (commit `136b707`, cambios de esta tarea aún sin
+confirmar) contra el stack Docker real (perfil
+`tls`) con `scripts/security-evidence.sh`, guardada íntegra en
+[`raw/A01-access-control.txt`](raw/A01-access-control.txt). A diferencia de la
+tabla anterior (que demuestra el control vía `MockMvc`, en el mismo proceso
+que el backend), esta evidencia llega por HTTP/TLS real, sin ningún
+componente de prueba:
+
+1. **Sin autenticación** — `curl https://localhost:8443/api/usuarios/me`
+   (sin cookies) → **401**:
+   ```json
+   {"type":"urn:biopet:error:unauthorized","title":"No autenticado","status":401,"detail":"Se requiere una autenticación válida para acceder a este recurso.","instance":"/api/usuarios/me"}
+   ```
+2. **Cuentas académicas temporales** creadas vía `POST /api/auth/registro`
+   (correo ficticio bajo el dominio `example.test`, contraseña aleatoria
+   nunca impresa ni guardada): Dueño A y Dueño B. El backend fuerza
+   `ROLE_DUENO` sin importar el valor de `rol` enviado (`AuthService.registrar`).
+3. **Acceso a recurso de otro propietario (IDOR)** — el admin crea una
+   mascota asignada al Dueño A; el Dueño B, ya autenticado, solicita
+   `GET /api/mascotas/{id}` de esa misma mascota → **403**:
+   ```json
+   {"type":"urn:biopet:error:forbidden","title":"Acceso denegado","status":403,"detail":"No tiene permisos suficientes para acceder a este recurso.","instance":"/api/mascotas/4"}
+   ```
+4. **Usuario autenticado sin privilegios suficientes** — el Dueño B
+   (`ROLE_DUENO`) intenta `POST /api/mascotas` → **403** (mismo formato
+   `ProblemDetail`, `instance=/api/mascotas`).
+
+**Limpieza:** la mascota de prueba se eliminó lógicamente (soft delete,
+`DELETE /api/mascotas/{id}` → 204) al final de la misma ejecución. No existe
+endpoint `DELETE /api/usuarios`, por lo que las dos cuentas académicas
+quedan como registros residuales, identificables sin ambigüedad por su
+dominio `example.test` y por el prefijo `qa.owasp.a01.*` de su correo.
+
 ## Reproducción
 
 ```bash
 cd Backend
 mvn -Dtest=MascotaControllerTest,AuthControllerTest test
+```
+
+Evidencia HTTP real (end-to-end, requiere el stack Docker levantado; la
+variable de entorno `ADMIN_PASSWORD` es obligatoria):
+
+```bash
+ADMIN_PASSWORD='...' scripts/security-evidence.sh
 ```
 
 ## Limitaciones

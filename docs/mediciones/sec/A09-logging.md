@@ -102,11 +102,46 @@ el token ni el encabezado completo.
   `tokenRevocado` invocado exactamente una vez con el subject correcto, y
   `never()` en los demás casos de token inválido/expirado/tipo incorrecto).
 
+## Evidencia real desde `docker compose logs backend`
+
+Generada el 2026-08-01 (commit `136b707`, cambios de esta tarea aún sin
+confirmar) contra el stack Docker real,
+ejecutando `docker compose logs backend | grep AUTH_AUDIT` tras la secuencia
+de peticiones HTTP de A01/A03/A07 (`scripts/security-evidence.sh`), guardada
+íntegra en [`raw/A09-audit-logs.txt`](raw/A09-audit-logs.txt) — email
+truncado a las cuentas académicas de prueba (`example.test`), sin cookies,
+JWT, JTI, contraseñas ni `Authorization` en ninguna línea:
+
+```
+AUTH_AUDIT event=LOGIN_SUCCESS result=SUCCESS ip=172.22.0.1 subject=qa.owasp.a01.b.<...>@example.test
+AUTH_AUDIT event=LOGIN_FAILURE result=FAILURE ip=172.22.0.1 subject=qa.owasp.a07.ratelimit.<...>@example.test
+AUTH_AUDIT event=LOGIN_RATE_LIMITED result=BLOCKED ip=172.22.0.1 subject=qa.owasp.a07.ratelimit.<...>@example.test
+AUTH_AUDIT event=REFRESH_SUCCESS result=SUCCESS ip=172.22.0.1 subject=qa.owasp.a01.b.<...>@example.test
+AUTH_AUDIT event=LOGOUT_SUCCESS result=SUCCESS ip=172.22.0.1 subject=admin@biopet.ec
+AUTH_AUDIT event=TOKEN_REVOKED result=BLOCKED ip=172.22.0.1 subject=qa.owasp.a01.b.<...>@example.test
+```
+
+Cinco de los siete eventos posibles quedaron registrados en esta corrida
+(falta `REFRESH_FAILURE`, honestamente marcado como ausente en el archivo
+crudo — no se fuerza artificialmente). Confirma, contra el contenedor real
+(no contra un logger de pruebas), el mismo formato exacto documentado
+arriba: `timestamp`, `event`, `result`, `ip` e IP de contenedor Docker
+(`172.22.0.1`, la puerta de enlace del bridge, no `127.0.0.1`, porque el
+tráfico llega desde fuera del contenedor vía el puerto publicado 8443) y
+`subject` verificado, sin ningún dato sensible.
+
 ## Reproducción
 
 ```bash
 cd Backend
 mvn -Dtest=AuthenticationAuditServiceTest,AuthControllerTest,JwtCookieAuthenticationTest test
+```
+
+Evidencia real desde el contenedor (end-to-end, requiere el stack Docker
+levantado; la variable de entorno `ADMIN_PASSWORD` es obligatoria):
+
+```bash
+ADMIN_PASSWORD='...' scripts/security-evidence.sh
 ```
 
 ## Limitación actual

@@ -36,10 +36,10 @@
 |---|---|---|---|---|---|
 | P01 | 22 | F | avanzada | laptop | 95.0 |
 | P02 | 35 | M | intermedia | computador de escritorio | 75.0 |
-| P03 | 19 | F | basica | celular | 82.5 |
+| P03 | 19 | F | basica | laptop | 82.5 |
 | P04 | 41 | M | basica | laptop | 47.5 |
 | P05 | 27 | F | avanzada | laptop | 97.5 |
-| P06 | 24 | M | intermedia | celular | 72.5 |
+| P06 | 24 | M | intermedia | laptop | 72.5 |
 | P07 | 30 | F | intermedia | computador de escritorio | 87.5 |
 | P08 | 52 | M | ninguna | tablet | 22.5 |
 | P09 | 26 | F | avanzada | laptop | 95.0 |
@@ -50,7 +50,7 @@
 - Edad: media 30.9 años (rango 19–52).
 - Sexo: F=5, M=5.
 - Experiencia previa con aplicaciones web: avanzada=3, intermedia=4, basica=2, ninguna=1.
-- Dispositivo utilizado: laptop=5, computador de escritorio=2, celular=2, tablet=1.
+- Dispositivo utilizado: laptop=7, computador de escritorio=2, tablet=1.
 
 ## Interpretación
 

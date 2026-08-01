@@ -7,6 +7,77 @@ repositorio (c\'odigo fuente, configuraci\'on, documentos de evidencia y
 ADR). No se describe ninguna funcionalidad planeada que no est\'e ya
 implementada.
 
+\section{Cierre de observaciones de las Entregas 1A y 1B (Bloque 0)}
+\label{sec:cierre-observaciones}
+
+Las ocho observaciones formuladas por el docente en la retroalimentaci\'on
+oficial del aula virtual SGA (Entrega~1A, semana~5; Entrega~1B, semana~6)
+est\'an \textbf{cerradas en su totalidad}. El detalle completo de cada una
+(texto literal, criterio, decisi\'on del equipo, correcci\'on realizada y
+commit de cierre) est\'a en \texttt{docs/observaciones/OBSERVACIONES.md}.
+
+\begin{table}[H]
+  \centering
+  \caption{Resumen de cierre de observaciones (Bloque 0).}
+  \label{tab:cierre-observaciones}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    C\'odigo & Entrega & Estado \\
+    \midrule
+    OBS-01 & 1A & Cerrada \\
+    OBS-02 & 1A & Cerrada \\
+    OBS-03 & 1A & Cerrada \\
+    OBS-04 & 1A & Cerrada \\
+    OBS-05 & 1B & Cerrada \\
+    OBS-06 & 1B & Cerrada \\
+    OBS-07 & 1B & Cerrada \\
+    OBS-08 & 1B & Cerrada \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Porcentaje de cierre: 8/8 (100\,\%).} El tag anotado
+\texttt{v0.1.0-entrega-1b} (exigido por OBS-08) apunta al commit hist\'orico
+de cierre de la Entrega~1B; el tag \texttt{v0.7.1} marca el commit en el que
+qued\'o cerrado el Bloque~0 completo. Ninguna observaci\'on queda abierta ni
+parcialmente resuelta.
+
+\section{Auditor\'ia OWASP (resumen)}
+\label{sec:owasp-resumen}
+
+Se auditaron los seis controles OWASP Top~10 aplicables al alcance actual
+del backend (A01, A02, A03, A05, A07 y A09), con evidencia HTTP real
+capturada por \texttt{scripts/security-evidence.sh} contra el stack Docker
+en ejecuci\'on (perfil \texttt{tls}). El detalle por control est\'a en
+\texttt{docs/mediciones/sec/REPORT.md} y en los documentos individuales
+\texttt{A0\{1,2,3,5,7,9\}-*.md}; el detalle t\'ecnico ampliado de A03 y A09
+se documenta en el cap\'itulo~\ref{cap:resultados-jaime}.
+
+\begin{table}[H]
+  \centering
+  \caption{Resultado de la auditor\'ia OWASP por control (fuente: \texttt{docs/mediciones/sec/REPORT.md}).}
+  \label{tab:owasp-resumen}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Control OWASP & Resultado \\
+    \midrule
+    A01 --- Control de acceso roto & PASS \\
+    A02 --- Fallas criptogr\'aficas (TLS) & PASS \\
+    A03 --- Inyecci\'on & PASS \\
+    A05 --- Configuraci\'on de seguridad & PASS \\
+    A07 --- Identificaci\'on y autenticaci\'on & PASS \\
+    A09 --- Registro y monitoreo & PASS \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{28 de 28 verificaciones puntuales autom\'aticas resultaron
+\texttt{CUMPLE}} (\texttt{scripts/security-evidence.sh}, c\'odigo de salida
+\texttt{0}, ejecutado el 2026-07-31). ``PASS'' indica que la evidencia
+referenciada se ejecut\'o realmente y coincide con el comportamiento exigido
+por la gu\'ia; no implica ausencia total de riesgo residual, detallado en
+las limitaciones de cada documento \texttt{A0X-*.md}.
+
 \section{Versi\'on y alcance}
 La versi\'on etiquetada del repositorio es \texttt{v0.9.0-rc} (candidata a
 release de la Tercera Entrega, no una versi\'on de producci\'on). El alcance
@@ -129,7 +200,7 @@ trazabilidad en \texttt{docs/trazabilidad/matriz.csv}).
     \toprule
     M\'etrica & Valor \\
     \midrule
-    Pruebas ejecutadas & 108 \\
+    Pruebas ejecutadas & 109 \\
     Fallos & 0 \\
     Errores & 0 \\
     Omitidas & 0 \\

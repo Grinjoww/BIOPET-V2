@@ -27,11 +27,15 @@ convención, en su propia carpeta:
 
 - Fuente Graphviz: [`c4-componentes-backend.dot`](c4-componentes-backend.dot)
 - Fuente PlantUML: [`c4-componentes-backend.puml`](c4-componentes-backend.puml)
-- Imagen renderizada: **pendiente** — no se generó `.png` en esta fase
-  porque no hay `dot` (Graphviz) ni `plantuml` disponibles en el entorno
-  local usado para esta tarea (ver sección "Limitaciones"). Ambos archivos
-  fuente están listos para renderizarse con `dot -Tpng c4-componentes-backend.dot -o c4-componentes-backend.png`
-  o con PlantUML en cuanto se disponga de la herramienta.
+- Imagen renderizada: [`c4-componentes-backend.png`](c4-componentes-backend.png)
+  (5594×2190 px, fondo blanco, generada a partir de la fuente Graphviz real,
+  no dibujada a mano), con el comando:
+  ```bash
+  dot -Tpng c4-componentes-backend.dot -o c4-componentes-backend.png
+  ```
+  usando Graphviz 15.1.0. Se validó primero la sintaxis con
+  `dot -Tcanon c4-componentes-backend.dot -o /dev/null` (sin errores) antes
+  de generar la imagen final.
 
 Fuente Graphviz incluida aquí para lectura directa sin herramientas externas:
 
@@ -89,6 +93,7 @@ digraph C4L3 {
 
   postgres [label="PostgreSQL 16\n:5432", fillcolor="#FDE68A", color="#92400E"];
   redis [label="Redis 7\n:6379", fillcolor="#FECACA", color="#B91C1C"];
+  flyway [label="Flyway 9.22.3\nclasspath:db/migration\nV1__schema_inicial.sql", fillcolor="#FEF9C3", color="#92400E"];
   logs [label="Logs locales del proceso\n(stdout / contenedor)", shape=note, fillcolor="#F1F5F9"];
 
   frontend -> AuthController [label="HTTPS/JSON + cookies"];
@@ -131,6 +136,7 @@ digraph C4L3 {
   MascotaRepo -> postgres [label="JDBC/JPA"];
 
   AuditService -> logs [label="AUTH_AUDIT"];
+  flyway -> postgres [label="aplica esquema al iniciar\n(una vez, antes de servir tráfico)", style=dotted];
 }
 ```
 
@@ -161,6 +167,7 @@ fuente [`c4-componentes-backend.dot`](c4-componentes-backend.dot).)
 | Persistencia | `UsuarioRepository` | Acceso a la tabla `usuarios` | Spring Data JPA |
 | Persistencia | `MascotaRepository` | Acceso a la tabla `mascotas` + función nativa `fn_resumen_mascotas_por_especie` (parámetro enlazado `:duenioId`) | Spring Data JPA + `@Query` nativa |
 | Infraestructura | `TomcatDualConnectorConfig` | Añade el conector HTTP interno (8080) junto al conector HTTPS principal (8443) cuando el perfil `tls` está activo | Tomcat embebido (Spring Boot), `@Profile("tls")` |
+| Infraestructura | Flyway | Aplica el esquema (`V1__schema_inicial.sql`) sobre PostgreSQL una sola vez, al iniciar el backend, antes de que este atienda tráfico; no interviene en ninguna solicitud HTTP | Flyway 9.22.3 (`spring.flyway.locations: classpath:db/migration`) |
 
 ### Relaciones principales
 
@@ -231,6 +238,15 @@ fuente [`c4-componentes-backend.dot`](c4-componentes-backend.dot).)
   código — `TokenBlacklistService` (blacklist de `jti` revocados) y la
   caché declarativa de `MascotaService` (`@Cacheable`/`@CacheEvict`, vía
   la abstracción de caché de Spring, configurada como `spring.cache.type: redis`).
+- **Flyway**: no es una clase propia de `com.biopet`, sino una dependencia
+  gestionada por `spring-boot-starter-parent` (versión efectiva `9.22.3`,
+  verificada con `mvn dependency:tree`) que Spring Boot invoca
+  automáticamente al arrancar, aplicando `V1__schema_inicial.sql`
+  (`classpath:db/migration`) sobre PostgreSQL antes de que el backend quede
+  disponible. No participa en ninguno de los flujos de solicitud HTTP
+  descritos arriba; se documenta en este nivel porque la guía de la
+  Tercera Entrega exige representarlo explícitamente. Ver también
+  `ADR-004-postgresql.md` y `ADR-007-acceso-datos.md`.
 - **HTTP 8080**: conector interno, habilitado solo cuando el perfil `tls`
   está activo (`TomcatDualConnectorConfig`); pensado para tráfico dentro
   de la red de contenedores (por ejemplo, el `healthcheck` de Docker), no
@@ -277,15 +293,15 @@ fuente [`c4-componentes-backend.dot`](c4-componentes-backend.dot).)
   llevaría su propio contador si hubiera más de una.
 - Los logs de auditoría son **locales**, sin integración con un SIEM.
 - El certificado TLS es **autofirmado y exclusivamente académico/local**.
-- Este diagrama representa la **versión actual** del código (rama
-  `jaime/c4-nivel-3-backend`, sincronizada con `main`); debe actualizarse
-  si cambian las dependencias reales entre estos componentes.
-- No se generó una imagen `.png` renderizada en esta fase por falta de
-  `dot`/`plantuml` en el entorno local usado (ver sección "Diagrama").
-  La verificación de sintaxis se hizo manualmente (balance de llaves,
-  corchetes y comillas, y validación cruzada de que cada arista referencia
-  un nodo/rectángulo realmente declarado), no con un compilador real de
-  Graphviz o PlantUML.
+- Este diagrama representa la **versión actual** del código, verificada
+  contra `main` y actualizada en la rama `jaime/adr-acceso-datos-c4-l3`
+  (incorporación de Flyway y render `.png` real); debe actualizarse si
+  cambian las dependencias reales entre estos componentes.
+- La fuente PlantUML (`c4-componentes-backend.puml`) se mantiene sincronizada
+  a mano con la fuente Graphviz; no se generó su render en esta fase (se
+  priorizó el render Graphviz, indicado como preferente para archivos
+  `.dot`), por lo que cualquier cambio futuro debe aplicarse a ambos
+  archivos fuente.
 
 ### Trazabilidad
 
@@ -316,6 +332,8 @@ fuente [`c4-componentes-backend.dot`](c4-componentes-backend.dot).)
 **Persistencia:**
 - `Backend/src/main/java/com/biopet/repository/UsuarioRepository.java`
 - `Backend/src/main/java/com/biopet/repository/MascotaRepository.java`
+- `db/procs/fn_resumen_mascotas_por_especie.sql`
+- `Backend/src/main/resources/db/migration/V1__schema_inicial.sql` (Flyway)
 
 **Configuración:**
 - `Backend/src/main/java/com/biopet/config/SecurityConfig.java`
@@ -323,6 +341,8 @@ fuente [`c4-componentes-backend.dot`](c4-componentes-backend.dot).)
 
 **Documentación relacionada:**
 - `docs/adr/ADR-006-autenticacion-seguridad.md`
+- `docs/adr/ADR-007-acceso-datos.md` (estrategia híbrida JPA / funciones PostgreSQL)
+- `docs/basedatos/CATALOGO-SP.md`
 - `docs/mediciones/sec/A01-access-control.md`
 - `docs/mediciones/sec/A02-cryptography-tls.md`
 - `docs/mediciones/sec/A05-security-headers.md`

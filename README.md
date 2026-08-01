@@ -93,8 +93,8 @@ Objetivos reales, verificados contra `Makefile` (raíz del repositorio):
 | `make up` | Implementado | Levanta el sistema completo (`docker compose up --build -d`). |
 | `make down` | Implementado | Detiene los contenedores **sin borrar volúmenes** (los datos de Postgres/Redis se conservan). |
 | `make test` | Implementado | Ejecuta las pruebas del backend (`cd Backend && mvn test`). No aplica por sí solo el umbral de cobertura (ver [Pruebas y cobertura](#pruebas-y-cobertura)). |
-| `make bench` | **No implementado** | Solo imprime un mensaje de pendiente (`"[bench] Pendiente: los scripts de k6 todavía no están implementados en este repositorio"`); no ejecuta ninguna corrida real. |
-| `make audit` | **No implementado** | Solo imprime un mensaje de pendiente (`"[audit] Pendiente: la auditoría OWASP automatizada todavía no está implementada en este repositorio"`); la evidencia OWASP real se genera con `scripts/security-evidence.ps1`/`.sh` (ver [Documentación](#documentación)), no con `make audit`. |
+| `make bench` | Implementado | Ejecuta un benchmark k6 (`k6 run k6/listado-mascotas.js`) contra el endpoint de listado de mascotas. Para las 6 corridas oficiales (frío/caliente) usar los comandos documentados en `docs/mediciones/perf/REPORT.md`; este objetivo corre una única corrida rápida. |
+| `make audit` | Implementado | Ejecuta la auditoría de seguridad OWASP (`scripts/security-evidence.sh`) y genera evidencia cruda en `docs/mediciones/sec/raw/` (config de docker-compose, headers HTTP/HTTPS, resultado de `mvn clean verify`). |
 | `make clean` | Implementado | Detiene contenedores y elimina huérfanos, conservando los datos. |
 | `make reset-db` | Implementado (**destructivo**) | Elimina también los volúmenes (borra los datos de Postgres y Redis) para reiniciar desde cero. |
 | `make lighthouse` | Implementado | Ejecuta `scripts/run-lighthouse.sh` contra el frontend servido por Docker. Requiere `make up` previo. A la fecha de este README no hay resultados versionados en `docs/mediciones/lighthouse/`. |
@@ -137,7 +137,7 @@ Resultado real más reciente:
 
 | Métrica | Valor |
 |---|---|
-| Pruebas ejecutadas | 108 |
+| Pruebas ejecutadas | 109 |
 | Fallos | 0 |
 | Errores | 0 |
 | Omitidas | 0 |
@@ -306,9 +306,11 @@ el flujo principal):
 
 | Documento | Contenido |
 |---|---|
-| [`docs/adr/`](docs/adr/) | Decisiones de arquitectura (ADR-002 a ADR-006); ver especialmente [`ADR-006-autenticacion-seguridad.md`](docs/adr/ADR-006-autenticacion-seguridad.md) (autenticación y seguridad). |
+| [`docs/adr/`](docs/adr/) | Decisiones de arquitectura (ADR-002 a ADR-007); ver especialmente [`ADR-006-autenticacion-seguridad.md`](docs/adr/ADR-006-autenticacion-seguridad.md) (autenticación y seguridad) y [`ADR-007-acceso-datos.md`](docs/adr/ADR-007-acceso-datos.md) (estrategia híbrida de acceso a datos). |
 | [`docs/diagrams/c4-componentes-backend/C4-L3-backend.md`](docs/diagrams/c4-componentes-backend/C4-L3-backend.md) | C4 Nivel 3: componentes del backend. |
 | [`docs/mediciones/sec/`](docs/mediciones/sec/) | Evidencia OWASP (A01, A02, A03, A05, A07, A09) y resumen JaCoCo, con [`REPORT.md`](docs/mediciones/sec/REPORT.md) como índice. |
+| [`docs/mediciones/redis/`](docs/mediciones/redis/) | Evidencia cruda de caché: configuración `maxmemory`/`maxmemory-policy`, tamaño de la base (`DBSIZE`), TTL y claves activas del caché de listado de mascotas. |
+| [`docs/mediciones/postgres/`](docs/mediciones/postgres/) | Evidencia formal de privilegios de rol: confirma que `biopet_app` opera con privilegios mínimos (`arwd`, sin `Superuser`/`Create role`/`Create DB`/owner completo) sobre `usuarios` y `mascotas`. |
 | [`docs/mediciones/DATA-DICTIONARY.md`](docs/mediciones/DATA-DICTIONARY.md) | Diccionario de datos de todas las mediciones (seguridad, cobertura, rendimiento, usabilidad). |
 | [`docs/informe/`](docs/informe/README.md) | Código fuente LaTeX del informe final de la Tercera Entrega; ver `docs/informe/README.md` para compilarlo. |
 | [`docs/requisitos/`](docs/requisitos/) | SRS, historias de usuario, casos de uso. |
@@ -353,8 +355,6 @@ nueva imagen.
   (`docker-compose.yml`, sin réplicas).
 - Los logs de auditoría (`AUTH_AUDIT`) son locales al proceso/contenedor,
   sin integración con un SIEM centralizado.
-- `make bench` y `make audit` no están implementados (ver
-  [Comandos del Makefile](#comandos-del-makefile)).
 - Las mediciones de usabilidad (SUS) y de accesibilidad automatizada
   (Lighthouse) todavía no se han ejecutado y no tienen resultados
   versionados.

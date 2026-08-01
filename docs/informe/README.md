@@ -146,7 +146,7 @@ encontrará y la figura seguirá sin aparecer.
 ### Jaime
 | # | Ruta esperada | Descripción |
 |---|---|---|
-| 01 | `figuras/jaime/01-maven-verify.png` | `mvn clean verify` con 108 pruebas y `BUILD SUCCESS`. |
+| 01 | `figuras/jaime/01-maven-verify.png` | `mvn clean verify` con 109 pruebas y `BUILD SUCCESS`. |
 | 02 | `figuras/jaime/02-jacoco-resumen.png` | Resumen HTML de JaCoCo. |
 | 03 | `figuras/jaime/03-tls-openssl.png` | OpenSSL mostrando TLSv1.3 y `TLS_AES_256_GCM_SHA384`. |
 | 04 | `figuras/jaime/04-security-headers.png` | `curl` HTTPS con HSTS y cabeceras de seguridad. |
@@ -155,7 +155,7 @@ encontrará y la figura seguirá sin aparecer.
 | 07 | `figuras/jaime/07-rate-limit-429.png` | Sexto intento de login con 429 y `Retry-After`. |
 | 08 | `figuras/jaime/08-cookie-attributes.png` | Atributos de cookies, sin exponer valores. |
 | 09 | `figuras/jaime/09-auth-audit.png` | Log `AUTH_AUDIT` sin secretos. |
-| 10 | `figuras/jaime/10-c4-nivel-3.png` | C4 Nivel 3 renderizado (aún no existe ningún renderizador local de Graphviz/PlantUML disponible; generar con `dot -Tpng` o PlantUML cuando se disponga de la herramienta). |
+| 10 | `figuras/jaime/10-c4-nivel-3.png` | C4 Nivel 3 renderizado. Ya existe una imagen renderizada en `docs/diagrams/c4-componentes-backend/c4-componentes-backend.png`; solo falta copiarla a esta ruta. |
 
 ### Fred
 | # | Ruta esperada | Descripción |

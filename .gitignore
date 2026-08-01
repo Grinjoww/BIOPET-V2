@@ -1,5 +1,5 @@
 ﻿# Java
-backend/target/
+Backend/target/
 *.class
 *.jar
 # Node
@@ -8,6 +8,8 @@ frontend/dist/
 # Env
 .env
 *.log
+# Postman: entorno local con valores reales (la plantilla sin secretos si se versiona)
+docs/postman/*.local.postman_environment.json
 # Certificados de desarrollo local (HTTPS/TLS BIOPET) - nunca versionar el keystore real
 Backend/certs/*
 !Backend/certs/.gitkeep

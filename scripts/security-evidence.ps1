@@ -1,16 +1,34 @@
 <#
 .SYNOPSIS
-    Recolecta evidencia de seguridad OWASP de BIOPET de forma reproducible,
-    sin registrar secretos, contraseñas, JWT ni cookies completas.
+    Prepara el entorno (build, keystore, validacion de compose, arranque del
+    stack) para la evidencia de seguridad OWASP de BIOPET en Windows.
 
 .DESCRIPTION
-    Ejecuta, en orden: comprobación de herramientas requeridas, "mvn clean
-    verify" (pruebas + cobertura JaCoCo), generación del keystore local si
-    falta (reutilizando scripts/generate-dev-keystore.ps1), validación de
-    "docker compose config", levantamiento del stack Compose base + TLS, y
-    consultas HTTP 8080 / HTTPS 8443 guardando SOLO cabeceras y códigos de
-    estado (nunca cuerpos de login, cookies Set-Cookie completas ni JWT) en
-    docs/mediciones/sec/raw/ (carpeta ignorada por git salvo .gitkeep).
+    IMPORTANTE: el script CANONICO y completo de evidencia OWASP es
+    scripts/security-evidence.sh, que ademas de lo que hace este .ps1
+    ejecuta la secuencia HTTP real de los seis controles (A01, A02, A03,
+    A05, A07, A09) contra el stack ya levantado, con cuentas academicas
+    temporales, sanitizacion de cookies/JWT, y evidencia cruda por control
+    en docs/mediciones/sec/raw/. Esa logica no se duplica aqui en
+    PowerShell: mantener dos implementaciones completas de ~20 peticiones
+    HTTP encadenadas (cookies, JTI, rate limiting) en dos lenguajes distintos
+    es en si mismo un riesgo de que ambas dejen de coincidir con el tiempo.
+    Como este mismo entorno Windows ya tiene Git Bash (requerido tambien por
+    scripts/validate-traceability.sh), la forma soportada de obtener la
+    evidencia completa en Windows es:
+
+        bash scripts/security-evidence.sh
+
+    Este script .ps1 sigue siendo util por si solo para preparar el entorno
+    sin salir de PowerShell: comprobacion de herramientas requeridas, "mvn
+    clean verify" (pruebas + cobertura JaCoCo), generacion del keystore
+    local si falta (reutilizando scripts/generate-dev-keystore.ps1),
+    validacion de "docker compose config", levantamiento del stack Compose
+    base + TLS, y una comprobacion basica de cabeceras HTTP 8080 / HTTPS
+    8443 (solo cabeceras y codigo de estado, nunca cuerpos de login, cookies
+    Set-Cookie completas ni JWT) en docs/mediciones/sec/raw/ (carpeta NO
+    excluida por git salvo el propio .gitkeep: los archivos que aqui se
+    generan son evidencia real).
 
     Este script NO ejecuta ningún comando de git de escritura (add/commit/push).
     No imprime ni guarda contraseñas ni tokens en ningún momento.
@@ -24,6 +42,10 @@
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File scripts/security-evidence.ps1 -StopContainers
+
+.EXAMPLE
+    # Evidencia completa de los seis controles OWASP (recomendado):
+    bash scripts/security-evidence.sh
 #>
 [CmdletBinding()]
 param(
@@ -159,10 +181,15 @@ try {
     Pop-Location
 }
 
-Write-Section "Verificaciones que requieren inspeccion manual"
-Write-Host "- Protocolo TLS y cipher exactos: 'openssl s_client -connect localhost:8443 -tls1_3' (no se automatiza aqui para no depender de que openssl este instalado)."
+Write-Section "Evidencia completa de los seis controles OWASP"
+Write-Host "Este script .ps1 solo prepara el entorno y cabeceras basicas. Para A01, A02,"
+Write-Host "A03, A05, A07 y A09 con peticiones HTTP reales (login, rate limiting, IDOR,"
+Write-Host "inyeccion, blacklist Redis, logs de auditoria), ejecuta el script canonico:"
+Write-Host ""
+Write-Host "    bash scripts/security-evidence.sh"
+Write-Host ""
+Write-Host "- Protocolo TLS y cipher exactos: 'openssl s_client -connect localhost:8443 -tls1_3'."
 Write-Host "- SAN del certificado: 'openssl s_client -connect localhost:8443 -tls1_3 2>NUL | openssl x509 -noout -text'."
-Write-Host "- Login real con credenciales de prueba: este script NO ejecuta ningun login, para no tener que manejar ni guardar cookies o tokens. Usa Postman o curl manualmente si necesitas esa evidencia puntual, y no la copies a un archivo versionado."
 Write-Host "- Estado visual detallado de los contenedores: 'docker compose -f docker-compose.yml -f docker-compose.tls.yml ps' (ya guardado en docs/mediciones/sec/raw/docker-compose-ps.txt, pero conviene revisarlo visualmente)."
 
 if ($StopContainers) {

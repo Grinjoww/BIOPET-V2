@@ -1,0 +1,100 @@
+Fuente: Aula virtual SGA
+Proyecto: BIOPET
+Equipo: Beltrán Montiel Fred A. | Mariscal Cabrera Jaime J. | Taipe Mora Zaida M.
+Entrega: Entrega 1B
+Semana: Semana 6
+Tipo: Transcripción de retroalimentación oficial
+Evidencia visual: docs/observaciones/evidencias/SGA-retroalimentacion-entrega-1B.png
+Fecha de incorporación al repositorio: 2026-07-31
+Nota de integridad: la captura PNG es la fuente primaria visual. Ante cualquier
+discrepancia entre esta transcripción y la captura, prevalece el contenido de
+la captura (ver "Nota de verificación" al final de este archivo).
+
+================================================================================
+TRANSCRIPCIÓN LITERAL
+================================================================================
+
+=================================
+RETROALIMENTACION — PFC ENTREGA 1B: AUTENTICACION JWT + ACCESO A DATOS
+Aplicaciones Web — 5.º Nivel — Ingenieria de Software — UTEQ — PPA 2026-2027
+Equipo: Beltran Montiel Fred · Mariscal Cabrera Jaime · Taipe Mora Zaida
+Sistema: BIOPET (Sistema Integral de Gestion Veterinaria)
+Repositorio: github.com/JirachinG19Stdio/PFC--VET-ENTR1B
+Rama: entrega-1b
+Docente: Dr. Gleiston Guerrero Ulloa, Ph.D.
+=================================
+NOTA SOBRE LA EVIDENCIA
+La calificacion se basa en el codigo verificado directamente en el repositorio, no en las capturas del informe.
+
+CALIFICACION POR CRITERIO (nivel — % del criterio)
+
+C1 Diagramas UML/DER/diccionario (10%) .... Bueno (90%)
+C4 de contenedores (puml/png), DER (der-biopet.dot) y diccionario_datos.md versionados; ADR-003 presente.
+El DER se entrega como .dot, no como exportacion PNG de pgAdmin.
+
+C2 Autenticacion JWT stateless (18%) ...... Excelente (100%)
+Endpoints registro, login, logout y refresh; TokenBlacklistService con StringRedisTemplate (Redis real); TTL = expiracion del token.
+
+C3 Acceso a datos CRUD+JPA+Flyway (18%) ... Excelente (100%)
+CRUD completo de Mascota; migracion Flyway V1 real con trigger; cero concatenacion SQL.
+
+C4 Seguridad OWASP (12%) .................. Excelente (100%)
+BCrypt costo 12, JWT 1h + refresh 7d, blacklist Redis, cabeceras (incluida CSP), CORS y @PreAuthorize + @EnableMethodSecurity.
+
+C5 Pruebas JUnit + Postman + metricas (12%) Bueno (85%)
+5 pruebas JUnit verificadas en AuthControllerTest (MockMvc). Cumple el minimo; la coleccion Postman no esta versionada (.json).
+
+C6 Docker Compose (10%) ................... Bueno (90%)
+4 servicios con healthchecks y README.
+El pipeline CI esta en ./workflows/ci.yml en lugar de ./.github/workflows/, por lo que no se ejecuta automaticamente en GitHub.
+
+C7 Repositorio Git (10%) .................. Bueno (85%)
+Commits de los tres integrantes y Conventional Commits, pero no se creo el tag v0.1.0-entrega-1b exigido para marcar la entrega.
+
+C8 Informe tecnico (10%) .................. Excelente (100%)
+Informe completo, conclusiones por objetivo y referencias APA/IEEE.
+
+NOTA FINAL: 95.00 / 100 (equivalente 9.50 / 10)
+
+FORTALEZAS
+- Modulo de autenticacion completo y correctamente cableado: la blacklist usa Redis real y los seis controles OWASP estan presentes.
+- CRUD de Mascota y migracion Flyway consistentes y verificables.
+- Participacion equilibrada de los tres integrantes.
+
+MEJORAS PARA SU APRENDIZAJE (no afectan esta nota)
+- Mover el pipeline a .github/workflows/ para que GitHub Actions lo ejecute en cada push.
+- Crear el tag anotado v0.1.0-entrega-1b sobre el commit de entrega y versionar la coleccion Postman (.json).
+- Exportar el DER desde pgAdmin 4 (ERD Tool) como PNG de alta resolucion para el informe final.
+
+ADVERTENCIA SOBRE PARTICIPACION (no afecta esta nota)
+El historial evidencia aportes de Beltran, Mariscal y Taipe. Mantener este equilibrio en la Entrega 2.
+=================================
+Inicio de entrega
+Lunes 08 de Junio del 2026, 00:00
+
+Vencimiento
+Viernes 26 de Junio del 2026, 11:59
+
+================================================================================
+NOTA DE VERIFICACIÓN (captura vs. transcripción)
+================================================================================
+
+La captura oficial (SGA-retroalimentacion-entrega-1B.png) es un recorte de una
+ventana de "Notificación" del SGA. El contenido visible en la captura coincide
+palabra por palabra con la transcripción anterior, desde "=== RETROALIMENTACION
+— PFC ENTREGA 1B ===" hasta el cierre "... Mantener este equilibrio en la
+Entrega 2. ===".
+
+Diferencia detectada: las líneas finales "Inicio de entrega / Lunes 08 de
+Junio del 2026, 00:00" y "Vencimiento / Viernes 26 de Junio del 2026, 11:59"
+NO aparecen dentro del recuadro de notificación capturado en el PNG (mismo
+patrón que en la captura de la Entrega 1A). Se conservan en esta transcripción
+tal como fueron suministradas, pero se deja constancia expresa de que no son
+verificables visualmente contra el PNG entregado.
+
+Todo el resto del contenido (calificación por criterio, nota final,
+fortalezas, mejoras para el aprendizaje y advertencia de participación) sí es
+plenamente verificable contra la captura y coincide sin discrepancias,
+incluyendo las tres observaciones citadas literalmente en el cuerpo de
+OBSERVACIONES.md (DER/pgAdmin, ubicación del workflow CI, y tag
+v0.1.0-entrega-1b/Postman).

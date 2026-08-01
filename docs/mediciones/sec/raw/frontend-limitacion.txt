@@ -1,0 +1,1 @@
+Nota (no bloqueante): el frontend esta en estado 'starting'. No afecta los controles OWASP del backend evaluados aqui.
