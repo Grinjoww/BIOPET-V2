@@ -703,3 +703,48 @@ existan mascotas registradas).
 (Testcontainers, PostgreSQL real desechable). Tipo de acceso a datos: SP
 (función PL/pgSQL `fn_resumen_mascotas_por_especie`), no CRUD elemental —
 ver bloque A.2.2 de la Guía.
+
+---
+
+## HU-021 — Notificaciones por correo electrónico *(recuperada, RF-07 de la Entrega 1A — cierre de OBS-02)*
+
+| Campo | Contenido |
+|---|---|
+| **Identificador** | HU-021 |
+| **Requisitos SRS asociados** | REQ-F-022 |
+| **Prioridad (MoSCoW)** | Could |
+| **Estado** | Pendiente |
+
+**Historia (Connextra)**
+> Como usuario del sistema
+> quiero recibir una notificación por correo electrónico cuando ocurra un evento relevante para mi cuenta (por ejemplo, un registro exitoso)
+> para enterarme sin tener que iniciar sesión y revisar manualmente.
+
+**Descripción:** recupera el requisito RF-07 de la Entrega 1A ("Servicio de
+Correos"), mencionado como sistema externo en el diagrama de contexto C4
+Nivel 1 (`docs/diagrams/c4-contexto/C4-L1-contexto.md`) pero nunca
+desglosado como requisito funcional propio en ninguna versión anterior del
+SRS. Se incorpora en la Tercera Entrega exclusivamente para cerrar OBS-02,
+sin ampliar el alcance más allá de lo que ya sugería el diagrama de
+contexto original.
+
+**Criterios de aceptación (Gherkin)** — *comportamiento esperado, no
+implementado*
+```gherkin
+Escenario: Notificación de bienvenida tras registro exitoso
+  Given que un visitante completa el registro con datos válidos
+  When el registro se procesa exitosamente
+  Then el sistema envía un correo de bienvenida a la dirección registrada
+
+Escenario: Fallo del servicio de correo no bloquea la operación principal
+  Given que el servicio de correo externo no está disponible
+  When ocurre un evento que dispararía una notificación
+  Then la operación de dominio que originó el evento completa exitosamente
+  And el fallo de envío queda registrado en el log del sistema
+```
+
+**Dependencias:** HU-001 (registro de usuario).
+**Observaciones:** sin código; requiere una decisión de arquitectura sobre
+el proveedor de correo antes de implementarse. No sustituye ni duplica
+HU-006/REQ-F-007 (consulta del perfil propio), que cubre una funcionalidad
+distinta ya implementada.

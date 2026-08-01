@@ -391,10 +391,11 @@ propietario según rol**
 | REQ-F-014 | Registrar medicamentos prescritos durante una atención médica. | Could | RF-05 | HU-013 / CU-13 | pendiente |
 | REQ-F-015 | Registrar, modificar y consultar citas veterinarias mediante calendario interactivo. | Should | RF-06 | HU-014 / CU-14 | pendiente |
 | REQ-F-016 | Proveer una API para recibir datos de dispositivos IoT de rastreo asociados a mascotas. | Could | RF-08, RF-09 | HU-015 / CU-15 | pendiente |
-| REQ-F-017 | Generar recomendaciones clínicas informativas basadas en el historial médico, vía servicio de IA. | Could | RF-10 | HU-016 / CU-16 | pendiente |
+| REQ-F-017 | Generar recomendaciones clínicas informativas a partir del historial médico (enunciado ampliado — ver bloque detallado, cierre de OBS-04). | Could | RF-10 | HU-016 / CU-16 | pendiente |
 | REQ-F-018 | Generar comprobantes de pago digitales en PDF y registrar el método de pago de un servicio veterinario. | Should | RF-11, RF-12 | HU-017 / CU-17 | pendiente |
 | REQ-F-019 | Generar reportes estadísticos exportables en PDF y Excel. | Could | RF-14 | HU-018 / CU-18 | pendiente |
 | REQ-F-020 | Registrar las operaciones relevantes del sistema (usuario, fecha, hora) para fines de auditoría. | Should | RF-15 | HU-019 / CU-19 | parcial |
+| REQ-F-022 | Enviar notificaciones al usuario por correo electrónico ante eventos relevantes de su cuenta. | Could | RF-07 | HU-021 / CU-21 | pendiente |
 
 > **Nota sobre REQ-F-020 (auditoría):** a diferencia de los demás requisitos
 > de esta tabla, no está 100% pendiente: el registro de eventos de
@@ -403,6 +404,111 @@ propietario según rol**
 > (`AuthenticationAuditService`). Lo que falta es la auditoría genérica de
 > operaciones CRUD sobre mascotas y los módulos pendientes. Se marca
 > "parcial", no "pendiente", para no ocultar el trabajo ya hecho.
+
+> **Nota sobre REQ-F-017 (cierre de OBS-04):** la retroalimentación oficial
+> del SGA de la Entrega 1A señaló, como observación leve, la ambigüedad de
+> la redacción original de RF-10 ("recomendaciones informativas"; ver
+> `docs/observaciones/OBSERVACIONES.md`, OBS-04). El identificador y el
+> alcance no cambian (sigue siendo `REQ-F-017`, prioridad `Could`, estado
+> `pendiente`, dependiente de `REQ-F-013`); lo que cambia es exclusivamente
+> la redacción, reformulada en patrón "El sistema deberá..." con entradas,
+> resultado esperado y criterios de aceptación verificables, sin ampliar la
+> funcionalidad prevista originalmente. El detalle completo reemplaza al
+> resumen de una sola línea que tenía esta fila en versiones anteriores del
+> SRS.
+
+**REQ-F-017 — Generación de recomendaciones clínicas informativas a partir
+del historial médico**
+- **Tipo:** Funcional · **Prioridad:** Could
+- **Enunciado:** Al recibir una solicitud de recomendaciones para una
+  mascota con historial clínico registrado, el sistema deberá generar,
+  mediante un servicio de IA externo, una lista de recomendaciones de
+  cuidado en texto a partir de los datos del historial clínico de esa
+  mascota, y deberá devolver cada recomendación acompañada de la advertencia
+  explícita "informativa, no sustituye diagnóstico veterinario".
+- **Entradas:** identificador de una mascota con historial clínico
+  registrado (depende de `REQ-F-013`, módulo pendiente).
+- **Resultado esperado:** una lista de cero a N recomendaciones en texto
+  plano, cada una acompañada de la advertencia de carácter informativo; si
+  la mascota no tiene historial clínico registrado, el sistema deberá
+  responder con una lista vacía, no con un error.
+- **Criterios de aceptación (verificables):**
+  1. Dado un historial clínico existente para la mascota solicitada, cuando
+     se invoca el endpoint de recomendaciones, entonces la respuesta incluye
+     el campo `recomendaciones: string[]` y, por cada elemento, el campo
+     `advertencia: "informativa, no sustituye diagnóstico veterinario"`.
+  2. Dado que la mascota no tiene historial clínico registrado, cuando se
+     solicita el endpoint de recomendaciones, entonces la respuesta es
+     `200 OK` con `recomendaciones: []`.
+  3. El proveedor concreto del servicio de IA es una decisión de
+     arquitectura pendiente; no se implementa en v0.9.0-rc.
+- **Rationale:** heredado de RF-10 de la Entrega 1A; reformulado en la
+  Tercera Entrega para cerrar OBS-04 (ambigüedad leve señalada por el
+  docente en "recomendaciones informativas"), sin ampliar el alcance
+  original: sigue dependiendo de `REQ-F-013` (historial clínico, módulo
+  pendiente) y del mismo servicio de IA externo ya previsto desde la
+  Entrega 1A.
+- **Verificación:** pendiente — no implementado en v0.9.0-rc (depende de
+  `REQ-F-013`). Método de verificación previsto: test de integración con un
+  doble de prueba (mock) del servicio de IA, validando el contrato de
+  entrada/salida y el caso sin historial clínico.
+- **Trazabilidad:** → HU-016 → CU-16 → (módulo pendiente; depende de
+  `REQ-F-013`).
+- **Estado:** pendiente (redacción cerrada; implementación no iniciada).
+
+> **Nota sobre REQ-F-022 (cierre de OBS-02):** este requisito no forma parte
+> de la secuencia original RF-03 a RF-15; se numera 022 (siguiente
+> identificador libre después de REQ-F-021) porque corresponde a **RF-07**,
+> el requisito que la retroalimentación oficial del SGA de la Entrega 1A
+> señaló como ausente de la lista consolidada ("FALTA RF-07 en la lista
+> consolidada, salta RF-06 -> RF-08"; ver
+> `docs/observaciones/OBSERVACIONES.md`, OBS-02). RF-07 no estaba perdido: el
+> diagrama de contexto C4 Nivel 1 (`docs/diagrams/c4-contexto/C4-L1-contexto.md`,
+> sección "Trazabilidad") ya lo identificaba como el "Servicio de Correos"
+> mencionado en la Entrega 1A, sin que ninguna versión anterior de este SRS
+> le hubiera asignado un identificador `REQ-F` propio. Se le asigna aquí
+> `REQ-F-022` (no `REQ-F-007`, que ya está ocupado por un requisito distinto
+> — "Consulta del perfil propio" — para no duplicar identificadores) con su
+> enunciado completo, criterios de aceptación verificables y trazabilidad
+> propia (ver bloque detallado más abajo).
+
+**REQ-F-022 — Notificaciones al usuario por correo electrónico (Servicio de
+Correos, RF-07 recuperado)**
+- **Tipo:** Funcional · **Prioridad:** Could
+- **Enunciado:** Al ocurrir un evento relevante para la cuenta de un usuario
+  (por ejemplo, registro exitoso), el sistema deberá enviar una notificación
+  por correo electrónico al usuario afectado a través de un servicio de
+  correo externo, de forma asíncrona, sin bloquear ni condicionar la
+  respuesta HTTP de la operación que originó el evento.
+- **Entradas:** un evento de dominio notificable (tipo de evento, correo
+  electrónico destinatario, datos contextuales mínimos del evento).
+- **Resultado esperado:** el correo se envía o se encola para envío de forma
+  asíncrona; un fallo del servicio de correo externo no debe revertir ni
+  hacer fallar la operación de dominio que originó el evento.
+- **Criterios de aceptación (verificables):**
+  1. Dado un registro de usuario exitoso, cuando el servicio de correo está
+     disponible, entonces se envía un correo de bienvenida a la dirección
+     registrada.
+  2. Dado que el servicio de correo externo no está disponible, cuando
+     ocurre un evento notificable, entonces la operación de dominio que lo
+     originó (por ejemplo, el registro) completa exitosamente y el fallo de
+     envío queda registrado en el log del sistema, sin propagarse como error
+     al cliente.
+  3. El proveedor de correo concreto (SMTP propio, SES, SendGrid u otro) es
+     una decisión de arquitectura pendiente; no está implementado en
+     v0.9.0-rc.
+- **Rationale:** corresponde al RF-07 original de la Entrega 1A ("Servicio
+  de Correos"), documentado como sistema externo en
+  `docs/diagrams/c4-contexto/C4-L1-contexto.md` pero sin requisito `REQ-F`
+  formal hasta esta revisión. Se incorpora explícitamente para cerrar OBS-02
+  sin duplicar `REQ-F-007` (funcionalidad distinta ya implementada).
+- **Verificación:** pendiente — no implementado en v0.9.0-rc. Método de
+  verificación previsto: test de integración con un servidor SMTP de
+  pruebas (por ejemplo, Mailhog) que confirme el envío en el caso exitoso y
+  el comportamiento no bloqueante ante fallo del servicio externo.
+- **Trazabilidad:** → HU-021 → CU-21 → (módulo pendiente; sin controlador
+  ni servicio implementados en el backend).
+- **Estado:** pendiente.
 
 ### 3.2. Requisitos no funcionales (REQ-NF)
 
@@ -584,7 +690,54 @@ en la sección 3.
 | 008 | HU-007 | CU-07 | 018 | HU-017 | CU-17 |
 | 009 | HU-008 | CU-08 | 019 | HU-018 | CU-18 |
 | 010 | HU-009 | CU-09 | 020 | HU-019 | CU-19 |
-| 021 | HU-020 | CU-20 | | | |
+| 021 | HU-020 | CU-20 | 022 | HU-021 | CU-21 |
+
+### 4.1. Trazabilidad histórica: identificadores originales → identificadores actuales (cierre de OBS-03)
+
+La retroalimentación oficial del SGA de la Entrega 1A señaló que "los RF-WEB
+se remapean a RF-16/RF-17 sin matriz de trazabilidad explícita en esta
+entrega" (ver `docs/observaciones/OBSERVACIONES.md`, OBS-03). Hasta esta
+revisión, el vínculo entre los identificadores originales (`RF-NN` /
+`RF-WEB-NN`, Entrega 1A) y los identificadores actuales (`REQ-F-NNN`) solo
+existía disperso en el campo *Rationale* de cada requisito individual (sección
+3.1). La siguiente tabla lo consolida en un único lugar explícito, sin omitir
+ningún requisito funcional del sistema y sin inventar ningún origen que no
+estuviera ya citado en este documento:
+
+| Identificador anterior (Entrega 1A) | Identificador actual | Descripción | Caso de uso | Historia | Estado |
+|---|---|---|---|---|---|
+| RF-01 | REQ-F-001 | Registro de usuario dueño de mascota | CU-01 | HU-001 | verificado |
+| RF-01, RF-02 | REQ-F-008 | Creación de mascota asociada a un dueño existente | CU-07 | HU-007 | verificado |
+| RF-02 | REQ-F-009 | Listado paginado de mascotas activas por propietario/rol | CU-08 | HU-008 | verificado |
+| RF-02 | REQ-F-011 | Actualización de mascota con verificación de propiedad | CU-10 | HU-010 | verificado |
+| RF-03, RF-04 | REQ-F-013 | Registro y consulta de historial clínico | CU-12 | HU-012 | pendiente |
+| RF-05 | REQ-F-014 | Prescripción de medicamentos | CU-13 | HU-013 | pendiente |
+| RF-06 | REQ-F-015 | Gestión de citas veterinarias mediante calendario | CU-14 | HU-014 | pendiente |
+| **RF-07** | **REQ-F-022** | **Notificaciones al usuario por correo electrónico (cierre de OBS-02)** | **CU-21** | **HU-021** | **pendiente** |
+| RF-08, RF-09 | REQ-F-016 | API de recepción de telemetría de dispositivos IoT | CU-15 | HU-015 | pendiente |
+| RF-10 | REQ-F-017 | Recomendaciones clínicas informativas (redacción cerrada en OBS-04) | CU-16 | HU-016 | pendiente |
+| RF-11, RF-12 | REQ-F-018 | Facturación digital y registro de pagos | CU-17 | HU-017 | pendiente |
+| RF-13, RF-WEB-02 | REQ-F-006 | Control de acceso por rol (RBAC) | CU-05 | HU-005 | verificado |
+| RF-14 | REQ-F-019 | Reportes estadísticos exportables | CU-18 | HU-018 | pendiente |
+| RF-15 | REQ-F-020 | Auditoría de operaciones del sistema | CU-19 | HU-019 | parcial |
+| RF-16, RF-WEB-01 | REQ-F-003 | Autenticación mediante usuario y contraseña | CU-02 | HU-002 | verificado |
+| RF-17, RF-WEB-04 | REQ-F-005 | Cierre de sesión con revocación de token | CU-04 | HU-004 | verificado |
+| RNF-03, RNF-WEB-03 | REQ-F-004 | Renovación de sesión (refresh) | CU-03 | HU-003 | verificado |
+
+**Requisitos sin origen en la Entrega 1A** (nuevos, agregados durante la
+Tercera Entrega para documentar funcionalidad ya presente en el código, sin
+requisito previo que cerrar): `REQ-F-002` (rechazo de correo duplicado),
+`REQ-F-007` (consulta del perfil propio), `REQ-F-010` (consulta de mascota
+por id), `REQ-F-012` (baja lógica de mascota) y `REQ-F-021` (resumen de
+mascotas por especie, exigido por el bloque A.2.2 de la Guía de la Tercera
+Entrega). Ninguno de estos sustituye ni duplica un identificador `RF-NN`
+original.
+
+Esta tabla es de solo lectura respecto a `docs/trazabilidad/matriz.csv`: no
+lo reemplaza ni lo modifica (ese archivo está fuera del alcance de los
+archivos autorizados para este cierre de observaciones). Queda como acción
+de seguimiento incorporar, en una futura revisión de `matriz.csv`, una
+columna equivalente de origen histórico para `REQ-F-022`.
 
 ## 5. Modelo de datos (referencia)
 
@@ -597,6 +750,21 @@ pendientes: `Cita`, `Historial_Clinico`, `Dispositivo_IoT`, `Chat_Triage`,
 `Mercaderia`, `Detalle_Ingreso`) proviene de la Entrega 1A
 (`PFC_Entrega1A_BMT.pdf`, sección 6) y se conserva como visión de producto
 pendiente de materialización, sin duplicar aquí el DDL completo.
+
+**Diagrama entidad-relación (DER) — dos artefactos distintos, no
+intercambiables (cierre de OBS-05):**
+
+- `docs/diagrams/der-biopet/der-biopet.png` — renderizado generado a partir
+  de la fuente Graphviz `der-biopet.dot`. Es un diagrama **dibujado**, no una
+  exportación de una herramienta de modelado de base de datos.
+- [`docs/observaciones/evidencias/DER-BIOPET-pgAdmin-ERD-Tool.png`](../observaciones/evidencias/DER-BIOPET-pgAdmin-ERD-Tool.png)
+  — exportación **real** generada desde **pgAdmin 4, herramienta ERD Tool**,
+  solicitada explícitamente por la retroalimentación oficial del SGA de la
+  Entrega 1B: *"Exportar el DER desde pgAdmin 4 (ERD Tool) como PNG de alta
+  resolución para el informe final"* (ver
+  `docs/observaciones/OBSERVACIONES.md`, OBS-05). PNG válido (firma de
+  archivo verificada), 768×883 px, generado directamente sobre el esquema
+  real de PostgreSQL, no sobre la fuente `.dot`.
 
 ## 6. Interfaces de usuario (referencia)
 
