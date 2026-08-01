@@ -27,7 +27,7 @@ La prevención es **estructural**, no basada en filtros de palabras:
 
 | Payload | Punto de entrada | Por qué se rechaza |
 |---|---|---|
-| `admin@biopet.com' OR '1'='1` | `email` en `POST /api/auth/login` | Rechazado por `@Email` (Bean Validation, 422) antes de que la petición llegue a `AuthService.login()`, o en su defecto por `BadCredentialsException` (401) — nunca autentica, nunca llega a una consulta SQL con ese contenido interpretado como código |
+| `' OR '1'='1` / `admin@biopet.com' OR '1'='1` / `'; DROP TABLE usuarios; --` | `email` en `POST /api/auth/login` | Rechazado por `@Email` (Bean Validation) **antes** de que la petición llegue a `AuthService.login()` — verificado en vivo: **422** real en los tres casos (ver sección "Evidencia HTTP real" más abajo). Nunca autentica, nunca llega a una consulta SQL con ese contenido interpretado como código |
 | `1 OR 1=1` | `duenioId` en `GET /api/mascotas/resumen-especies` | Spring MVC intenta convertir el `String` a `Long` durante el *binding* del `@RequestParam`; falla con `MethodArgumentTypeMismatchException` **antes** de que el controlador o el repositorio se ejecuten |
 | `1; DROP TABLE usuarios; --` | ídem | Mismo mecanismo: no es un `Long` válido, se rechaza en el binding |
 | `%' UNION SELECT NULL --` | ídem | Mismo mecanismo: se trata como texto incompatible con `Long`, nunca como fragmento SQL |
@@ -64,7 +64,8 @@ Todas en `Backend/src/test/java/com/biopet/SqlInjectionSecurityTest.java`:
 
 | Prueba | Qué demuestra |
 |---|---|
-| `loginConEmailDeInyeccionNoAutentica` | El payload de inyección en `email` nunca produce `200`; no emite `access_token`/`refresh_token`; la respuesta no filtra información interna; un login válido posterior sigue funcionando |
+| `loginConEmailDeInyeccionNoAutentica` | El payload de inyección en `email` produce **422** exacto (antes se aceptaba también 401, ambigüedad ya resuelta); no emite `access_token`/`refresh_token`; la respuesta no filtra información interna; un login válido posterior sigue funcionando |
+| `loginConPayloadLiteralDeLaGuiaDevuelve422` | Payload literal citado por la guía (`' OR '1'='1`, sin arroba) en `email` → 422 ProblemDetails exacto (`type=urn:biopet:error:validation`), sin reflejar el payload en el body |
 | `parametroDuenioIdConOrDevuelveProblemDetail400` | Payload `1 OR 1=1` → 400 ProblemDetail exacto, sin reflejar el payload en el body |
 | `parametroDuenioIdConDropDevuelveProblemDetail400` | Payload `1; DROP TABLE usuarios; --` → 400 ProblemDetail; `usuarioRepository.count()` y `mascotaRepository.count()` **idénticos antes y después** del payload — ninguna tabla fue alterada |
 | `parametroDuenioIdConUnionDevuelveProblemDetail400` | Payload `%' UNION SELECT NULL --` → 400 ProblemDetail, tratado como valor incompatible con `Long` |
@@ -82,11 +83,61 @@ La protección depende exclusivamente de:
 3. Validación estructural existente (`@Email`, `@NotBlank`, etc. vía Bean
    Validation).
 
+## Evidencia HTTP real: 422 confirmado (discrepancia previa resuelta)
+
+Generada el 2026-08-01 (commit `136b707`, cambios de esta tarea aún sin
+confirmar) contra el stack Docker real (perfil `tls`) con
+`scripts/security-evidence.sh`, guardada íntegra en
+[`raw/A03-injection.txt`](raw/A03-injection.txt).
+
+**Diagnóstico:** la guía (Bloque C.2) pide enviar el payload de inyección
+"en un campo de búsqueda" y exige **422**. El endpoint usado originalmente
+para esta evidencia (`duenioId` en `GET /api/mascotas/resumen-especies`) es
+un parámetro `Long`, así que cualquier payload de inyección se rechaza en
+el *binding* de Spring MVC (`MethodArgumentTypeMismatchException`) con
+**400**, una capa anterior a Bean Validation — de ahí la discrepancia
+detectada inicialmente (400 real vs. 422 exigido).
+
+**Resolución, sin modificar código productivo:** el campo que realmente
+actúa como "campo de búsqueda" en este backend —el campo por el que
+`AuthService` localiza al usuario a autenticar— es `email` en
+`POST /api/auth/login`, ya cubierto por `@Valid`/`@Email` (Bean Validation)
+sobre `LoginRequest`. Un payload de inyección no tiene forma de correo
+válida, así que se rechaza con **422** real, antes de que la petición
+llegue a `AuthService`/`UsuarioRepository`. Se confirmó con tres payloads
+distintos, incluido el payload literal de la guía sin modificaciones
+(`' OR '1'='1`):
+
+```json
+{"type":"urn:biopet:error:validation","title":"Error de validación","status":422,"detail":"Uno o más campos contienen valores inválidos.","instance":"/api/auth/login","errors":{"email":["must be a well-formed email address"]}}
+```
+
+Idéntico (mismo `type`/`title`/`status`/`errors.email`) para los tres
+payloads probados: `' OR '1'='1` (payload literal de la guía),
+`admin@biopet.com' OR '1'='1` (variante ya usada en
+`SqlInjectionSecurityTest`) y `'; DROP TABLE usuarios; --`. Sin stack
+trace, sin reflejar el payload completo en el body, sin llegar nunca a
+ejecutarse como SQL.
+
+**Evidencia adicional, no es el caso exigido por la guía:** el mismo tipo
+de payload contra `duenioId` (`Long`) sigue devolviendo **400** — un
+mecanismo de rechazo distinto (binding de Spring MVC, no Bean Validation),
+igual de seguro, documentado en `raw/A03-injection.txt` solo como
+profundidad adicional de la defensa, sin contar como verificación pass/fail
+de A03.
+
 ## Reproducción
 
 ```bash
 cd Backend
 mvn -Dtest=SqlInjectionSecurityTest test
+```
+
+Evidencia HTTP real (end-to-end, requiere el stack Docker levantado; la
+variable de entorno `ADMIN_PASSWORD` es obligatoria):
+
+```bash
+ADMIN_PASSWORD='...' scripts/security-evidence.sh
 ```
 
 ## Limitaciones

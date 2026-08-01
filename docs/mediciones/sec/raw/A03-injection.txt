@@ -1,0 +1,26 @@
+# A03 - Injection - evidencia real
+# Generado: 2026-08-01T00:02:01Z
+# Endpoint y campo elegidos: POST /api/auth/login, campo 'email'.
+# Interpretacion literal de 'un campo de busqueda' de la guia: el campo
+# email es el campo por el que AuthService localiza/identifica al usuario
+# a autenticar. Un payload con apariencia de inyeccion SQL no tiene forma
+# de correo electronico valida, por lo que Bean Validation (@Email sobre
+# LoginRequest.email) lo rechaza ANTES de que la peticion llegue a
+# AuthService/UsuarioRepository, con 422 y ProblemDetails real.
+
+## Payload en el campo email: ' OR '1'='1
+comando: curl -X POST https://localhost:8443/api/auth/login -d '{"email":"<payload>","password":"..."}'
+status: 422
+{"type":"urn:biopet:error:validation","title":"Error de validación","status":422,"detail":"Uno o más campos contienen valores inválidos.","instance":"/api/auth/login","errors":{"email":["must be a well-formed email address"]}}
+## Payload en el campo email: admin@biopet.com' OR '1'='1
+comando: curl -X POST https://localhost:8443/api/auth/login -d '{"email":"<payload>","password":"..."}'
+status: 422
+{"type":"urn:biopet:error:validation","title":"Error de validación","status":422,"detail":"Uno o más campos contienen valores inválidos.","instance":"/api/auth/login","errors":{"email":["must be a well-formed email address"]}}
+## Payload en el campo email: '; DROP TABLE usuarios; --
+comando: curl -X POST https://localhost:8443/api/auth/login -d '{"email":"<payload>","password":"..."}'
+status: 422
+{"type":"urn:biopet:error:validation","title":"Error de validación","status":422,"detail":"Uno o más campos contienen valores inválidos.","instance":"/api/auth/login","errors":{"email":["must be a well-formed email address"]}}
+## Evidencia adicional (no es el caso exigido por la guia; no se evalua pass/fail): mismo tipo de payload en un parametro Long
+comando: curl -b cookiejar -G --data-urlencode "duenioId=1 OR 1=1" https://localhost:8443/api/mascotas/resumen-especies
+status: 400 (400 = MethodArgumentTypeMismatchException, capa de binding de Spring MVC; comportamiento seguro pero mecanismo distinto de Bean Validation)
+{"type":"urn:biopet:error:bad-request","title":"Parámetro inválido","status":400,"detail":"El parámetro 'duenioId' tiene un formato inválido.","instance":"/api/mascotas/resumen-especies"}

@@ -1,0 +1,12 @@
+# A09 - Security Logging and Monitoring Failures - evidencia real
+# Generado: 2026-08-01T00:02:08Z
+# Fuente: docker compose logs backend (salida estandar del contenedor)
+
+## Ultimas lineas AUTH_AUDIT generadas por esta ejecucion (una muestra por tipo de evento)
+biopet-backend  | 2026-08-01T00:02:00.970Z  INFO 1 --- [io-8443-exec-10] c.b.security.AuthenticationAuditService  : AUTH_AUDIT timestamp=2026-08-01T00:02:00.970536650Z event=LOGIN_SUCCESS result=SUCCESS ip=172.22.0.1 subject=qa.owasp.a01.b.1785542518.766@example.test
+biopet-backend  | 2026-08-01T00:02:07.981Z  WARN 1 --- [nio-8443-exec-6] c.b.security.AuthenticationAuditService  : AUTH_AUDIT timestamp=2026-08-01T00:02:07.981769823Z event=LOGIN_FAILURE result=FAILURE ip=172.22.0.1 subject=qa.owasp.a07.ratelimit.1785542518.766@example.test
+biopet-backend  | 2026-08-01T00:02:08.297Z  WARN 1 --- [nio-8443-exec-3] c.b.security.AuthenticationAuditService  : AUTH_AUDIT timestamp=2026-08-01T00:02:08.297391894Z event=LOGIN_RATE_LIMITED result=BLOCKED ip=172.22.0.1 subject=qa.owasp.a07.ratelimit.1785542518.766@example.test
+biopet-backend  | 2026-08-01T00:02:06.304Z  INFO 1 --- [nio-8443-exec-7] c.b.security.AuthenticationAuditService  : AUTH_AUDIT timestamp=2026-08-01T00:02:06.304570113Z event=REFRESH_SUCCESS result=SUCCESS ip=172.22.0.1 subject=qa.owasp.a01.b.1785542518.766@example.test
+(sin eventos REFRESH_FAILURE capturados en esta ejecucion)
+biopet-backend  | 2026-08-01T00:02:08.484Z  INFO 1 --- [nio-8443-exec-7] c.b.security.AuthenticationAuditService  : AUTH_AUDIT timestamp=2026-08-01T00:02:08.484745245Z event=LOGOUT_SUCCESS result=SUCCESS ip=172.22.0.1 subject=admin@biopet.ec
+biopet-backend  | 2026-08-01T00:02:06.563Z  WARN 1 --- [nio-8443-exec-1] c.b.security.AuthenticationAuditService  : AUTH_AUDIT timestamp=2026-08-01T00:02:06.563368470Z event=TOKEN_REVOKED result=BLOCKED ip=172.22.0.1 subject=qa.owasp.a01.b.1785542518.766@example.test

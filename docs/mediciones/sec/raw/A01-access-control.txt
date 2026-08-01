@@ -1,0 +1,24 @@
+# A01 - Broken Access Control - evidencia real
+# Generado: 2026-08-01T00:01:57Z
+# Commit: 136b707
+
+## 1. Sin autenticacion -> /api/usuarios/me
+comando: curl -sS -o body.json -w '%{http_code}' https://localhost:8443/api/usuarios/me
+status: 401
+{"type":"urn:biopet:error:unauthorized","title":"No autenticado","status":401,"detail":"Se requiere una autenticación válida para acceder a este recurso.","instance":"/api/usuarios/me"}
+## 2. Cuentas academicas temporales creadas via POST /api/auth/registro
+Dueno A: email=qa.owasp.a01.a.1785542518.766@example.test id=10 status_registro=201 (rol forzado a ROLE_DUENO por el backend, sin importar el valor enviado)
+Dueno B: email=qa.owasp.a01.b.1785542518.766@example.test id=11 status_registro=201
+Las contrasenas de estas cuentas son aleatorias, generadas en esta ejecucion, y no se imprimen ni se guardan en ningun archivo.
+
+## 3-4. Admin autenticado crea una mascota para el Dueno A
+status_creacion_mascota=201 mascota_id=4 (asignada a dueno_id=10)
+
+## 5-6. Dueno B autenticado consulta la mascota del Dueno A (recurso ajeno)
+comando: curl -b cookiejar https://localhost:8443/api/mascotas/4
+status: 403
+{"type":"urn:biopet:error:forbidden","title":"Acceso denegado","status":403,"detail":"No tiene permisos suficientes para acceder a este recurso.","instance":"/api/mascotas/4"}
+## 7. Dueno B autenticado (rol insuficiente) intenta crear una mascota
+comando: curl -b cookiejar -X POST https://localhost:8443/api/mascotas
+status: 403
+{"type":"urn:biopet:error:forbidden","title":"Acceso denegado","status":403,"detail":"No tiene permisos suficientes para acceder a este recurso.","instance":"/api/mascotas"}

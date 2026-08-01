@@ -99,6 +99,15 @@ que comprueba en las cabeceras `Set-Cookie` reales de la respuesta:
 `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/` (access) y
 `Path=/api/auth` (refresh).
 
+## Evidencia automatizada (2026-08-01, commit `136b707`)
+
+La misma verificación (protocolo, cipher, subject/SAN del certificado,
+cabeceras HTTP 8080) ahora también se genera de forma automática y
+reproducible con `scripts/security-evidence.sh`, guardada en
+[`raw/A02-tls.txt`](raw/A02-tls.txt) — resultado idéntico al capturado
+manualmente arriba (`Protocol: TLSv1.3`, `Cipher: TLS_AES_256_GCM_SHA384`,
+`Subject`/SAN iguales).
+
 ## Comandos reproducibles
 
 ```bash
