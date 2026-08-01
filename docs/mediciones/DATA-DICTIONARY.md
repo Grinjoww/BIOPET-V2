@@ -170,9 +170,88 @@ puntaje agregado en `scripts/analisis-sus.py`, reporte en
 
 ## Accesibilidad / Lighthouse (`docs/mediciones/lighthouse/`) — responsable: Zaida
 
-_Pendiente: sección a completar por Zaida con las variables de cada auditoría
-`lhci` (Performance, Accessibility, Best Practices, SEO — escala 0–100, umbral
-mínimo declarado en `lighthouserc.js`)._
+Fuente: archivos crudos `lhci-YYYYMMDD-HHMM-<slug>-runN.json`, producidos por
+`npx @lhci/cli autorun` (ver `lighthouserc.js` y `scripts/run-lighthouse.sh`)
+contra el frontend Angular servido por el contenedor real
+(`http://localhost:4200`), nunca contra `ng serve`. Cada corrida es un LHR
+(Lighthouse Result) completo en formato JSON; no se edita manualmente. El
+archivo `lhci-YYYYMMDD-HHMM.meta.txt` que acompaña cada lote documenta fecha
+ISO 8601, commit hash corto y versiones de herramientas, exigido por el
+Bloque B.2 de la guía.
+
+> **Estado a la fecha de este documento:** configuración (`lighthouserc.js`,
+> `scripts/run-lighthouse.sh`) completa y verificada, pero la corrida real
+> contra el contenedor todavía no se ha ejecutado ni archivado. Esta sección
+> describe el esquema que tendrán las variables una vez generados los JSON
+> crudos; los valores de "Resultados medidos actuales" se añaden en cuanto
+> exista `docs/mediciones/lighthouse/*.json` real.
+
+### Identificación de la corrida
+
+| Variable | Tipo de dato | Unidad | Rango esperado | Significado |
+|---|---|---|---|---|
+| requestedUrl | Texto (URL) | — | {`http://localhost:4200/login`, `http://localhost:4200/mascotas`} | URL solicitada, tal como se declara en `lighthouserc.js` (`collect.url`). |
+| finalUrl | Texto (URL) | — | igual a `requestedUrl` salvo redirección | URL final tras seguir redirecciones; para `/mascotas` sin sesión activa, Lighthouse termina auditando `/login` (authGuard redirige) — comportamiento esperado, documentado en `lighthouserc.js`. |
+| fetchTime | Fecha-hora (ISO 8601) | — | coincide con el `STAMP` del archivo | Momento en que Lighthouse ejecutó la auditoría (campo `fetchTime` del LHR). |
+| lighthouseVersion | Texto (semver) | — | `^0.14.x` (línea fijada en `run-lighthouse.sh`, `@lhci/cli@0.14.x`) | Versión de la librería Lighthouse embebida en `@lhci/cli`, tomada del propio JSON, no adivinada. |
+| userAgent | Texto | — | cadena de Chrome headless | User-Agent del navegador que ejecutó la auditoría (Chromium headless invocado por `lhci`). |
+| run_index | Entero | corrida | 0–2 | Índice de la corrida dentro de las 3 exigidas por `numberOfRuns: 3` en `lighthouserc.js`; corresponde al sufijo `runN` del nombre de archivo asignado por `run-lighthouse.sh`. |
+
+### Puntuaciones por categoría
+
+| Variable | Tipo de dato | Unidad | Rango esperado | Significado |
+|---|---|---|---|---|
+| categories.performance.score | Decimal | proporción (0–1 en el JSON crudo; ×100 al reportar) | ≥ 0.80 | Puntuación de Performance. Umbral mínimo declarado en `lighthouserc.js`: `categories:performance` ≥ 0.8. |
+| categories.accessibility.score | Decimal | proporción (0–1; ×100 al reportar) | ≥ 0.90 | Puntuación de Accessibility. Umbral: ≥ 0.9. |
+| categories['best-practices'].score | Decimal | proporción (0–1; ×100 al reportar) | ≥ 0.90 | Puntuación de Best Practices. Umbral: ≥ 0.9. |
+| categories.seo.score | Decimal | proporción (0–1; ×100 al reportar) | ≥ 0.90 | Puntuación de SEO. Umbral: ≥ 0.9. |
+| assertion_result | Texto (categórico) | — | {PASS, FAIL} | Resultado de `lhci assert` para cada categoría contra el umbral de `lighthouserc.js` (`assert.assertions`); FAIL en cualquier categoría hace fallar `lhci autorun` con código de salida ≠ 0. |
+
+### Métricas crudas de rendimiento (subconjunto de `audits.*.numericValue`)
+
+| Variable | Tipo de dato | Unidad | Rango esperado | Significado |
+|---|---|---|---|---|
+| first_contentful_paint_ms | Decimal | ms | según perfil móvil/Slow 4G, sin umbral propio de la guía | `audits['first-contentful-paint'].numericValue`: momento en que aparece el primer contenido visible. |
+| largest_contentful_paint_ms | Decimal | ms | sin umbral propio de la guía | `audits['largest-contentful-paint'].numericValue`: momento en que aparece el elemento más grande visible. |
+| total_blocking_time_ms | Decimal | ms | sin umbral propio de la guía | `audits['total-blocking-time'].numericValue`: tiempo total en que el hilo principal estuvo bloqueado para el usuario. |
+| cumulative_layout_shift | Decimal | adimensional | sin umbral propio de la guía | `audits['cumulative-layout-shift'].numericValue`: medida de estabilidad visual (saltos de layout inesperados). |
+| speed_index_ms | Decimal | ms | sin umbral propio de la guía | `audits['speed-index'].numericValue`: rapidez con la que se puebla visualmente el contenido. |
+| time_to_interactive_ms | Decimal | ms | sin umbral propio de la guía | `audits.interactive.numericValue`: momento en que la página queda interactiva de forma confiable. |
+
+Estas seis métricas alimentan `categories.performance.score` (con pesos
+propios del algoritmo de Lighthouse v10+), pero la guía solo exige umbral
+sobre el score agregado de la categoría, no sobre cada métrica individual;
+se documentan aquí porque explican variaciones entre corridas.
+
+### Condiciones de la auditoría (configuración aplicada, no medida)
+
+| Variable | Tipo de dato | Unidad | Rango esperado | Significado |
+|---|---|---|---|---|
+| perfil | Texto (categórico) | — | {mobile} | `settings.preset` de `lighthouserc.js`; perfil móvil exigido por el Bloque C.5. |
+| throttling_method | Texto (categórico) | — | {simulate} | `settings.throttlingMethod`; throttling de red y CPU simulado equivalente a Slow 4G + CPU 4x slowdown (preset por defecto de Lighthouse, no sobreescrito). |
+| skipped_audits | Texto (lista) | — | {`uses-http2`} | Auditorías omitidas explícitamente (`settings.skipAudits`); `uses-http2` se omite porque el contenedor de desarrollo sirve HTTP/1.1 vía Nginx sin TLS local, documentado en el propio `lighthouserc.js`. |
+| numberOfRuns | Entero | corridas | 3 | Corridas por URL exigidas en `collect.numberOfRuns`, para reducir varianza entre mediciones. |
+
+### Metadata de la medición (`lhci-YYYYMMDD-HHMM.meta.txt`)
+
+| Variable | Tipo de dato | Unidad | Rango esperado | Significado |
+|---|---|---|---|---|
+| fecha_iso8601 | Fecha-hora (ISO 8601, UTC) | — | AAAA-MM-DDTHH:MM:SSZ | Fecha/hora de generación del lote de corridas, capturada por `run-lighthouse.sh` con `date -u`. |
+| commit_hash_corto | Texto (hash Git) | — | 7 caracteres hexadecimales | `git rev-parse --short HEAD` en el momento de la corrida; ausente ("sin-git") solo si se ejecuta fuera de un repositorio Git, caso que no debe darse en la evidencia final. |
+| node_version | Texto (semver) | — | `v18.x`–`v22.x` | Salida de `node --version` en la máquina que ejecutó la auditoría. |
+| lighthouse_cli_version | Texto (semver) | — | `^0.14.x` | Salida de `npx @lhci/cli@0.14.x --version`. |
+| urls_auditadas | Texto (lista) | — | las dos URL de `collect.url` | Confirmación textual de qué rutas se auditaron en ese lote. |
+| corridas_por_url | Entero | corridas | 3 | Debe coincidir con `numberOfRuns` de `lighthouserc.js`, para trazabilidad cruzada entre la config y la evidencia archivada. |
+
+### Resultados medidos actuales
+
+_Pendiente de completar tras ejecutar `bash scripts/run-lighthouse.sh` contra
+el contenedor real y archivar los JSON crudos en
+`docs/mediciones/lighthouse/`. No se reportan aquí valores hasta que existan
+los archivos crudos correspondientes — reportar cifras sin archivo crudo
+respaldándolas violaría la regla transversal 8 de la guía ("los archivos
+crudos deben conservarse tal cual, su edición manual invalida la
+evidencia")._
 
 ## Cobertura JaCoCo (`Backend/target/site/jacoco/`, resumida en `docs/mediciones/sec/jacoco-summary.md`) — responsable: Jaime
 
