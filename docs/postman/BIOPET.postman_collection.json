@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "BIOPET - API",
-    "description": "Coleccion Postman real y reproducible del backend de BIOPET (Spring Boot),\nverificada contra el codigo actual: controladores, DTOs, SecurityConfig,\nGlobalExceptionHandler/ProblemDetailFactory/ProblemType, JwtCookieService,\nAuthService, MascotaService y application.yml/application-tls.yml.\n\n## Orden recomendado de ejecucion\n\n1. Configurar las variables de la coleccion o del entorno (emails y passwords\n   vacios por defecto: completarlos antes de empezar).\n2. Levantar el stack: `docker compose -f docker-compose.yml -f docker-compose.tls.yml up --build -d`\n   (o solo `docker-compose.yml` si no se necesita HTTPS).\n3. Ejecutar \"1. Estado del servicio\".\n4. Ejecutar Login con el rol requerido (carpeta 2).\n5. Ejecutar los requests funcionales (carpetas 2 a 4).\n6. Ejecutar Logout.\n7. Ejecutar los casos 401/403 en una sesion limpia (sin cookies).\n8. Ejecutar \"Rate limiting (login)\" al final, porque bloquea temporalmente el\n   login desde la IP actual.\n\n## Cookies, no tokens\n\nTodo el flujo de autenticacion web usa cookies HttpOnly+Secure+SameSite=Strict\n(access_token, refresh_token) gestionadas automaticamente por el cookie jar de\nPostman. Esta coleccion nunca lee, guarda ni muestra el valor de un JWT o de\nuna cookie, y no agrega `Authorization: Bearer` al flujo principal.\n\n## HTTP vs HTTPS\n\n`baseUrl` apunta por defecto a `{{baseUrlHttp}}` (http://localhost:8080). Para\nprobar contra HTTPS, cambia el valor de la variable `baseUrl` a\n`{{baseUrlHttps}}` (o pega directamente `https://localhost:8443`) en el\nentorno o en la coleccion. El HTTPS local usa un certificado autofirmado\nacademico: puede ser necesario desactivar temporalmente \"SSL certificate\nverification\" en Settings > General de Postman.\n\n## Cuentas de prueba\n\n`Backend/src/main/java/com/biopet/config/DataInitializer.java` siembra una\nunica cuenta automaticamente en cada arranque del backend: `admin@biopet.ec`,\nrol ROLE_ADMIN, de forma idempotente. La contrasena esta codificada en ese\nmismo archivo (y documentada en el README.md raiz del proyecto); no se copia\nen esta coleccion ni en su entorno. `adminEmail` puede completarse con ese\nvalor fijo; `adminPassword` debes completarla tu localmente.\n\nEl repositorio NO siembra cuentas VETERINARIO ni AUXILIAR, y el registro\npublico (`POST /api/auth/registro`) siempre crea ROLE_DUENO, sin importar el\nvalor de `rol` enviado (asi lo hace `AuthService.registrar`). Para probar\nesos dos roles hay que crear la cuenta manualmente (registrando un dueno y\ncambiando su columna `rol` directamente en PostgreSQL a\n`ROLE_VETERINARIO`/`ROLE_AUXILIAR`) y completar\n`veterinarioEmail`/`veterinarioPassword` o\n`auxiliarEmail`/`auxiliarPassword`. Ver docs/postman/README.md.\n\nNinguna captura de pantalla se genera en esta fase.",
+    "description": "Coleccion Postman real y reproducible del backend de BIOPET (Spring Boot),\nverificada contra el codigo actual: controladores, DTOs, SecurityConfig,\nGlobalExceptionHandler/ProblemDetailFactory/ProblemType, JwtCookieService,\nAuthService, MascotaService y application.yml/application-tls.yml.\n\n## Orden recomendado de ejecucion\n\n1. Configurar las variables de entorno reales en un archivo local NO\n   versionado, `docs/postman/BIOPET-Local.local.postman_environment.json`\n   (emails y passwords vacios por defecto en la plantilla versionada:\n   completarlos ahi, nunca en la plantilla).\n2. Levantar el stack: `docker compose -f docker-compose.yml -f docker-compose.tls.yml up --build -d`\n   (necesario para HTTPS/8443; casi toda la coleccion corre contra HTTPS).\n3. Ejecutar las carpetas en el orden en que aparecen (1 a 7). Cada carpeta\n   ya incluye, dentro de si misma, los logins explicitos que necesita para\n   el rol correspondiente (dueno, segundo dueno o admin); no depende de\n   cookies dejadas por una carpeta anterior.\n4. \"6. Rate limiting (login)\" va deliberadamente casi al final: bloquea\n   temporalmente el login desde la IP actual durante 15 minutos\n   (`security.rate-limit.login.block-duration`), y ese bloqueo afecta a\n   cualquier intento de login posterior, con credenciales correctas o no.\n   Si se ejecuta antes, los re-logins de las carpetas 3 a 5 fallaran con 429.\n5. \"7. Cierre de sesion\" (Logout) es el ultimo paso.\n\n## Cookies, no tokens\n\nTodo el flujo de autenticacion web usa cookies HttpOnly+Secure+SameSite=Strict\n(access_token, refresh_token) gestionadas automaticamente por el cookie jar de\nPostman. Esta coleccion nunca lee, guarda ni muestra el valor de un JWT o de\nuna cookie, y no agrega `Authorization: Bearer` al flujo principal.\n\n## HTTP vs HTTPS\n\n`baseUrl` apunta por defecto a `{{baseUrlHttps}}` (https://localhost:8443):\nlas cookies de sesion se emiten con el atributo `Secure`, por lo que el\ncliente HTTP solo las reenvia si la peticion original tambien fue HTTPS.\nUnicamente los dos \"Health check\" de la carpeta 1 y \"Cabeceras de\nseguridad\" (carpeta 5) usan `{{baseUrlHttp}}` a proposito, para comprobar\nque la cabecera HSTS esta ausente sobre HTTP. El HTTPS local usa un\ncertificado autofirmado academico: ejecuta Newman con `--insecure`, o\ndesactiva temporalmente \"SSL certificate verification\" en Settings >\nGeneral de Postman.\n\n## Cuentas de prueba\n\n`Backend/src/main/java/com/biopet/config/DataInitializer.java` siembra una\nunica cuenta automaticamente en cada arranque del backend: `admin@biopet.ec`,\nrol ROLE_ADMIN, de forma idempotente. La contrasena esta codificada en ese\nmismo archivo (y documentada en el README.md raiz del proyecto); no se copia\nen esta coleccion ni en su entorno. `adminEmail` puede completarse con ese\nvalor fijo; `adminPassword` debes completarla tu localmente.\n\nEl repositorio NO siembra cuentas VETERINARIO ni AUXILIAR, y el registro\npublico (`POST /api/auth/registro`) siempre crea ROLE_DUENO, sin importar el\nvalor de `rol` enviado (asi lo hace `AuthService.registrar`). Para probar\nesos dos roles hay que crear la cuenta manualmente (registrando un dueno y\ncambiando su columna `rol` directamente en PostgreSQL a\n`ROLE_VETERINARIO`/`ROLE_AUXILIAR`) y completar\n`veterinarioEmail`/`veterinarioPassword` o\n`auxiliarEmail`/`auxiliarPassword`. Ver docs/postman/README.md.\n\nNinguna captura de pantalla se genera en esta fase.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -15,7 +15,7 @@
     },
     {
       "key": "baseUrl",
-      "value": "http://localhost:8080"
+      "value": "https://localhost:8443"
     },
     {
       "key": "adminEmail",
@@ -129,7 +129,7 @@
                   "});",
                   "",
                   "pm.test('No se asume HSTS sobre HTTP (no debe estar presente)', function () {",
-                  "    pm.expect(pm.response.headers.get('Strict-Transport-Security')).to.be.null;",
+                  "    pm.expect(pm.response.headers.get('Strict-Transport-Security')).to.not.exist;",
                   "});"
                 ]
               }
@@ -431,6 +431,89 @@
                   "        pm.expect(atributos).to.include('samesite=strict');",
                   "        // 'secure' solo se exige realmente contra HTTPS (security.cookie.secure=true en el perfil por defecto).",
                   "    });",
+                  "});",
+                  "",
+                  "// Resuelve duenioUsuarioId de forma robusta via /api/usuarios/me,",
+                  "// sin depender de que 'Registro' haya devuelto 201 en esta corrida",
+                  "// (si el correo ya existia de una ejecucion previa, Registro da 409",
+                  "// y nunca hubiera podido guardar este id de otra forma).",
+                  "if (pm.response.code === 200) {",
+                  "    pm.sendRequest({",
+                  "        url: pm.collectionVariables.get('baseUrl') + '/api/usuarios/me',",
+                  "        method: 'GET'",
+                  "    }, function (err, res) {",
+                  "        if (!err && res.code === 200) {",
+                  "            pm.collectionVariables.set('duenioUsuarioId', String(res.json().id));",
+                  "        }",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Renueva el access token (POST /api/auth/refresh). No envia body: el controlador lee el refresh token unicamente desde la cookie refresh_token (Path=/api/auth), gestionada por el cookie jar de Postman. Ejecutar despues de un Login exitoso, en la misma sesion de cookies."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 si hay cookie refresh_token valida, 401 si no la hay', function () {",
+                  "    pm.expect([200, 401]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Content-Type es application/json', function () {",
+                  "        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "    });",
+                  "",
+                  "    pm.test('El body solo trae expiresIn', function () {",
+                  "        var cuerpo = pm.response.json();",
+                  "        pm.expect(cuerpo).to.have.property('expiresIn');",
+                  "        pm.expect(cuerpo).to.not.have.property('accessToken');",
+                  "        pm.expect(cuerpo).to.not.have.property('refreshToken');",
+                  "    });",
+                  "",
+                  "    pm.test('Se emite una nueva cookie de access (Set-Cookie presente)', function () {",
+                  "        var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "            return h.key.toLowerCase() === 'set-cookie';",
+                  "        });",
+                  "        pm.expect(cabecerasSetCookie.length).to.be.greaterThan(0);",
+                  "    });",
+                  "}",
+                  "",
+                  "if (pm.response.code === 401) {",
+                  "    pm.test('ProblemDetail de 401 tiene el type esperado', function () {",
+                  "        pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                  "    });",
+                  "}",
+                  "",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
                   "});"
                 ]
               }
@@ -508,7 +591,22 @@
                   "        pm.expect(atributos).to.include('samesite=strict');",
                   "        // 'secure' solo se exige realmente contra HTTPS (security.cookie.secure=true en el perfil por defecto).",
                   "    });",
-                  "});"
+                  "});",
+                  "",
+                  "// Resuelve segundoDuenioUsuarioId de forma robusta via /api/usuarios/me,",
+                  "// sin depender de que 'Registro' haya devuelto 201 en esta corrida",
+                  "// (si el correo ya existia de una ejecucion previa, Registro da 409",
+                  "// y nunca hubiera podido guardar este id de otra forma).",
+                  "if (pm.response.code === 200) {",
+                  "    pm.sendRequest({",
+                  "        url: pm.collectionVariables.get('baseUrl') + '/api/usuarios/me',",
+                  "        method: 'GET'",
+                  "    }, function (err, res) {",
+                  "        if (!err && res.code === 200) {",
+                  "            pm.collectionVariables.set('segundoDuenioUsuarioId', String(res.json().id));",
+                  "        }",
+                  "    });",
+                  "}"
                 ]
               }
             }
@@ -626,6 +724,20 @@
           "response": [],
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('veterinarioEmail')) {",
+                  "    pm.test('veterinarioEmail configurado, o se omite explicitamente (no hay cuenta VETERINARIO sembrada por defecto)', function () {",
+                  "        pm.expect(true, 'omitido: complete veterinarioEmail/veterinarioPassword en BIOPET-Local.local.postman_environment.json si desea ejercitar este login').to.be.true;",
+                  "    });",
+                  "    pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -703,6 +815,20 @@
           "response": [],
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('auxiliarEmail')) {",
+                  "    pm.test('auxiliarEmail configurado, o se omite explicitamente (no hay cuenta AUXILIAR sembrada por defecto)', function () {",
+                  "        pm.expect(true, 'omitido: complete auxiliarEmail/auxiliarPassword en BIOPET-Local.local.postman_environment.json si desea ejercitar este login').to.be.true;",
+                  "    });",
+                  "    pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -746,111 +872,6 @@
           ]
         },
         {
-          "name": "Refresh",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/refresh",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "refresh"
-              ]
-            },
-            "description": "Renueva el access token (POST /api/auth/refresh). No envia body: el controlador lee el refresh token unicamente desde la cookie refresh_token (Path=/api/auth), gestionada por el cookie jar de Postman. Ejecutar despues de un Login exitoso, en la misma sesion de cookies."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200 si hay cookie refresh_token valida, 401 si no la hay', function () {",
-                  "    pm.expect([200, 401]).to.include(pm.response.code);",
-                  "});",
-                  "",
-                  "if (pm.response.code === 200) {",
-                  "    pm.test('Content-Type es application/json', function () {",
-                  "        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
-                  "    });",
-                  "",
-                  "    pm.test('El body solo trae expiresIn', function () {",
-                  "        var cuerpo = pm.response.json();",
-                  "        pm.expect(cuerpo).to.have.property('expiresIn');",
-                  "        pm.expect(cuerpo).to.not.have.property('accessToken');",
-                  "        pm.expect(cuerpo).to.not.have.property('refreshToken');",
-                  "    });",
-                  "",
-                  "    pm.test('Se emite una nueva cookie de access (Set-Cookie presente)', function () {",
-                  "        var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
-                  "            return h.key.toLowerCase() === 'set-cookie';",
-                  "        });",
-                  "        pm.expect(cabecerasSetCookie.length).to.be.greaterThan(0);",
-                  "    });",
-                  "}",
-                  "",
-                  "if (pm.response.code === 401) {",
-                  "    pm.test('ProblemDetail de 401 tiene el type esperado', function () {",
-                  "        pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
-                  "    });",
-                  "}",
-                  "",
-                  "",
-                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
-                  "    var texto = pm.response.text();",
-                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
-                  "    patrones.forEach(function (p) {",
-                  "        pm.expect(texto).to.not.include(p);",
-                  "    });",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Logout",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/logout",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "logout"
-              ]
-            },
-            "description": "Cierra la sesion (POST /api/auth/logout). No envia body ni Authorization: depende del cookie jar. Es idempotente: responde 204 incluso sin cookies (AuthService.logout no falla si no hay tokens que revocar). Revoca en Redis cada token presente y elimina ambas cookies (Max-Age=0) en la respuesta."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 204 No Content (idempotente, con o sin cookies previas)', function () {",
-                  "    pm.response.to.have.status(204);",
-                  "});",
-                  "",
-                  "pm.test('El cuerpo de la respuesta esta vacio', function () {",
-                  "    pm.expect(pm.response.text()).to.eql('');",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
           "name": "Acceso SIN autenticacion (401)",
           "request": {
             "method": "GET",
@@ -870,6 +891,20 @@
           },
           "response": [],
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Limpieza defensiva: esta peticion exige que NO exista sesion previa,",
+                  "// sin depender de que 'Logout' se haya ejecutado justo antes.",
+                  "var jar = pm.cookies.jar();",
+                  "var https = pm.collectionVariables.get('baseUrlHttps');",
+                  "jar.unset(https, 'access_token', function () {});",
+                  "jar.unset(https, 'refresh_token', function () {});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -914,493 +949,6 @@
               }
             }
           ]
-        },
-        {
-          "name": "Rate limiting (login)",
-          "item": [
-            {
-              "name": "Intento fallido 1",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/auth/login",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "auth",
-                    "login"
-                  ]
-                },
-                "description": "Intento fallido numero 1 de 5 permitidos antes del bloqueo. Debe responder 401.",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "response": [],
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Status 401', function () {",
-                      "    pm.response.to.have.status(401);",
-                      "});",
-                      "",
-                      "pm.test('Content-Type es application/problem+json', function () {",
-                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el type esperado', function () {",
-                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el title esperado', function () {",
-                      "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene status 401', function () {",
-                      "    pm.expect(pm.response.json().status).to.eql(401);",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail incluye instance', function () {",
-                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
-                      "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
-                      "});",
-                      "",
-                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
-                      "    var texto = pm.response.text();",
-                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
-                      "    patrones.forEach(function (p) {",
-                      "        pm.expect(texto).to.not.include(p);",
-                      "    });",
-                      "});"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Intento fallido 2",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/auth/login",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "auth",
-                    "login"
-                  ]
-                },
-                "description": "Intento fallido numero 2 de 5 permitidos antes del bloqueo. Debe responder 401.",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "response": [],
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Status 401', function () {",
-                      "    pm.response.to.have.status(401);",
-                      "});",
-                      "",
-                      "pm.test('Content-Type es application/problem+json', function () {",
-                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el type esperado', function () {",
-                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el title esperado', function () {",
-                      "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene status 401', function () {",
-                      "    pm.expect(pm.response.json().status).to.eql(401);",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail incluye instance', function () {",
-                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
-                      "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
-                      "});",
-                      "",
-                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
-                      "    var texto = pm.response.text();",
-                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
-                      "    patrones.forEach(function (p) {",
-                      "        pm.expect(texto).to.not.include(p);",
-                      "    });",
-                      "});"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Intento fallido 3",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/auth/login",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "auth",
-                    "login"
-                  ]
-                },
-                "description": "Intento fallido numero 3 de 5 permitidos antes del bloqueo. Debe responder 401.",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "response": [],
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Status 401', function () {",
-                      "    pm.response.to.have.status(401);",
-                      "});",
-                      "",
-                      "pm.test('Content-Type es application/problem+json', function () {",
-                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el type esperado', function () {",
-                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el title esperado', function () {",
-                      "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene status 401', function () {",
-                      "    pm.expect(pm.response.json().status).to.eql(401);",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail incluye instance', function () {",
-                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
-                      "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
-                      "});",
-                      "",
-                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
-                      "    var texto = pm.response.text();",
-                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
-                      "    patrones.forEach(function (p) {",
-                      "        pm.expect(texto).to.not.include(p);",
-                      "    });",
-                      "});"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Intento fallido 4",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/auth/login",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "auth",
-                    "login"
-                  ]
-                },
-                "description": "Intento fallido numero 4 de 5 permitidos antes del bloqueo. Debe responder 401.",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "response": [],
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Status 401', function () {",
-                      "    pm.response.to.have.status(401);",
-                      "});",
-                      "",
-                      "pm.test('Content-Type es application/problem+json', function () {",
-                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el type esperado', function () {",
-                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el title esperado', function () {",
-                      "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene status 401', function () {",
-                      "    pm.expect(pm.response.json().status).to.eql(401);",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail incluye instance', function () {",
-                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
-                      "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
-                      "});",
-                      "",
-                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
-                      "    var texto = pm.response.text();",
-                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
-                      "    patrones.forEach(function (p) {",
-                      "        pm.expect(texto).to.not.include(p);",
-                      "    });",
-                      "});"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Intento fallido 5",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/auth/login",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "auth",
-                    "login"
-                  ]
-                },
-                "description": "Intento fallido numero 5 de 5 permitidos antes del bloqueo. Debe responder 401.",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "response": [],
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Status 401', function () {",
-                      "    pm.response.to.have.status(401);",
-                      "});",
-                      "",
-                      "pm.test('Content-Type es application/problem+json', function () {",
-                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el type esperado', function () {",
-                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el title esperado', function () {",
-                      "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene status 401', function () {",
-                      "    pm.expect(pm.response.json().status).to.eql(401);",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail incluye instance', function () {",
-                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
-                      "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
-                      "});",
-                      "",
-                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
-                      "    var texto = pm.response.text();",
-                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
-                      "    patrones.forEach(function (p) {",
-                      "        pm.expect(texto).to.not.include(p);",
-                      "    });",
-                      "});"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Intento fallido 6 - bloqueado",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/auth/login",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "auth",
-                    "login"
-                  ]
-                },
-                "description": "6º intento fallido consecutivo desde la misma IP: debe responder 429 con Retry-After.",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "response": [],
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Status 429', function () {",
-                      "    pm.response.to.have.status(429);",
-                      "});",
-                      "",
-                      "pm.test('Content-Type es application/problem+json', function () {",
-                      "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el type esperado', function () {",
-                      "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:rate-limited');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el title esperado', function () {",
-                      "    pm.expect(pm.response.json().title).to.eql('Demasiados intentos');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene status 429', function () {",
-                      "    pm.expect(pm.response.json().status).to.eql(429);",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail incluye instance', function () {",
-                      "    pm.expect(pm.response.json().instance).to.be.a('string');",
-                      "});",
-                      "",
-                      "pm.test('ProblemDetail tiene el detail esperado', function () {",
-                      "    pm.expect(pm.response.json().detail).to.eql(\"Se ha excedido el n\\u00famero m\\u00e1ximo de intentos fallidos de inicio de sesi\\u00f3n. Intente nuevamente m\\u00e1s tarde.\");",
-                      "});",
-                      "",
-                      "pm.test('La respuesta incluye la cabecera Retry-After', function () {",
-                      "    var retryAfter = pm.response.headers.get('Retry-After');",
-                      "    pm.expect(retryAfter).to.not.be.null;",
-                      "    pm.expect(Number(retryAfter)).to.be.a('number');",
-                      "    pm.expect(Number(retryAfter)).to.be.greaterThan(0);",
-                      "});",
-                      "",
-                      "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
-                      "    var texto = pm.response.text();",
-                      "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
-                      "    patrones.forEach(function (p) {",
-                      "        pm.expect(texto).to.not.include(p);",
-                      "    });",
-                      "});"
-                    ]
-                  }
-                }
-              ]
-            }
-          ],
-          "description": "Secuencia de LoginRateLimiterService (en memoria, ConcurrentHashMap, por IP, ver\nBackend/src/main/java/com/biopet/security/LoginRateLimiterService.java): ventana y\nbloqueo de 15 minutos por defecto, maximo 6 intentos (5 fallos toleran 401, el 6º\nresponde 429 con cabecera Retry-After). El contrapunto no es distribuido: en un\ndespliegue con varias instancias cada una llevaria su propio contador.\n\nCada request de esta carpeta es un intento manual independiente (sin bucles ni\nreintentos automaticos). No se ejecuto esta secuencia de forma real durante esta\nfase para no bloquear temporalmente el login del entorno de pruebas: queda\npreparada y validada contra el comportamiento documentado en\ndocs/mediciones/sec/A07-authentication.md (pruebas automatizadas reales de\nAuthControllerTest). Ejecutarla solo al final del recorrido, deliberadamente,\nsabiendo que bloqueara el login desde la IP actual durante el tiempo configurado.\n\nUsa {{duenioEmail}} (debe estar ya registrado) junto con una contrasena\ndeliberadamente incorrecta escrita en el body (no es una credencial real ni se\nguarda en ninguna variable)."
         }
       ],
       "description": "Flujo real de autenticacion basado en cookies HttpOnly+Secure+SameSite=Strict (JwtCookieService): no hay Authorization Bearer en el flujo web principal. Orden sugerido dentro de esta carpeta: Registro (dueno) y Registro (segundo dueno) una sola vez, luego Login del rol que se necesite, luego Refresh/Logout, y las verificaciones 401 en una sesion sin cookies. La subcarpeta 'Rate limiting' se ejecuta aparte y al final, porque bloquea temporalmente el login."
@@ -1408,6 +956,83 @@
     {
       "name": "3. Mascotas",
       "item": [
+        {
+          "name": "Login (admin) [sesion: crear/listar mascotas]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login real (POST /api/auth/login). Las cookies access_token/refresh_token las gestiona automaticamente el cookie jar de Postman: no se leen ni se guardan tokens en variables. Cuenta ROLE_ADMIN sembrada automaticamente al arrancar el backend (Backend/src/main/java/com/biopet/config/DataInitializer.java, bean seedAdmin, idempotente: solo crea la cuenta si admin@biopet.ec no existe ya). adminEmail puede completarse con 'admin@biopet.ec' (no es un dato sensible); adminPassword debes completarla tu localmente, tomandola del propio DataInitializer.java o del README.md raiz del proyecto (no se copia aqui). Ver docs/postman/README.md.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('El body solo trae expiresIn (sin accessToken ni refreshToken en el body)', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('expiresIn');",
+                  "    pm.expect(cuerpo).to.not.have.property('accessToken');",
+                  "    pm.expect(cuerpo).to.not.have.property('refreshToken');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta trae cabeceras Set-Cookie', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    pm.expect(cabecerasSetCookie.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Las cookies emitidas declaran HttpOnly, Secure y SameSite=Strict (sin exponer el valor)', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    cabecerasSetCookie.forEach(function (h) {",
+                  "        var atributos = h.value.toLowerCase();",
+                  "        pm.expect(atributos).to.include('httponly');",
+                  "        pm.expect(atributos).to.include('samesite=strict');",
+                  "        // 'secure' solo se exige realmente contra HTTPS (security.cookie.secure=true en el perfil por defecto).",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
         {
           "name": "Crear mascota (dueno)",
           "request": {
@@ -1442,6 +1067,20 @@
           "response": [],
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('duenioUsuarioId')) {",
+                  "    pm.test(\"Variable duenioUsuarioId disponible antes de continuar (requiere que 'Registro (dueno)' haya devuelto 201 antes)\", function () {",
+                  "        pm.expect.fail(\"duenioUsuarioId esta vacio: requiere que 'Registro (dueno)' haya devuelto 201 antes\");",
+                  "    });",
+                  "    pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1454,30 +1093,37 @@
                   "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
                   "});",
                   "",
-                  "var cuerpo = pm.response.json();",
+                  "if (pm.response.code === 201) {",
+                  "    var cuerpo = pm.response.json();",
                   "",
-                  "pm.test('La respuesta trae los campos principales de MascotaResponse', function () {",
-                  "    pm.expect(cuerpo).to.have.property('id');",
-                  "    pm.expect(cuerpo).to.have.property('duenioId');",
-                  "    pm.expect(cuerpo).to.have.property('nombre');",
-                  "    pm.expect(cuerpo).to.have.property('especie');",
-                  "    pm.expect(cuerpo).to.have.property('raza');",
-                  "    pm.expect(cuerpo).to.have.property('activo', true);",
-                  "});",
-                  "",
-                  "pm.test('duenioId de la respuesta coincide con el enviado', function () {",
-                  "    pm.expect(String(cuerpo.duenioId)).to.eql(pm.collectionVariables.get('duenioUsuarioId'));",
-                  "});",
-                  "",
-                  "pm.collectionVariables.set('mascotaId', String(cuerpo.id));",
-                  "",
-                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
-                  "    var texto = pm.response.text();",
-                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
-                  "    patrones.forEach(function (p) {",
-                  "        pm.expect(texto).to.not.include(p);",
+                  "    pm.test('La respuesta trae los campos principales de MascotaResponse', function () {",
+                  "        pm.expect(cuerpo).to.have.property('id');",
+                  "        pm.expect(cuerpo).to.have.property('duenioId');",
+                  "        pm.expect(cuerpo).to.have.property('nombre');",
+                  "        pm.expect(cuerpo).to.have.property('especie');",
+                  "        pm.expect(cuerpo).to.have.property('raza');",
+                  "        pm.expect(cuerpo).to.have.property('activo', true);",
                   "    });",
-                  "});"
+                  "",
+                  "    pm.test('duenioId de la respuesta coincide con el enviado', function () {",
+                  "        pm.expect(String(cuerpo.duenioId)).to.eql(pm.collectionVariables.get('duenioUsuarioId'));",
+                  "    });",
+                  "",
+                  "    pm.collectionVariables.set('mascotaId', String(cuerpo.id));",
+                  "",
+                  "    pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "        var texto = pm.response.text();",
+                  "        var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "        patrones.forEach(function (p) {",
+                  "            pm.expect(texto).to.not.include(p);",
+                  "        });",
+                  "    });",
+                  "} else {",
+                  "    pm.collectionVariables.set('mascotaId', '');",
+                  "    pm.test('mascotaId no se guarda: la creacion de la mascota fallo (status ' + pm.response.code + ')', function () {",
+                  "        pm.expect.fail('La creacion de la mascota no devolvio 201; revisar la sesion/rol activo antes de este paso.');",
+                  "    });",
+                  "}"
                 ]
               }
             }
@@ -1517,6 +1163,20 @@
           "response": [],
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('segundoDuenioUsuarioId')) {",
+                  "    pm.test(\"Variable segundoDuenioUsuarioId disponible antes de continuar (requiere que 'Registro (segundo dueno)' haya devuelto 201 antes)\", function () {",
+                  "        pm.expect.fail(\"segundoDuenioUsuarioId esta vacio: requiere que 'Registro (segundo dueno)' haya devuelto 201 antes\");",
+                  "    });",
+                  "    pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1529,30 +1189,37 @@
                   "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
                   "});",
                   "",
-                  "var cuerpo = pm.response.json();",
+                  "if (pm.response.code === 201) {",
+                  "    var cuerpo = pm.response.json();",
                   "",
-                  "pm.test('La respuesta trae los campos principales de MascotaResponse', function () {",
-                  "    pm.expect(cuerpo).to.have.property('id');",
-                  "    pm.expect(cuerpo).to.have.property('duenioId');",
-                  "    pm.expect(cuerpo).to.have.property('nombre');",
-                  "    pm.expect(cuerpo).to.have.property('especie');",
-                  "    pm.expect(cuerpo).to.have.property('raza');",
-                  "    pm.expect(cuerpo).to.have.property('activo', true);",
-                  "});",
-                  "",
-                  "pm.test('duenioId de la respuesta coincide con el enviado', function () {",
-                  "    pm.expect(String(cuerpo.duenioId)).to.eql(pm.collectionVariables.get('segundoDuenioUsuarioId'));",
-                  "});",
-                  "",
-                  "pm.collectionVariables.set('mascotaAjenaId', String(cuerpo.id));",
-                  "",
-                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
-                  "    var texto = pm.response.text();",
-                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
-                  "    patrones.forEach(function (p) {",
-                  "        pm.expect(texto).to.not.include(p);",
+                  "    pm.test('La respuesta trae los campos principales de MascotaResponse', function () {",
+                  "        pm.expect(cuerpo).to.have.property('id');",
+                  "        pm.expect(cuerpo).to.have.property('duenioId');",
+                  "        pm.expect(cuerpo).to.have.property('nombre');",
+                  "        pm.expect(cuerpo).to.have.property('especie');",
+                  "        pm.expect(cuerpo).to.have.property('raza');",
+                  "        pm.expect(cuerpo).to.have.property('activo', true);",
                   "    });",
-                  "});"
+                  "",
+                  "    pm.test('duenioId de la respuesta coincide con el enviado', function () {",
+                  "        pm.expect(String(cuerpo.duenioId)).to.eql(pm.collectionVariables.get('segundoDuenioUsuarioId'));",
+                  "    });",
+                  "",
+                  "    pm.collectionVariables.set('mascotaAjenaId', String(cuerpo.id));",
+                  "",
+                  "    pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "        var texto = pm.response.text();",
+                  "        var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "        patrones.forEach(function (p) {",
+                  "            pm.expect(texto).to.not.include(p);",
+                  "        });",
+                  "    });",
+                  "} else {",
+                  "    pm.collectionVariables.set('mascotaAjenaId', '');",
+                  "    pm.test('mascotaAjenaId no se guarda: la creacion de la mascota fallo (status ' + pm.response.code + ')', function () {",
+                  "        pm.expect.fail('La creacion de la mascota no devolvio 201; revisar la sesion/rol activo antes de este paso.');",
+                  "    });",
+                  "}"
                 ]
               }
             }
@@ -1610,6 +1277,98 @@
                   "    pm.expect(cuerpo.content).to.be.an('array');",
                   "    pm.expect(cuerpo).to.have.property('totalElements');",
                   "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (dueno) [sesion: mascotas propias]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login real (POST /api/auth/login). Las cookies access_token/refresh_token las gestiona automaticamente el cookie jar de Postman: no se leen ni se guardan tokens en variables.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"{{duenioPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('El body solo trae expiresIn (sin accessToken ni refreshToken en el body)', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('expiresIn');",
+                  "    pm.expect(cuerpo).to.not.have.property('accessToken');",
+                  "    pm.expect(cuerpo).to.not.have.property('refreshToken');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta trae cabeceras Set-Cookie', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    pm.expect(cabecerasSetCookie.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Las cookies emitidas declaran HttpOnly, Secure y SameSite=Strict (sin exponer el valor)', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    cabecerasSetCookie.forEach(function (h) {",
+                  "        var atributos = h.value.toLowerCase();",
+                  "        pm.expect(atributos).to.include('httponly');",
+                  "        pm.expect(atributos).to.include('samesite=strict');",
+                  "        // 'secure' solo se exige realmente contra HTTPS (security.cookie.secure=true en el perfil por defecto).",
+                  "    });",
+                  "});",
+                  "",
+                  "// Resuelve duenioUsuarioId de forma robusta via /api/usuarios/me,",
+                  "// sin depender de que 'Registro' haya devuelto 201 en esta corrida",
+                  "// (si el correo ya existia de una ejecucion previa, Registro da 409",
+                  "// y nunca hubiera podido guardar este id de otra forma).",
+                  "if (pm.response.code === 200) {",
+                  "    pm.sendRequest({",
+                  "        url: pm.collectionVariables.get('baseUrl') + '/api/usuarios/me',",
+                  "        method: 'GET'",
+                  "    }, function (err, res) {",
+                  "        if (!err && res.code === 200) {",
+                  "            pm.collectionVariables.set('duenioUsuarioId', String(res.json().id));",
+                  "        }",
+                  "    });",
+                  "}"
                 ]
               }
             }
@@ -1698,6 +1457,20 @@
           "response": [],
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('mascotaId')) {",
+                  "    pm.test(\"Variable mascotaId disponible antes de continuar (requiere que 'Crear mascota (dueno)' haya devuelto 201 antes)\", function () {",
+                  "        pm.expect.fail(\"mascotaId esta vacio: requiere que 'Crear mascota (dueno)' haya devuelto 201 antes\");",
+                  "    });",
+                  "    pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1749,6 +1522,20 @@
               "response": [],
               "event": [
                 {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.collectionVariables.get('mascotaId')) {",
+                      "    pm.test(\"Variable mascotaId disponible antes de continuar (requiere 'Crear mascota (dueno)' previo)\", function () {",
+                      "        pm.expect.fail(\"mascotaId esta vacio: requiere 'Crear mascota (dueno)' previo\");",
+                      "    });",
+                      "    pm.execution.skipRequest();",
+                      "}"
+                    ]
+                  }
+                },
+                {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
@@ -1781,6 +1568,20 @@
               },
               "response": [],
               "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.collectionVariables.get('mascotaAjenaId')) {",
+                      "    pm.test(\"Variable mascotaAjenaId disponible antes de continuar (requiere 'Crear mascota (dueno ajeno)' previo)\", function () {",
+                      "        pm.expect.fail(\"mascotaAjenaId esta vacio: requiere 'Crear mascota (dueno ajeno)' previo\");",
+                      "    });",
+                      "    pm.execution.skipRequest();",
+                      "}"
+                    ]
+                  }
+                },
                 {
                   "listen": "test",
                   "script": {
@@ -1820,39 +1621,6 @@
                       "    patrones.forEach(function (p) {",
                       "        pm.expect(texto).to.not.include(p);",
                       "    });",
-                      "});"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Acceso global de ADMIN/VETERINARIO/AUXILIAR a mascota de cualquier dueno",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/mascotas/{{mascotaAjenaId}}",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "mascotas",
-                    "{{mascotaAjenaId}}"
-                  ]
-                },
-                "description": "tieneAccesoGlobal(rol) es true para ROLE_ADMIN, ROLE_VETERINARIO y ROLE_AUXILIAR: pueden consultar la mascota de cualquier dueno. Ejecutar tras Login (admin), Login (veterinario) o Login (auxiliar). Debe responder 200."
-              },
-              "response": [],
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test('Status 200 (rol con acceso global)', function () {",
-                      "    pm.response.to.have.status(200);",
                       "});"
                     ]
                   }
@@ -1972,6 +1740,20 @@
               "response": [],
               "event": [
                 {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.collectionVariables.get('mascotaId')) {",
+                      "    pm.test(\"Variable mascotaId disponible antes de continuar (requiere 'Crear mascota (dueno)' previo)\", function () {",
+                      "        pm.expect.fail(\"mascotaId esta vacio: requiere 'Crear mascota (dueno)' previo\");",
+                      "    });",
+                      "    pm.execution.skipRequest();",
+                      "}"
+                    ]
+                  }
+                },
+                {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
@@ -2037,6 +1819,20 @@
               "response": [],
               "event": [
                 {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (!pm.collectionVariables.get('mascotaId')) {",
+                      "    pm.test(\"Variable mascotaId disponible antes de continuar (requiere 'Crear mascota (dueno)' previo)\", function () {",
+                      "        pm.expect.fail(\"mascotaId esta vacio: requiere 'Crear mascota (dueno)' previo\");",
+                      "    });",
+                      "    pm.execution.skipRequest();",
+                      "}"
+                    ]
+                  }
+                },
+                {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
@@ -2085,6 +1881,130 @@
           "description": "Requests reproducibles de autorizacion por rol y por propiedad, verificados contra MascotaController (@PreAuthorize) y MascotaService.verificarPropiedad. No dependen de botones ocultos del frontend: la autorizacion ocurre siempre en el backend, antes de construir la respuesta."
         },
         {
+          "name": "Login (admin) [sesion: acceso global/actualizar/eliminar]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login real (POST /api/auth/login). Las cookies access_token/refresh_token las gestiona automaticamente el cookie jar de Postman: no se leen ni se guardan tokens en variables. Cuenta ROLE_ADMIN sembrada automaticamente al arrancar el backend (Backend/src/main/java/com/biopet/config/DataInitializer.java, bean seedAdmin, idempotente: solo crea la cuenta si admin@biopet.ec no existe ya). adminEmail puede completarse con 'admin@biopet.ec' (no es un dato sensible); adminPassword debes completarla tu localmente, tomandola del propio DataInitializer.java o del README.md raiz del proyecto (no se copia aqui). Ver docs/postman/README.md.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('El body solo trae expiresIn (sin accessToken ni refreshToken en el body)', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('expiresIn');",
+                  "    pm.expect(cuerpo).to.not.have.property('accessToken');",
+                  "    pm.expect(cuerpo).to.not.have.property('refreshToken');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta trae cabeceras Set-Cookie', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    pm.expect(cabecerasSetCookie.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Las cookies emitidas declaran HttpOnly, Secure y SameSite=Strict (sin exponer el valor)', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    cabecerasSetCookie.forEach(function (h) {",
+                  "        var atributos = h.value.toLowerCase();",
+                  "        pm.expect(atributos).to.include('httponly');",
+                  "        pm.expect(atributos).to.include('samesite=strict');",
+                  "        // 'secure' solo se exige realmente contra HTTPS (security.cookie.secure=true en el perfil por defecto).",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Acceso global de ADMIN/VETERINARIO/AUXILIAR a mascota de cualquier dueno",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mascotas/{{mascotaAjenaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mascotas",
+                "{{mascotaAjenaId}}"
+              ]
+            },
+            "description": "tieneAccesoGlobal(rol) es true para ROLE_ADMIN, ROLE_VETERINARIO y ROLE_AUXILIAR: pueden consultar la mascota de cualquier dueno. Ejecutar tras Login (admin), Login (veterinario) o Login (auxiliar). Debe responder 200."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('mascotaAjenaId')) {",
+                  "    pm.test(\"Variable mascotaAjenaId disponible antes de continuar (requiere 'Crear mascota (dueno ajeno)' previo)\", function () {",
+                  "        pm.expect.fail(\"mascotaAjenaId esta vacio: requiere 'Crear mascota (dueno ajeno)' previo\");",
+                  "    });",
+                  "    pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 (rol con acceso global)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Actualizar mascota",
           "request": {
             "method": "PUT",
@@ -2118,6 +2038,20 @@
           },
           "response": [],
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('mascotaId')) {",
+                  "    pm.test(\"Variable mascotaId disponible antes de continuar (requiere que 'Crear mascota (dueno)' haya devuelto 201 antes)\", function () {",
+                  "        pm.expect.fail(\"mascotaId esta vacio: requiere que 'Crear mascota (dueno)' haya devuelto 201 antes\");",
+                  "    });",
+                  "    pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -2159,6 +2093,20 @@
           },
           "response": [],
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('mascotaId')) {",
+                  "    pm.test(\"Variable mascotaId disponible antes de continuar (requiere que 'Crear mascota (dueno)' haya devuelto 201 antes)\", function () {",
+                  "        pm.expect.fail(\"mascotaId esta vacio: requiere que 'Crear mascota (dueno)' haya devuelto 201 antes\");",
+                  "    });",
+                  "    pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -2250,6 +2198,20 @@
           },
           "response": [],
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('duenioUsuarioId')) {",
+                  "    pm.test(\"Variable duenioUsuarioId disponible antes de continuar (requiere 'Registro (dueno)' previo)\", function () {",
+                  "        pm.expect.fail(\"duenioUsuarioId esta vacio: requiere 'Registro (dueno)' previo\");",
+                  "    });",
+                  "    pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -2599,6 +2561,19 @@
           "response": [],
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Limpieza defensiva: esta peticion exige que NO exista sesion previa.",
+                  "var jar = pm.cookies.jar();",
+                  "var https = pm.collectionVariables.get('baseUrlHttps');",
+                  "jar.unset(https, 'access_token', function () {});",
+                  "jar.unset(https, 'refresh_token', function () {});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -2638,6 +2613,98 @@
                   "        pm.expect(texto).to.not.include(p);",
                   "    });",
                   "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (dueno) [sesion: 403 sin permiso]",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login real (POST /api/auth/login). Las cookies access_token/refresh_token las gestiona automaticamente el cookie jar de Postman: no se leen ni se guardan tokens en variables.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"{{duenioPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('El body solo trae expiresIn (sin accessToken ni refreshToken en el body)', function () {",
+                  "    var cuerpo = pm.response.json();",
+                  "    pm.expect(cuerpo).to.have.property('expiresIn');",
+                  "    pm.expect(cuerpo).to.not.have.property('accessToken');",
+                  "    pm.expect(cuerpo).to.not.have.property('refreshToken');",
+                  "});",
+                  "",
+                  "pm.test('La respuesta trae cabeceras Set-Cookie', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    pm.expect(cabecerasSetCookie.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('Las cookies emitidas declaran HttpOnly, Secure y SameSite=Strict (sin exponer el valor)', function () {",
+                  "    var cabecerasSetCookie = pm.response.headers.filter(function (h) {",
+                  "        return h.key.toLowerCase() === 'set-cookie';",
+                  "    });",
+                  "    cabecerasSetCookie.forEach(function (h) {",
+                  "        var atributos = h.value.toLowerCase();",
+                  "        pm.expect(atributos).to.include('httponly');",
+                  "        pm.expect(atributos).to.include('samesite=strict');",
+                  "        // 'secure' solo se exige realmente contra HTTPS (security.cookie.secure=true en el perfil por defecto).",
+                  "    });",
+                  "});",
+                  "",
+                  "// Resuelve duenioUsuarioId de forma robusta via /api/usuarios/me,",
+                  "// sin depender de que 'Registro' haya devuelto 201 en esta corrida",
+                  "// (si el correo ya existia de una ejecucion previa, Registro da 409",
+                  "// y nunca hubiera podido guardar este id de otra forma).",
+                  "if (pm.response.code === 200) {",
+                  "    pm.sendRequest({",
+                  "        url: pm.collectionVariables.get('baseUrl') + '/api/usuarios/me',",
+                  "        method: 'GET'",
+                  "    }, function (err, res) {",
+                  "        if (!err && res.code === 200) {",
+                  "            pm.collectionVariables.set('duenioUsuarioId', String(res.json().id));",
+                  "        }",
+                  "    });",
+                  "}"
                 ]
               }
             }
@@ -2727,9 +2794,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/actuator/health",
+              "raw": "{{baseUrlHttp}}/actuator/health",
               "host": [
-                "{{baseUrl}}"
+                "{{baseUrlHttp}}"
               ],
               "path": [
                 "actuator",
@@ -2761,14 +2828,10 @@
                   "    pm.expect(pm.response.headers.get('Content-Security-Policy')).to.include(\"default-src 'self'\");",
                   "});",
                   "",
-                  "pm.test('HSTS presente solo si el baseUrl usado es HTTPS', function () {",
-                  "    var baseUrl = pm.collectionVariables.get('baseUrl') || '';",
-                  "    var hsts = pm.response.headers.get('Strict-Transport-Security');",
-                  "    if (baseUrl.indexOf('https://') === 0) {",
-                  "        pm.expect(hsts).to.include('max-age=31536000');",
-                  "    } else {",
-                  "        pm.expect(hsts).to.be.null;",
-                  "    }",
+                  "pm.test('HSTS ausente sobre HTTP (esta peticion corre explicitamente contra baseUrlHttp)', function () {",
+                  "    // pm.response.headers.get(...) devuelve undefined (no null) cuando la",
+                  "    // cabecera no existe en este runtime; '.to.not.exist' cubre ambos casos.",
+                  "    pm.expect(pm.response.headers.get('Strict-Transport-Security')).to.not.exist;",
                   "});"
                 ]
               }
@@ -2777,6 +2840,535 @@
         }
       ],
       "description": "Catalogo de errores controlados (422, 400, 404, 401, 403, cabeceras) mas verificacion de cabeceras de seguridad. El caso 429 (rate limiting) no se duplica aqui: vive unicamente en la carpeta 2 (subcarpeta 'Rate limiting (login)') para no arriesgar bloquear la IP dos veces en una misma ejecucion de la coleccion. No se incluyen solicitudes destructivas ni que intenten borrar tablas."
+    },
+    {
+      "name": "6. Rate limiting (login)",
+      "item": [
+        {
+          "name": "Intento fallido 1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Intento fallido numero 1 de 5 permitidos antes del bloqueo. Debe responder 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 401', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(401);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Intento fallido 2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Intento fallido numero 2 de 5 permitidos antes del bloqueo. Debe responder 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 401', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(401);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Intento fallido 3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Intento fallido numero 3 de 5 permitidos antes del bloqueo. Debe responder 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 401', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(401);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Intento fallido 4",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Intento fallido numero 4 de 5 permitidos antes del bloqueo. Debe responder 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 401', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(401);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Intento fallido 5",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Intento fallido numero 5 de 5 permitidos antes del bloqueo. Debe responder 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:unauthorized');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('No autenticado');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 401', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(401);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"Credenciales inv\\u00e1lidas\");",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Intento fallido 6 - bloqueado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "6º intento fallido consecutivo desde la misma IP: debe responder 429 con Retry-After.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{duenioEmail}}\",\n  \"password\": \"credencial-incorrecta-de-prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 429', function () {",
+                  "    pm.response.to.have.status(429);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type es application/problem+json', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/problem+json');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el type esperado', function () {",
+                  "    pm.expect(pm.response.json().type).to.eql('urn:biopet:error:rate-limited');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el title esperado', function () {",
+                  "    pm.expect(pm.response.json().title).to.eql('Demasiados intentos');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene status 429', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql(429);",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail incluye instance', function () {",
+                  "    pm.expect(pm.response.json().instance).to.be.a('string');",
+                  "});",
+                  "",
+                  "pm.test('ProblemDetail tiene el detail esperado', function () {",
+                  "    pm.expect(pm.response.json().detail).to.eql(\"Se ha excedido el n\\u00famero m\\u00e1ximo de intentos fallidos de inicio de sesi\\u00f3n. Intente nuevamente m\\u00e1s tarde.\");",
+                  "});",
+                  "",
+                  "pm.test('La respuesta incluye la cabecera Retry-After', function () {",
+                  "    var retryAfter = pm.response.headers.get('Retry-After');",
+                  "    pm.expect(retryAfter).to.not.be.null;",
+                  "    pm.expect(Number(retryAfter)).to.be.a('number');",
+                  "    pm.expect(Number(retryAfter)).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test('La respuesta no expone stack trace ni detalles internos', function () {",
+                  "    var texto = pm.response.text();",
+                  "    var patrones = ['stackTrace', 'Hibernate', 'org.hibernate', 'PostgreSQL', 'SQLGrammarException', 'java.lang', 'org.springframework', 'SQLException'];",
+                  "    patrones.forEach(function (p) {",
+                  "        pm.expect(texto).to.not.include(p);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Secuencia de LoginRateLimiterService (en memoria, ConcurrentHashMap, por IP, ver\nBackend/src/main/java/com/biopet/security/LoginRateLimiterService.java): ventana y\nbloqueo de 15 minutos por defecto, maximo 6 intentos (5 fallos toleran 401, el 6º\nresponde 429 con cabecera Retry-After). El contrapunto no es distribuido: en un\ndespliegue con varias instancias cada una llevaria su propio contador.\n\nCada request de esta carpeta es un intento manual independiente (sin bucles ni\nreintentos automaticos). No se ejecuto esta secuencia de forma real durante esta\nfase para no bloquear temporalmente el login del entorno de pruebas: queda\npreparada y validada contra el comportamiento documentado en\ndocs/mediciones/sec/A07-authentication.md (pruebas automatizadas reales de\nAuthControllerTest). Ejecutarla solo al final del recorrido, deliberadamente,\nsabiendo que bloqueara el login desde la IP actual durante el tiempo configurado.\n\nUsa {{duenioEmail}} (debe estar ya registrado) junto con una contrasena\ndeliberadamente incorrecta escrita en el body (no es una credencial real ni se\nguarda en ninguna variable)."
+    },
+    {
+      "name": "7. Cierre de sesion",
+      "item": [
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Cierra la sesion (POST /api/auth/logout). No envia body ni Authorization: depende del cookie jar. Es idempotente: responde 204 incluso sin cookies (AuthService.logout no falla si no hay tokens que revocar). Revoca en Redis cada token presente y elimina ambas cookies (Max-Age=0) en la respuesta."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204 No Content (idempotente, con o sin cookies previas)', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test('El cuerpo de la respuesta esta vacio', function () {",
+                  "    pm.expect(pm.response.text()).to.eql('');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
