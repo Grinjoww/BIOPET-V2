@@ -1,0 +1,82 @@
+Fuente: Aula virtual SGA
+Proyecto: BIOPET
+Equipo: Beltrán Montiel Fred A. | Mariscal Cabrera Jaime J. | Taipe Mora Zaida M.
+Entrega: Entrega 1A
+Semana: Semana 5
+Tipo: Transcripción de retroalimentación oficial
+Evidencia visual: docs/observaciones/evidencias/SGA-retroalimentacion-entrega-1A.png
+Fecha de incorporación al repositorio: 2026-07-31
+Nota de integridad: la captura PNG es la fuente primaria visual. Ante cualquier
+discrepancia entre esta transcripción y la captura, prevalece el contenido de
+la captura (ver "Nota de verificación" al final de este archivo).
+
+================================================================================
+TRANSCRIPCIÓN LITERAL
+================================================================================
+
+=================================
+INFORME 3 — GRUPO: BIOPET (Gestión Veterinaria + IoT/IA)
+Integrantes: Beltrán Montiel Fred A. | Mariscal Cabrera Jaime J. | Taipe Mora Zaida M.
+Repositorio: NO PROPORCIONADO (portada vacía; sección 9 sin URL).
+[NO VERIFICABLE — JirachinG19Stdio/APP-WEB-PFC- devuelve 404]
+El contenido del PDF SÍ es verificable directamente.
+--------------------------------------------------------------------------------
+RÚBRICA (peso · %logrado · puntos)
+A. Formato e identidad institucional 3 70% 2.1 (URL repo vacía)
+B. Descripción del sistema + alcance 8 100% 8.0
+C. Revisión/adaptación de requisitos 8 100% 8.0
+D. Ingeniería de requisitos (29148) 24 --- 21.1
+D1 Completitud/consistencia conjunto 6 78% 4.7
+D2 Conformidad redacción ("deberá") 6 95% 5.7
+D3 No-ambigüedad y singularidad 6 88% 5.3
+D4 Verificabilidad 6 90% 5.4
+E. Arquitectura C4 N1+N2 + capas 12 100% 12.0
+F. ADR-001 (ASP.NET Core 8, coherente) 7 100% 7.0
+G. Modelo datos (MER+diccionario+DDL) 15 100% 15.0
+H. Wireframes 7 100% 7.0
+I. Cronograma sem 5-17 + roles 5 100% 5.0
+J. Repositorio Git 8 0% 0.0 (no verificable)
+K. Referencias verificadas 3 100% 3.0
+--- ----
+TOTAL 100 88.2
+
+DETALLE 29148 (RF/RNF):
++ D2 (EL MEJOR): todos los RF usan el patrón canónico "El sistema (web) deberá [permitir/generar/controlar]..." (sujeto + shall + acción + objeto). Conforme.
++ D4: 8 RNF con métricas (<=2s p95, TLS, JWT, 320/768/1440px); RF con criterios.
++ D3: redacción limpia; leve "recomendaciones informativas" (RF-10).
+- D1 (defecto del conjunto): FALTA RF-07 en la lista consolidada (salta RF-06 -> RF-08) y los RF-WEB se remapean a RF-16/RF-17 sin matriz de trazabilidad explícita en esta entrega (9.4.3 completitud/consistencia).
+
+OBSERVACIONES GENERALES:
++ Documento técnicamente más sólido: C4 N1/N2 y MER reales, DDL PostgreSQL con ENUM (~14 tablas + FK) con evidencia de ejecución en pgAdmin; refs académicas.
+- CRÍTICO: sin URL de repositorio (entregable obligatorio). Con una URL válida y accesible se re-evalúa el criterio J y la nota puede subir hasta ~96/100.
+
+CALIFICACIÓN: 88.2/100 -> 8.8/10
+=================================
+Inicio de entrega
+Lunes 04 de Mayo del 2026, 00:00
+
+Vencimiento
+Jueves 04 de Junio del 2026, 23:59
+
+================================================================================
+NOTA DE VERIFICACIÓN (captura vs. transcripción)
+================================================================================
+
+La captura oficial (SGA-retroalimentacion-entrega-1A.png) es un recorte de una
+ventana de "Notificación" del SGA. El contenido visible en la captura coincide
+palabra por palabra con la transcripción anterior, desde "=== INFORME 3 —
+GRUPO: BIOPET ===" hasta el cierre "CALIFICACIÓN: 88.2/100 -> 8.8/10 ===".
+
+Diferencia detectada: las líneas finales "Inicio de entrega / Lunes 04 de Mayo
+del 2026, 00:00" y "Vencimiento / Jueves 04 de Junio del 2026, 23:59" NO
+aparecen dentro del recuadro de notificación capturado en el PNG. Esas fechas
+probablemente correspondían a metadatos de la tarea visibles en otra zona de
+la página del SGA (fuera del recorte de la captura), no al cuerpo de la
+retroalimentación en sí. Conforme a la regla de prioridad de la captura, no se
+elimina esta información de la transcripción (se conserva tal como fue
+suministrada), pero se deja constancia expresa de que no es verificable
+visualmente contra el PNG entregado.
+
+Todo el resto del contenido (rúbrica, puntajes por criterio, detalle 29148,
+observaciones generales y calificación final) sí es plenamente verificable
+contra la captura y coincide sin discrepancias.
