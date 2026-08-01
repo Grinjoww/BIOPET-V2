@@ -4,10 +4,12 @@
 Este cap\'itulo integra la informaci\'on real disponible sobre el trabajo de
 Zaida: ingenier\'ia de requisitos, frontend Angular, accesibilidad manual
 verificable en el c\'odigo, e integraci\'on con el esquema de autenticaci\'on
-por cookies. Las mediciones cuantitativas de usabilidad (SUS) y
-accesibilidad autom\'atica (Lighthouse) \textbf{no se reportan como
-resultados} porque a\'un no se han ejecutado; \'unicamente se describe su
-metodolog\'ia (cap\'itulo~\ref{cap:protocolo-experimental}).
+por cookies. A diferencia de una versi\'on previa de este cap\'itulo, la
+medici\'on de usabilidad (SUS) \textbf{s\'i se ejecut\'o} y se reporta como
+resultado con datos reales (secci\'on~\ref{sec:zaida-sus}). La auditor\'ia
+autom\'atica de accesibilidad (Lighthouse) permanece configurada pero
+\textbf{a\'un no ejecutada}; se reporta \'unicamente su metodolog\'ia
+(secci\'on~\ref{sec:zaida-lighthouse}).
 
 \section{Requisitos}
 
@@ -57,12 +59,16 @@ M\'odulos verificados directamente en \texttt{frontend/src/app/}:
 \section{Autenticaci\'on mediante cookies (integraci\'on frontend)}
 
 El frontend no maneja el JWT directamente: env\'ia y recibe las cookies
-\texttt{access_token}/\texttt{refresh_token} de forma transparente gracias
-a \texttt{credentials: include} en las peticiones HTTP, consistente con el
-esquema \texttt{HttpOnly}+\texttt{Secure}+\texttt{SameSite=Strict} descrito
-en el cap\'itulo~\ref{cap:resultados-jaime}. Esta integraci\'on qued\'o
-reflejada en el historial de cambios del proyecto (rama
-\texttt{zaida/frontend-cookies-jwt} y, m\'as recientemente,
+\texttt{access\_token}/\texttt{refresh\_token} de forma transparente gracias
+a \texttt{withCredentials: true} (aplicado globalmente en
+\texttt{http-error.interceptor.ts}) en las peticiones HTTP, consistente con
+el esquema \texttt{HttpOnly}+\texttt{Secure}+\texttt{SameSite=Strict}
+descrito en el cap\'itulo~\ref{cap:resultados-jaime}. El mismo interceptor
+gestiona autom\'aticamente un reintento de \texttt{refresh} ante una
+respuesta 401 en rutas protegidas, y propaga el \texttt{ProblemDetail}
+original ante 403, 409, 422 y 429 para que los componentes lo muestren tal
+cual. Esta integraci\'on qued\'o reflejada en el historial de cambios del
+proyecto (rama \texttt{zaida/frontend-cookies-jwt} y, m\'as recientemente,
 \texttt{zaida/problemdetail-409-accesibilidad-login}, que ajust\'o el
 manejo de \texttt{ProblemDetail} y la accesibilidad del login tras la
 introducci\'on del c\'odigo 409 en el registro).
@@ -80,7 +86,7 @@ manualmente, en l\'inea con las pautas de accesibilidad WCAG~\cite{wcag21}
 el \'unico canal del mensaje. El componente de mascotas
 (\texttt{mascotas.component.ts}) usa el mismo tipo de atributos de forma
 extensiva en su marcado. Estas verificaciones son de c\'odigo, no de una
-herramienta automatizada de accesibilidad.
+herramienta automatizada de accesibilidad (ver secci\'on~\ref{sec:zaida-lighthouse}).
 
 % EVIDENCIA-ZAIDA-03
 % Ruta esperada: figuras/zaida/03-responsive.png
@@ -89,33 +95,70 @@ herramienta automatizada de accesibilidad.
 {fig:zaida-responsive}
 
 \section{Usabilidad (SUS)}
+\label{sec:zaida-sus}
 
 El instrumento System Usability Scale (Brooke~\cite{sus-brooke1996}),
 alineado con los conceptos de usabilidad de ISO~9241-11~\cite{iso9241-11},
-con un m\'inimo de diez
-participantes externos al equipo, est\'a documentado metodol\'ogicamente en
-\texttt{docs/etica/ETHICS.md} (secci\'on~iii): consentimiento informado por
-participante, tarea de referencia (login, alta, edici\'on, eliminaci\'on
-l\'ogica, logout), y resultados agregados vinculados \'unicamente a un
-c\'odigo de participante. \textbf{A la fecha de este informe no existe
-\texttt{docs/mediciones/sus/} en el repositorio}: la prueba SUS a\'un no se
-ha ejecutado. No se reporta ninguna puntuaci\'on SUS en este documento.
+se aplic\'o a diez participantes reales externos al equipo (P01--P10),
+siguiendo el protocolo documentado en \texttt{docs/etica/ETHICS.md}
+(secci\'on~iii): consentimiento informado por participante (plantilla en
+\texttt{docs/etica/consentimientos/plantilla.md}, formularios firmados
+conservados fuera del repositorio p\'ublico), y una tarea de referencia
+com\'un (inicio de sesi\'on, alta de una mascota, edici\'on, eliminaci\'on
+l\'ogica y cierre de sesi\'on).
+
+Los datos crudos y anonimizados est\'an archivados en
+\texttt{docs/mediciones/sus/sus-raw.csv}, y el an\'alisis agregado en
+\texttt{docs/mediciones/sus/REPORT.md}. La Tabla~\ref{tab:zaida-sus}
+resume los resultados.
+
+\begin{table}[H]
+  \centering
+  \caption{Resultados agregados del instrumento SUS (n = 10).}
+  \label{tab:zaida-sus}
+  \begin{tabular}{lr}
+    \hline
+    \textbf{M\'etrica} & \textbf{Valor} \\
+    \hline
+    Media (SUS Score)                          & 74.75 / 100 \\
+    Desviaci\'on t\'ipica (muestral, $n-1$)     & 23.67 \\
+    Intervalo de confianza 95\,\%               & [57.82, 91.68] \\
+    Mediana (p50)                               & 78.75 \\
+    M\'inimo / M\'aximo                         & 22.50 / 97.50 \\
+    Clasificaci\'on cualitativa (Bangor et al.) & Bueno \\
+    \hline
+  \end{tabular}
+\end{table}
+
+La media obtenida (74.75) se ubica en la categor\'ia \textbf{Bueno} de la
+escala de adjetivos SUS, con un intervalo de confianza al 95\,\% que
+incluye el umbral de referencia de 68 puntos considerado ``por encima del
+promedio'' en la literatura de usabilidad~\cite{sus-brooke1996}. El
+participante con menor puntaje (P08) declar\'o no tener experiencia previa
+con aplicaciones web, consistente con el efecto conocido de la curva de
+aprendizaje inicial en usuarios sin experiencia digital previa.
 
 % EVIDENCIA-ZAIDA-05
 % Ruta esperada: figuras/zaida/05-sus-resultados.png
 \evidencia{figuras/zaida/05-sus-resultados.png}%
-{Resultados agregados del instrumento SUS (media, desviaci\'on t\'ipica, IC 95\,\%), cuando est\'en disponibles.}%
+{Resultados agregados del instrumento SUS (media, desviaci\'on t\'ipica, IC 95\,\%).}%
 {fig:zaida-sus-resultados}
 
 \section{Accesibilidad autom\'atica (Lighthouse)}
+\label{sec:zaida-lighthouse}
 
-El repositorio registra la intenci\'on de auditar el frontend con
-Lighthouse~\cite{lighthouse-docs} CI (rama hist\'orica
-\texttt{zaida/frontend-lighthouse}), pero
-\textbf{no existe actualmente un \texttt{lighthouserc.js} versionado ni una
-carpeta \texttt{docs/mediciones/lighthouse/}} con resultados. No se reporta
-ninguna puntuaci\'on de Performance, Accessibility, Best Practices ni SEO
-en este documento por no existir todav\'ia esa medici\'on.
+La configuraci\'on de auditor\'ia est\'a versionada en
+\texttt{lighthouserc.js} (perfil m\'ovil simulado, umbrales
+Performance~$\geq$~80, Accessibility~$\geq$~90, Best Practices~$\geq$~90 y
+SEO~$\geq$~90, conforme al bloque C.5 de la Gu\'ia) junto con
+\texttt{scripts/run-lighthouse.sh}, que ejecuta \texttt{npx lhci autorun}
+contra el frontend servido por el contenedor Docker (no contra
+\texttt{ng serve}) y archivar\'ia los JSON crudos en
+\texttt{docs/mediciones/lighthouse/}. \textbf{A la fecha de este informe la
+corrida a\'un no se ha realizado}: no existe todav\'ia la carpeta
+\texttt{docs/mediciones/lighthouse/} con resultados, por lo que no se
+reporta ninguna puntuaci\'on de Performance, Accessibility, Best Practices
+ni SEO en este documento.
 
 % EVIDENCIA-ZAIDA-04
 % Ruta esperada: figuras/zaida/04-lighthouse.png
@@ -139,12 +182,14 @@ resto del c\'odigo, en lugar de binarios opacos.
 \section{Limitaciones reales de este bloque}
 
 \begin{itemize}[nosep]
-  \item Las mediciones de usabilidad (SUS) y accesibilidad autom\'atica
-    (Lighthouse) est\'an dise\~nadas metodol\'ogicamente pero no ejecutadas
-    a la fecha de este informe.
-  \item La verificaci\'on de accesibilidad reportada aqu\'i es de
-    inspecci\'on de c\'odigo (atributos ARIA presentes), no una auditor\'ia
-    automatizada ni una prueba con usuarios reales con discapacidad.
+  \item La auditor\'ia autom\'atica de accesibilidad (Lighthouse) est\'a
+    dise\~nada y configurada metodol\'ogicamente pero no ejecutada a la
+    fecha de este informe; la medici\'on de usabilidad (SUS) s\'i se
+    ejecut\'o y se reporta con datos reales.
+  \item La verificaci\'on de accesibilidad reportada aqu\'i, m\'as all\'a
+    del SUS, es de inspecci\'on de c\'odigo (atributos ARIA presentes), no
+    una auditor\'ia automatizada ni una prueba con usuarios reales con
+    discapacidad.
   \item No se dispone de un reporte de compatibilidad entre navegadores
     distinto del entorno de desarrollo usado por el equipo.
 \end{itemize}

@@ -32,7 +32,6 @@ module.exports = {
       ],
       numberOfRuns: 3,
       settings: {
-        preset: 'mobile',
         throttlingMethod: 'simulate',
         // La pantalla de Mascotas depende de la cookie de sesión (authGuard
         // hace GET /api/usuarios/me y redirige a /login si no hay sesión).

@@ -40,15 +40,20 @@ inmediatamente antes de la corrida de referencia.
 
 Fuentes reales: los documentos `A01-access-control.md`, `A02-cryptography-tls.md`,
 `A03-injection.md`, `A05-security-headers.md`, `A07-authentication.md` y
-`A09-logging.md` de esta misma carpeta (evidencia ya verificada en la Fase 9A
-contra el código y contra pruebas automatizadas reales); las salidas locales
-que generan `scripts/security-evidence.ps1`/`.sh` en `docs/mediciones/sec/raw/`
-(`mvn-clean-verify.txt`, `docker-compose-config.txt`, `docker-compose-ps.txt`,
-`http-8080-headers.txt`, `https-8443-headers.txt` — carpeta con solo `.gitkeep`
-versionado, el resto se regenera localmente y no se sube al repositorio);
-`curl`/`curl.exe` y `openssl s_client` contra el stack Docker real; la suite
-`mvn clean verify` (`Backend/src/test/java/com/biopet/**`); y los logs
-estructurados `AUTH_AUDIT` que emite `AuthenticationAuditService`.
+`A09-logging.md` de esta misma carpeta (evidencia verificada contra el
+código, contra pruebas automatizadas reales y, desde 2026-07-31, contra
+peticiones HTTP reales); las salidas que genera `scripts/security-evidence.sh`
+(canónico) / `.ps1` en `docs/mediciones/sec/raw/` — `mvn-clean-verify.txt`,
+`docker-compose-config.txt`, `docker-compose-ps.txt`, y, por cada uno de los
+seis controles, un archivo dedicado: `A01-access-control.txt`, `A02-tls.txt`,
+`A03-injection.txt`, `A05-security-headers.txt`, `A07-auth-rate-limit.txt`,
+`A09-audit-logs.txt` (nota: esta carpeta **no** está excluida por
+`.gitignore` más allá de `.gitkeep`; los archivos que el script genera son
+evidencia real, sanitizada, destinada a versionarse, no una salida
+puramente local descartable); `curl`/`curl.exe` y `openssl s_client` contra
+el stack Docker real; la suite `mvn clean verify`
+(`Backend/src/test/java/com/biopet/**`); y los logs estructurados
+`AUTH_AUDIT` obtenidos con `docker compose logs backend`.
 
 ### Respuestas HTTP y autorización
 
@@ -138,23 +143,115 @@ lleguen al logger (`A09-logging.md`, `noRegistraDatosSensibles`).
 
 | Variable | Tipo de dato | Unidad | Rango esperado | Significado |
 |---|---|---|---|---|
-| security_tests_run | Entero | pruebas | 108 | Total de pruebas ejecutadas por `mvn clean verify` (suite completa del módulo, no solo las clases de seguridad; es la única cifra agregada real disponible — ver también la sección de JaCoCo). |
+| security_tests_run | Entero | pruebas | 109 | Total de pruebas ejecutadas por `mvn clean verify` (suite completa del módulo, no solo las clases de seguridad; es la única cifra agregada real disponible — ver también la sección de JaCoCo). Sube de 108 a 109 el 2026-08-01 al reemplazar la aserción ambigua de `SqlInjectionSecurityTest.loginConEmailDeInyeccionNoAutentica` (antes aceptaba 401 o 422) por una aserción exacta de 422, y añadir `loginConPayloadLiteralDeLaGuiaDevuelve422` con el payload literal de la guía. |
 | failures | Entero | pruebas | 0 | Aserciones fallidas reportadas por Surefire/Failsafe. |
 | errors | Entero | pruebas | 0 | Errores no controlados durante la ejecución de pruebas. |
 | skipped | Entero | pruebas | 0 | Pruebas omitidas. |
-| test_result | Texto (categórico) | — | {BUILD SUCCESS} | Resultado agregado final de `mvn clean verify`, reejecutado el 2026-07-31 (`jacoco-summary.md`). |
+| test_result | Texto (categórico) | — | {BUILD SUCCESS} | Resultado agregado final de `mvn clean verify`, reejecutado el 2026-08-01. |
 
-## Usabilidad SUS (`docs/mediciones/sus/`) — responsable: Zaida
+## Usabilidad SUS (`docs/mediciones/sus/sus-raw.csv`) — responsable: Zaida
 
-_Pendiente: sección a completar por Zaida con las variables del instrumento SUS
-(puntuación por ítem, escala 1–5, puntuación agregada 0–100, IC 95%, perfil de
-participantes)._
+Datos crudos de la prueba de usabilidad System Usability Scale (Brooke, 1996),
+aplicada a diez participantes externos al equipo (P01–P10). Instrumento
+detallado en `docs/mediciones/sus/instrumento-sus.md`; análisis y cálculo del
+puntaje agregado en `scripts/analisis-sus.py`, reporte en
+`docs/mediciones/sus/REPORT.md`.
+
+| Variable | Tipo de dato | Unidad | Rango esperado | Significado |
+|---|---|---|---|---|
+| codigo_participante | Texto (categórico) | — | P01–P10 | Identificador anonimizado del participante; no permite identificarlo individualmente. |
+| fecha_iso8601 | Fecha (ISO 8601) | — | AAAA-MM-DD | Fecha en que el participante realizó la prueba. |
+| edad | Entero | años | 18–99 | Edad declarada por el participante, con fines demográficos agregados. |
+| sexo | Texto (categórico) | — | {F, M} | Sexo declarado por el participante. |
+| experiencia_web | Texto (categórico) | — | {ninguna, basica, intermedia, avanzada} | Experiencia previa autodeclarada con aplicaciones web. |
+| dispositivo | Texto (categórico) | — | {laptop, computador de escritorio, tablet, celular} | Dispositivo utilizado por el participante durante la prueba. Todos los participantes de esta corrida usaron equipos de escritorio o laptop, salvo P08 (tablet). |
+| Q1_usaria_frecuentemente … Q10_necesito_aprender_mucho_antes | Entero | puntos Likert | 1–5 | Respuesta a cada uno de los diez ítems originales del instrumento SUS (1 = totalmente en desacuerdo, 5 = totalmente de acuerdo). Ítems impares redactados en sentido positivo, pares en sentido negativo, según Brooke (1996). |
+| sus_score | Decimal | puntos SUS | 0.0–100.0 | Puntaje SUS agregado por participante, calculado según el método estándar de Brooke: suma de contribuciones de los diez ítems × 2.5. |
 
 ## Accesibilidad / Lighthouse (`docs/mediciones/lighthouse/`) — responsable: Zaida
 
-_Pendiente: sección a completar por Zaida con las variables de cada auditoría
-`lhci` (Performance, Accessibility, Best Practices, SEO — escala 0–100, umbral
-mínimo declarado en `lighthouserc.js`)._
+Fuente: archivos crudos `lhci-YYYYMMDD-HHMM-<slug>-runN.json`, producidos por
+`npx @lhci/cli autorun` (ver `lighthouserc.js` y `scripts/run-lighthouse.sh`)
+contra el frontend Angular servido por el contenedor real
+(`http://localhost:4200`), nunca contra `ng serve`. Cada corrida es un LHR
+(Lighthouse Result) completo en formato JSON; no se edita manualmente. El
+archivo `lhci-YYYYMMDD-HHMM.meta.txt` que acompaña cada lote documenta fecha
+ISO 8601, commit hash corto y versiones de herramientas, exigido por el
+Bloque B.2 de la guía.
+
+> **Estado a la fecha de este documento:** configuración (`lighthouserc.js`,
+> `scripts/run-lighthouse.sh`) completa y verificada, pero la corrida real
+> contra el contenedor todavía no se ha ejecutado ni archivado. Esta sección
+> describe el esquema que tendrán las variables una vez generados los JSON
+> crudos; los valores de "Resultados medidos actuales" se añaden en cuanto
+> exista `docs/mediciones/lighthouse/*.json` real.
+
+### Identificación de la corrida
+
+| Variable | Tipo de dato | Unidad | Rango esperado | Significado |
+|---|---|---|---|---|
+| requestedUrl | Texto (URL) | — | {`http://localhost:4200/login`, `http://localhost:4200/mascotas`} | URL solicitada, tal como se declara en `lighthouserc.js` (`collect.url`). |
+| finalUrl | Texto (URL) | — | igual a `requestedUrl` salvo redirección | URL final tras seguir redirecciones; para `/mascotas` sin sesión activa, Lighthouse termina auditando `/login` (authGuard redirige) — comportamiento esperado, documentado en `lighthouserc.js`. |
+| fetchTime | Fecha-hora (ISO 8601) | — | coincide con el `STAMP` del archivo | Momento en que Lighthouse ejecutó la auditoría (campo `fetchTime` del LHR). |
+| lighthouseVersion | Texto (semver) | — | `^0.14.x` (línea fijada en `run-lighthouse.sh`, `@lhci/cli@0.14.x`) | Versión de la librería Lighthouse embebida en `@lhci/cli`, tomada del propio JSON, no adivinada. |
+| userAgent | Texto | — | cadena de Chrome headless | User-Agent del navegador que ejecutó la auditoría (Chromium headless invocado por `lhci`). |
+| run_index | Entero | corrida | 0–2 | Índice de la corrida dentro de las 3 exigidas por `numberOfRuns: 3` en `lighthouserc.js`; corresponde al sufijo `runN` del nombre de archivo asignado por `run-lighthouse.sh`. |
+
+### Puntuaciones por categoría
+
+| Variable | Tipo de dato | Unidad | Rango esperado | Significado |
+|---|---|---|---|---|
+| categories.performance.score | Decimal | proporción (0–1 en el JSON crudo; ×100 al reportar) | ≥ 0.80 | Puntuación de Performance. Umbral mínimo declarado en `lighthouserc.js`: `categories:performance` ≥ 0.8. |
+| categories.accessibility.score | Decimal | proporción (0–1; ×100 al reportar) | ≥ 0.90 | Puntuación de Accessibility. Umbral: ≥ 0.9. |
+| categories['best-practices'].score | Decimal | proporción (0–1; ×100 al reportar) | ≥ 0.90 | Puntuación de Best Practices. Umbral: ≥ 0.9. |
+| categories.seo.score | Decimal | proporción (0–1; ×100 al reportar) | ≥ 0.90 | Puntuación de SEO. Umbral: ≥ 0.9. |
+| assertion_result | Texto (categórico) | — | {PASS, FAIL} | Resultado de `lhci assert` para cada categoría contra el umbral de `lighthouserc.js` (`assert.assertions`); FAIL en cualquier categoría hace fallar `lhci autorun` con código de salida ≠ 0. |
+
+### Métricas crudas de rendimiento (subconjunto de `audits.*.numericValue`)
+
+| Variable | Tipo de dato | Unidad | Rango esperado | Significado |
+|---|---|---|---|---|
+| first_contentful_paint_ms | Decimal | ms | según perfil móvil/Slow 4G, sin umbral propio de la guía | `audits['first-contentful-paint'].numericValue`: momento en que aparece el primer contenido visible. |
+| largest_contentful_paint_ms | Decimal | ms | sin umbral propio de la guía | `audits['largest-contentful-paint'].numericValue`: momento en que aparece el elemento más grande visible. |
+| total_blocking_time_ms | Decimal | ms | sin umbral propio de la guía | `audits['total-blocking-time'].numericValue`: tiempo total en que el hilo principal estuvo bloqueado para el usuario. |
+| cumulative_layout_shift | Decimal | adimensional | sin umbral propio de la guía | `audits['cumulative-layout-shift'].numericValue`: medida de estabilidad visual (saltos de layout inesperados). |
+| speed_index_ms | Decimal | ms | sin umbral propio de la guía | `audits['speed-index'].numericValue`: rapidez con la que se puebla visualmente el contenido. |
+| time_to_interactive_ms | Decimal | ms | sin umbral propio de la guía | `audits.interactive.numericValue`: momento en que la página queda interactiva de forma confiable. |
+
+Estas seis métricas alimentan `categories.performance.score` (con pesos
+propios del algoritmo de Lighthouse v10+), pero la guía solo exige umbral
+sobre el score agregado de la categoría, no sobre cada métrica individual;
+se documentan aquí porque explican variaciones entre corridas.
+
+### Condiciones de la auditoría (configuración aplicada, no medida)
+
+| Variable | Tipo de dato | Unidad | Rango esperado | Significado |
+|---|---|---|---|---|
+| perfil | Texto (categórico) | — | {mobile} | `settings.preset` de `lighthouserc.js`; perfil móvil exigido por el Bloque C.5. |
+| throttling_method | Texto (categórico) | — | {simulate} | `settings.throttlingMethod`; throttling de red y CPU simulado equivalente a Slow 4G + CPU 4x slowdown (preset por defecto de Lighthouse, no sobreescrito). |
+| skipped_audits | Texto (lista) | — | {`uses-http2`} | Auditorías omitidas explícitamente (`settings.skipAudits`); `uses-http2` se omite porque el contenedor de desarrollo sirve HTTP/1.1 vía Nginx sin TLS local, documentado en el propio `lighthouserc.js`. |
+| numberOfRuns | Entero | corridas | 3 | Corridas por URL exigidas en `collect.numberOfRuns`, para reducir varianza entre mediciones. |
+
+### Metadata de la medición (`lhci-YYYYMMDD-HHMM.meta.txt`)
+
+| Variable | Tipo de dato | Unidad | Rango esperado | Significado |
+|---|---|---|---|---|
+| fecha_iso8601 | Fecha-hora (ISO 8601, UTC) | — | AAAA-MM-DDTHH:MM:SSZ | Fecha/hora de generación del lote de corridas, capturada por `run-lighthouse.sh` con `date -u`. |
+| commit_hash_corto | Texto (hash Git) | — | 7 caracteres hexadecimales | `git rev-parse --short HEAD` en el momento de la corrida; ausente ("sin-git") solo si se ejecuta fuera de un repositorio Git, caso que no debe darse en la evidencia final. |
+| node_version | Texto (semver) | — | `v18.x`–`v22.x` | Salida de `node --version` en la máquina que ejecutó la auditoría. |
+| lighthouse_cli_version | Texto (semver) | — | `^0.14.x` | Salida de `npx @lhci/cli@0.14.x --version`. |
+| urls_auditadas | Texto (lista) | — | las dos URL de `collect.url` | Confirmación textual de qué rutas se auditaron en ese lote. |
+| corridas_por_url | Entero | corridas | 3 | Debe coincidir con `numberOfRuns` de `lighthouserc.js`, para trazabilidad cruzada entre la config y la evidencia archivada. |
+
+### Resultados medidos actuales
+
+_Pendiente de completar tras ejecutar `bash scripts/run-lighthouse.sh` contra
+el contenedor real y archivar los JSON crudos en
+`docs/mediciones/lighthouse/`. No se reportan aquí valores hasta que existan
+los archivos crudos correspondientes — reportar cifras sin archivo crudo
+respaldándolas violaría la regla transversal 8 de la guía ("los archivos
+crudos deben conservarse tal cual, su edición manual invalida la
+evidencia")._
 
 ## Cobertura JaCoCo (`Backend/target/site/jacoco/`, resumida en `docs/mediciones/sec/jacoco-summary.md`) — responsable: Jaime
 
@@ -201,7 +298,7 @@ contra `docs/mediciones/sec/jacoco-summary.md`:
 
 | Variable | Tipo de dato | Unidad | Rango esperado | Significado |
 |---|---|---|---|---|
-| tests_run | Entero | pruebas | 108 | Total de pruebas ejecutadas por `mvn clean verify`, verificado sumando `Tests run:` de todos los `Backend/target/surefire-reports/*.txt` generados localmente. |
+| tests_run | Entero | pruebas | 109 | Total de pruebas ejecutadas por `mvn clean verify`, verificado sumando `Tests run:` de todos los `Backend/target/surefire-reports/*.txt` generados localmente (109/109, 0 fallos, 0 errores, reejecutado el 2026-08-01). |
 | test_failures | Entero | pruebas | 0 | Suma de `Failures:` de los mismos reportes. |
 | test_errors | Entero | pruebas | 0 | Suma de `Errors:` de los mismos reportes. |
 | test_skipped | Entero | pruebas | 0 | Suma de `Skipped:` de los mismos reportes. |
