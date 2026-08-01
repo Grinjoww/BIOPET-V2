@@ -716,3 +716,48 @@ valor recibido en la petición.
 
 **Tipo de acceso a datos:** SP — función PL/pgSQL con `GROUP BY`, prohibida
 como CRUD elemental por el bloque A.2.1 de la Guía.
+
+---
+
+## CU-21 — Enviar notificación por correo electrónico *(recuperado, RF-07 — cierre de OBS-02)*
+
+| Campo | Contenido |
+|---|---|
+| **Objetivo** | Notificar al usuario por correo electrónico ante un evento relevante de su cuenta |
+| **Actor principal** | Sistema (proceso automático disparado por un evento de dominio) |
+| **Actores secundarios** | Servicio de correo externo (SMTP/proveedor por definir) |
+| **Disparador** | Ocurre un evento de dominio notificable (por ejemplo, registro exitoso de usuario) |
+| **Precondiciones** | El usuario destinatario tiene un correo electrónico válido registrado |
+| **Postcondiciones** | Éxito: el correo fue enviado o encolado hacia el servicio externo; un fallo de envío no revierte ni bloquea la operación que generó el evento |
+| **Requisitos relacionados** | REQ-F-022 |
+| **Historias relacionadas** | HU-021 |
+| **Estado** | Pendiente (no implementado en v0.9.0-rc) |
+
+**Descripción:** cuando ocurre un evento de dominio notificable, el sistema
+arma el contenido del correo a partir de los datos del evento y lo envía de
+forma asíncrona a través de un servicio de correo externo, sin que el
+resultado de ese envío afecte la respuesta HTTP de la operación original.
+
+**Flujo principal**
+1. Ocurre un evento de dominio notificable (por ejemplo, registro exitoso
+   de usuario, incluye CU-01).
+2. El sistema arma el contenido del correo a partir de los datos del
+   evento.
+3. El sistema encola o envía el correo al servicio de correo externo de
+   forma asíncrona.
+4. El servicio de correo externo confirma la entrega (fuera del alcance
+   verificable directamente por BIOPET).
+
+**Flujos alternativos:** ninguno adicional a los descritos.
+
+**Flujos de excepción**
+- 3a. El servicio de correo externo no está disponible o responde con
+  error: el sistema registra el fallo en el log y continúa; la operación de
+  dominio que originó el evento no se revierte ni responde con error al
+  cliente.
+
+**Reglas de negocio:** el envío de correo nunca debe ser una condición
+bloqueante para el éxito de la operación de dominio que lo origina.
+
+**Tipo de acceso a datos:** no aplica — no involucra acceso directo a base
+de datos; consume un servicio externo.
