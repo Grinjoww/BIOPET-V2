@@ -17,7 +17,7 @@
 - **Entregas cubiertas:** Entrega 1A (Semana 5) y Entrega 1B (Semana 6).
 - **Procedencia de la evidencia:** Aula virtual SGA (capturas de notificación de retroalimentación del docente, Dr. Gleiston Cicerón Guerrero Ulloa, Ph.D.).
 - **Fecha de incorporación de la evidencia al repositorio:** 2026-07-31.
-- **Rama donde se construyó esta bitácora:** `jaime/observaciones-1a-1b` (creación inicial); cierre de OBS-02, OBS-03, OBS-04 y OBS-05 realizado en `jaime/cierre-observaciones-1a-1b`.
+- **Rama donde se construyó esta bitácora:** `jaime/observaciones-1a-1b` (creación inicial); cierre de OBS-02, OBS-03, OBS-04 y OBS-05 realizado en `jaime/cierre-observaciones-1a-1b`; cierre de OBS-08 (verificación del tag `v0.1.0-entrega-1b`) realizado en `jaime/cierre-obs-08`.
 
 ## 3.2 Fuentes primarias
 
@@ -63,7 +63,7 @@ recalculan ni se reinterpreta la rúbrica del docente.
 | OBS-05 | 1B, Semana 6 | DER entregado como `.dot`, no como exportación PNG de pgAdmin | C1. Diagramas UML, DER y diccionario | Jaime Mariscal (evidencia incorporada) | CERRADA | Commit de cierre: pendiente, commit de esta rama |
 | OBS-06 | 1B, Semana 6 | Colección Postman no versionada (.json) | C5. Pruebas JUnit, Postman y métricas | Zaida Taipe / Jaime Mariscal (Postman) | CERRADA | `39a40a9`, `dcf8e16` |
 | OBS-07 | 1B, Semana 6 | Workflow CI ubicado en `./workflows/ci.yml` en vez de `.github/workflows/` | C6. Docker Compose e integración | Jaime Mariscal (CI/CD) | CERRADA | `eef268c` (PR #37) |
-| OBS-08 | 1B, Semana 6 | Tag `v0.1.0-entrega-1b` exigido no fue creado | C7. Repositorio Git | Jaime Mariscal (gestión del repositorio) | ABIERTA | — |
+| OBS-08 | 1B, Semana 6 | Tag `v0.1.0-entrega-1b` exigido no fue creado | C7. Repositorio Git | Jaime Mariscal (gestión del repositorio) | CERRADA | Tag anotado `v0.1.0-entrega-1b` → commit `058b1fe` |
 
 ---
 
@@ -374,21 +374,35 @@ recalculan ni se reinterpreta la rúbrica del docente.
   > "Crear el tag anotado v0.1.0-entrega-1b sobre el commit de entrega"
 - **Criterio relacionado:** C7 — Repositorio Git (peso 10 %, logrado 85 % = "Bueno", junto con la falta de tag como único señalamiento explícito de este criterio).
 - **Impacto señalado por el docente:** Es la razón explícita dada para que C7 no fuera "Excelente" pese a los commits de los tres integrantes y el uso de Conventional Commits.
-- **Decisión del equipo:** No verificable — no se creó el tag en ningún momento posterior.
-- **Corrección realizada:** Ninguna.
+- **Decisión del equipo:** Crear el tag anotado exactamente con el nombre solicitado por el docente (`v0.1.0-entrega-1b`, sin sustituirlo por `v0.7.0`, `v0.7.1` ni `v0.9.0-rc`), sobre el commit `058b1fe` — el mismo commit que este documento ya había identificado en la Parte 8 como candidato verificado a "fotografía de la Entrega 1B" (último commit del lote inicial del 2026-06-20, el que agrega `PFC_Entrega1B_BMT.pdf`).
+- **Corrección realizada:** Se creó el tag anotado `v0.1.0-entrega-1b` sobre el commit `058b1fe`, marcando formalmente el cierre de la Entrega 1B tal como pedía la retroalimentación oficial del SGA: *"Crear el tag anotado v0.1.0-entrega-1b sobre el commit de entrega"*.
 - **Archivos involucrados:** No aplica (es un objeto de Git, no un archivo).
 - **Evidencia actual:**
   ```
-  git tag --list
-  (sin salida)
-
   git tag --list "v0.1.0-entrega-1b"
-  (sin salida)
+  v0.1.0-entrega-1b
+
+  git show --no-patch --decorate v0.1.0-entrega-1b
+  tag v0.1.0-entrega-1b
+  Tagger: Jaime Mariscal <mariscaljaime34@gmail.com>
+  Date:   Fri Jul 31 21:56:14 2026 -0500
+
+  Entrega 1B: autenticacion JWT y acceso a datos
+
+  commit 058b1fef728900916fc293fabd0fa7ddb723ba83 (tag: v0.1.0-entrega-1b)
+  Author: Fred Beltran <fbeltranm@uteq.edu.ec>
+  Date:   Sat Jun 20 12:04:48 2026 -0500
+
+      Add files via upload
+
+  git rev-parse v0.1.0-entrega-1b^{}
+  058b1fef728900916fc293fabd0fa7ddb723ba83
   ```
-- **Commit o commits:** No aplica — el tag no existe.
+  Nombre exacto del tag: `v0.1.0-entrega-1b` (tag **anotado**, no ligero — tiene tagger, fecha y mensaje propios). Commit objetivo: `058b1fe` (`058b1fef728900916fc293fabd0fa7ddb723ba83`). Comando de verificación: `git rev-parse v0.1.0-entrega-1b^{}`. Propósito indicado por la retroalimentación del SGA: *"no se creo el tag v0.1.0-entrega-1b exigido para marcar la entrega"* / *"Crear el tag anotado v0.1.0-entrega-1b sobre el commit de entrega"* (criterio C7, Repositorio Git).
+- **Commit o commits:** `058b1fe` (commit objetivo del tag; no es un commit de corrección de código, es el commit de entrega que el tag marca).
 - **Responsable:** Jaime Mariscal (gestión del repositorio).
-- **Estado:** ABIERTA
-- **Justificación del estado:** Se confirmó explícitamente, mediante `git tag --list`, que no existe ningún tag en el repositorio (ni `v0.1.0-entrega-1b` ni ningún otro). **No se creó el tag como parte de esta tarea**, conforme a la restricción explícita de no crear tags. Se conserva exactamente el nombre solicitado por el docente (`v0.1.0-entrega-1b`), sin sustituirlo por `v0.7.0`, `v0.7.1` ni `v0.9.0-rc` (ver Parte 8).
+- **Estado:** CERRADA
+- **Justificación del estado:** El tag anotado `v0.1.0-entrega-1b` existe, apunta exactamente al commit `058b1fe` (verificado con `git rev-parse v0.1.0-entrega-1b^{}`), y conserva el nombre exacto solicitado por el docente sin sustituirlo por ninguno de los tags de la Tercera Entrega (`v0.7.0`, `v0.7.1`, `v0.9.0-rc`), tal como exigía la instrucción original.
 
 ---
 
@@ -439,9 +453,9 @@ docente, no deficiencias a resolver.
 
 | Tag | Fuente que lo exige | Existe | Commit candidato | Estado | Riesgo |
 |---|---|---|---|---|---|
-| `v0.1.0-entrega-1b` | Retroalimentación oficial de la Entrega 1B (SGA, Semana 6) — texto literal citado en OBS-08 | No | — | No creado (OBS-08 ABIERTA) | Bajo si se crea sobre el commit correcto de cierre de la Entrega 1B; pero ese commit no ha sido identificado con certeza porque el repositorio evaluado originalmente (`PFC--VET-ENTR1B`) no es este repositorio. |
-| `v0.7.0` | Guía de la Tercera Entrega (v0.9.0-rc), no la retroalimentación del SGA | No | `058b1fe` (candidato, ver justificación abajo) | No creado | Medio: `058b1fe` es del repositorio sucesor (`PFC-VET-ENTR3-v0.9.0-rc`), no del repositorio original de la Entrega 1B; etiquetarlo como "v0.7.0" documenta el estado heredado en *este* árbol, no el commit exacto que el docente evaluó. |
-| `v0.7.1` | Guía de la Tercera Entrega — cierre formal de la aplicación de observaciones de 1A/1B | No | — | No aplica todavía | Medio-bajo: de las 8 observaciones, 7 están CERRADAS (87.5 %) y solo OBS-08 permanece ABIERTA (falta crear `v0.1.0-entrega-1b`). Crear `v0.7.1` antes de resolver OBS-08 etiquetaría un cierre incompleto del Bloque 0; una vez resuelta esa última observación, el riesgo de crear `v0.7.1` pasaría a ser bajo. |
+| `v0.1.0-entrega-1b` | Retroalimentación oficial de la Entrega 1B (SGA, Semana 6) — texto literal citado en OBS-08 | **Sí** | `058b1fe` (`058b1fef728900916fc293fabd0fa7ddb723ba83`) | Creado — tag anotado (OBS-08 CERRADA) | Cerrado: verificado con `git rev-parse v0.1.0-entrega-1b^{}` = `058b1fe`, el mismo commit que este documento ya había identificado como candidato a "fotografía de la Entrega 1B". |
+| `v0.7.0` | Guía de la Tercera Entrega (v0.9.0-rc), no la retroalimentación del SGA | No | `058b1fe` (candidato, ver justificación abajo) | No creado | Medio: `058b1fe` es del repositorio sucesor (`PFC-VET-ENTR3-v0.9.0-rc`), no del repositorio original de la Entrega 1B; etiquetarlo como "v0.7.0" documenta el estado heredado en *este* árbol, no el commit exacto que el docente evaluó. Nótese que `058b1fe` ya tiene el tag `v0.1.0-entrega-1b`: un mismo commit puede llevar varios tags con propósitos distintos, pero `v0.7.0` sigue sin crearse porque responde a una fuente diferente (la Guía, no la retroalimentación del SGA). |
+| `v0.7.1` | Guía de la Tercera Entrega — cierre formal de la aplicación de observaciones de 1A/1B | No | — | No aplica todavía | Bajo: las 8 observaciones de esta bitácora (OBS-01 a OBS-08) están CERRADAS (100 %). Las observaciones de las Entregas 1A y 1B ya no bloquean el cierre formal del Bloque 0; crear `v0.7.1` es ahora una decisión de alcance del equipo, no una limitación de evidencia. |
 | `v0.9.0-rc` | Guía de la Tercera Entrega — tag final de esta entrega | No | — | No aplica todavía | Debe ser el último tag en crearse, después de `v0.7.1`, y solo cuando el resto del trabajo de la Tercera Entrega (bloques A-F de la Guía) esté cerrado, no solo el Bloque 0 de observaciones. |
 
 **`v0.1.0-entrega-1b`, `v0.7.0`, `v0.7.1` y `v0.9.0-rc` no son equivalentes ni intercambiables.** Cada uno responde a una fuente y a un propósito distinto: el primero es un nombre exigido explícitamente por el docente sobre el commit de cierre de la Entrega 1B; los otros tres provienen de la guía de la Tercera Entrega y marcan hitos distintos del proyecto sucesor.
@@ -465,10 +479,14 @@ A  PFC_Entrega1B_BMT.pdf
 
 - **Por qué es candidato:** es el último commit del lote inicial fechado 2026-06-20 (el mismo día en que se subió todo el contenido de la Entrega 1B), y es además el commit que agrega el propio informe técnico `PFC_Entrega1B_BMT.pdf`. Todo el trabajo posterior salta a 2026-07-29 y corresponde inequívocamente a la Tercera Entrega (Makefile, digests, ProblemDetail, claims JWT, etc.).
 - **Por qué no debe crearse automáticamente:** este repositorio (`PFC-VET-ENTR3-v0.9.0-rc`) no es el repositorio `PFC--VET-ENTR1B` que el docente efectivamente evaluó (URL distinta, citada en la propia captura de retroalimentación). Etiquetar `058b1fe` como `v0.7.0` en este árbol documenta razonablemente el estado heredado, pero no reconstruye con certeza absoluta el commit exacto calificado por el docente en el repositorio original.
-- **Por qué `v0.7.1` requiere primero cerrar las observaciones:** por definición, `v0.7.1` marca el cierre de la aplicación de observaciones de 1A/1B; crearlo con 6 de 8 observaciones sin cerrar por completo invalidaría el propósito del tag.
+- **Por qué `v0.7.1` ya no está bloqueado por falta de cierre:** por definición, `v0.7.1` marca el cierre de la aplicación de observaciones de 1A/1B; con las 8 observaciones (OBS-01 a OBS-08) CERRADAS, el propósito del tag ya está satisfecho en cuanto a evidencia. Su creación queda como decisión de alcance del equipo (por ejemplo, coordinarla con el resto del trabajo de la Tercera Entrega), no como algo pendiente de esta bitácora.
 - **Por qué `v0.9.0-rc` debe crearse al final:** es el tag objetivo de toda la Tercera Entrega (bloques 0 y A-F de la guía), no solo del Bloque 0 de observaciones aquí auditado.
 
-**No se creó ningún tag como parte de esta tarea.**
+**No se creó ningún tag `v0.7.0`, `v0.7.1` ni `v0.9.0-rc` como parte de esta
+tarea.** El único tag existente en el repositorio, `v0.1.0-entrega-1b`, fue
+creado directamente por Jaime Mariscal (ver evidencia en el bloque OBS-08)
+antes de esta actualización de la bitácora; esta tarea únicamente verificó y
+documentó su existencia, sin ejecutar `git tag`.
 
 ---
 
@@ -477,26 +495,32 @@ A  PFC_Entrega1B_BMT.pdf
 ## Estado global
 
 - **Total de observaciones:** 8
-- **CERRADAS:** 7 (OBS-01, OBS-02, OBS-03, OBS-04, OBS-05, OBS-06, OBS-07)
+- **CERRADAS:** 8 (OBS-01, OBS-02, OBS-03, OBS-04, OBS-05, OBS-06, OBS-07, OBS-08)
 - **CERRADAS PARCIALMENTE:** 0
-- **ABIERTAS:** 1 (OBS-08)
+- **ABIERTAS:** 0
 - **NO VERIFICABLES:** 0
 
 **Porcentaje real de cierre** (solo CERRADA cuenta como cierre completo):
 
 ```
 porcentaje de cierre = observaciones CERRADAS / 8 × 100
-                      = 7 / 8 × 100
-                      = 87.5 %
+                      = 8 / 8 × 100
+                      = 100 %
 ```
 
 ## Observaciones que aún bloquean `v0.7.1`
 
-- **OBS-08** (ABIERTA) — falta crear el tag `v0.1.0-entrega-1b` sobre el commit correspondiente al cierre de la Entrega 1B. Es la **única** observación que impide alcanzar el 100 % de cierre.
+Ninguna. Las 8 observaciones (OBS-01 a OBS-08) de las Entregas 1A y 1B están
+**CERRADAS**. Las observaciones ya no bloquean el cierre formal del Bloque 0
+de la Guía de la Tercera Entrega; la creación de `v0.7.1` queda como
+decisión de alcance del equipo, no como una limitación de evidencia
+pendiente en esta bitácora.
 
 ## Acciones concretas pendientes
 
-1. Crear el tag anotado `v0.1.0-entrega-1b` sobre el commit que el equipo determine como cierre real de la Entrega 1B (OBS-08). — *Responsable recomendado: Jaime Mariscal.* **No se ejecuta en esta tarea** (restricción explícita: no crear tags).
+Ninguna acción pendiente derivada de las observaciones de las Entregas 1A y
+1B. El Bloque 0 de la Guía de la Tercera Entrega queda con evidencia
+completa (100 % de cierre).
 
 ## Verificación de trazabilidad end-to-end
 
@@ -511,16 +535,17 @@ VALIDACION OK: 35 requisitos del SRS, 35 filas en matriz.csv, 21 historias
 y 21 casos de uso consistentes entre sí.
 ```
 
-OBS-01 a OBS-07 quedan CERRADAS, sin limitaciones pendientes de trazabilidad.
-Solo falta crear el tag `v0.1.0-entrega-1b` (OBS-08) para que el Bloque 0 de
-la Guía de la Tercera Entrega quede al 100 % y sea seguro evaluar la
-creación de `v0.7.1`.
+OBS-01 a OBS-08 quedan CERRADAS, sin limitaciones pendientes de trazabilidad.
+El tag `v0.1.0-entrega-1b` (OBS-08) ya existe sobre el commit `058b1fe`. El
+Bloque 0 de la Guía de la Tercera Entrega queda al 100 % de cierre; las
+observaciones de las Entregas 1A y 1B ya no bloquean la creación de
+`v0.7.1`.
 
 ---
 
 ## Trazabilidad de este documento
 
-- Elaborado en la rama `jaime/observaciones-1a-1b`; cerrado (OBS-02, OBS-03, OBS-04, OBS-05) en la rama `jaime/cierre-observaciones-1a-1b`.
+- Elaborado en la rama `jaime/observaciones-1a-1b`; cerrado (OBS-02, OBS-03, OBS-04, OBS-05) en la rama `jaime/cierre-observaciones-1a-1b`; cerrado (OBS-08) en la rama `jaime/cierre-obs-08`.
 - Fuentes primarias: capturas oficiales del aula virtual SGA (ver sección 3.2).
 - Verificado contra el historial real de Git mediante `git show --stat` / `git show --name-status` para cada commit citado.
 - No contiene observaciones inventadas ni hashes inexistentes.
