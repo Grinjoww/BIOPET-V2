@@ -37,6 +37,28 @@ completo, con relaciones verificadas contra el código, está en:
 - [`docs/diagrams/c4-contenedores/`](docs/diagrams/c4-contenedores/) — C4 Nivel 2 (contenedores).
 - [`docs/diagrams/c4-componentes-backend/C4-L3-backend.md`](docs/diagrams/c4-componentes-backend/C4-L3-backend.md) — C4 Nivel 3 (componentes del backend).
 
+### Flujo MVC de una petición autenticada
+
+El siguiente diagrama de secuencia muestra el ciclo de vida de una petición autenticada dentro de BIOPET, desde el cliente Angular hasta PostgreSQL y el retorno de la respuesta JSON.
+
+[Ver diagrama de secuencia del flujo MVC](docs/diagramas/flujo-mvc-springboot.png)
+
+![Flujo MVC Spring Boot](docs/diagramas/flujo-mvc-springboot.png)
+
+#### Descripción del flujo
+
+1. **Cliente Angular:** `MascotaApiService.listar()` envía la petición `GET /api/mascotas` incluyendo la cookie de autenticación.
+2. **JwtAuthenticationFilter:** `doFilterInternal()` intercepta la petición y obtiene el JWT mediante `resolveToken(request)`.
+3. **SecurityContextHolder:** Spring registra la autenticación del usuario validado.
+4. **MascotaController:** `listar(Pageable, UserDetails)` recibe la petición autenticada y los parámetros de paginación.
+5. **MascotaService:** `listar(Pageable, String email)` ejecuta la lógica de negocio dentro de una transacción de solo lectura.
+6. **UsuarioRepository:** `findByEmailAndActivoTrue(email)` obtiene al usuario autenticado.
+7. **MascotaRepository:** según el rol, ejecuta `findAllByActivoTrue(pageable)` o `findAllByDuenioIdAndActivoTrue(...)`.
+8. **PostgreSQL:** Hibernate genera y ejecuta la consulta SQL correspondiente sobre la tabla `mascotas`.
+9. **MascotaResponse:** las entidades obtenidas se transforman al DTO mediante `map(this::toResponse)`.
+10. **Jackson:** `MappingJackson2HttpMessageConverter` serializa el resultado a JSON.
+11. **Cliente Angular:** recibe la respuesta HTTP `200 OK` con el contenido paginado en formato JSON.
+
 ## Inicio rápido
 
 ```bash
