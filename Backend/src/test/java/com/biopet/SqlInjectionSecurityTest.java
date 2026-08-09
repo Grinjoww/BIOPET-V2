@@ -2,6 +2,7 @@ package com.biopet;
 
 import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
+import com.biopet.repository.CitaRepository;
 import com.biopet.repository.MascotaRepository;
 import com.biopet.repository.UsuarioRepository;
 import com.biopet.security.LoginRateLimiterService;
@@ -67,6 +68,7 @@ class SqlInjectionSecurityTest {
     @Autowired MockMvc mockMvc;
     @Autowired UsuarioRepository usuarioRepository;
     @Autowired MascotaRepository mascotaRepository;
+    @Autowired CitaRepository citaRepository;
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired LoginRateLimiterService loginRateLimiterService;
 
@@ -74,6 +76,9 @@ class SqlInjectionSecurityTest {
 
     @BeforeEach
     void setUp() {
+        // citaRepository se limpia primero por la FK citas.mascota_id -> mascotas
+        // (módulo Cita, Bloque 2 de Jaime); mismo motivo que en MascotaControllerTest.
+        citaRepository.deleteAll();
         mascotaRepository.deleteAll();
         usuarioRepository.deleteAll();
         Usuario usuario = Usuario.builder()
