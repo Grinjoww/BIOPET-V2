@@ -13,6 +13,18 @@ Este reporte **no implementa controles nuevos**: recopila y referencia
 evidencia de código, pruebas automatizadas y ejecuciones reales ya realizadas
 en fases anteriores (7A–7E, 8A–8B) del proyecto.
 
+**Actualización (Unidad IV, Bloque 3B, `2026-08-09`, rama
+`jaime/u4-usuarios-citas`, sin commitear):** se cierran las tres
+observaciones que quedaban explícitamente abiertas en la versión anterior
+de este documento — A04 (Insecure Design), A06 (Vulnerable and Outdated
+Components) y XSS. Mismo principio que el resto del reporte: no se
+implementó ningún control nuevo salvo que fuera estrictamente necesario
+(no lo fue). La evaluación de A04, A06 y XSS quedó completada; en el caso
+de A06 se documentan además hallazgos **reales, con evidencia verificable**
+detectados durante la auditoría (no solo controles ya existentes) — ver el
+detalle en `A04-insecure-design.md`, `A06-vulnerable-components.md` y
+`XSS.md`.
+
 ## Alcance
 
 - Backend Spring Boot (`Backend/`), únicamente. No cubre el frontend Angular,
@@ -23,8 +35,16 @@ en fases anteriores (7A–7E, 8A–8B) del proyecto.
   rate limiting de login, auditoría de eventos de autenticación (A09),
   cabeceras HTTP (A05), HTTPS/TLS 1.3 nativo, y pruebas contra inyección SQL
   (A03).
-- No incluye A04, A06, A08 ni A10: no fueron objeto de fases anteriores y no
-  se documentan aquí para no inventar evidencia inexistente.
+- No incluye A08 ni A10: no fueron objeto de ninguna fase hasta la fecha y no
+  se documentan aquí para no inventar evidencia inexistente. **A04 y A06
+  sí se incorporaron** en la actualización del `2026-08-09` (ver arriba);
+  la exclusión original de este párrafo (fases 7A–9A) queda desactualizada
+  para esas dos categorías y se corrige aquí explícitamente en vez de
+  dejar una afirmación falsa en el documento.
+- Esta actualización sí cubre parcialmente el frontend Angular (inventario
+  de dependencias y análisis de código para XSS, dentro de A06/XSS), a
+  diferencia del resto del reporte (7A–9A), que declaraba el frontend
+  fuera de alcance.
 
 ## Fecha y commit
 
@@ -96,12 +116,22 @@ en fases anteriores (7A–7E, 8A–8B) del proyecto.
 | A05 | Cabeceras HTTP (`X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, CSP, HSTS condicional a HTTPS), CORS con origen concreto | `docs/mediciones/sec/A05-security-headers.md`, `SecurityHeadersTest`, `raw/A05-security-headers.txt` | PASS |
 | A07 | Login/refresh/logout por cookies, revocación de tokens, rate limiting 401→429 con `Retry-After`, reinicio de contador tras éxito | `docs/mediciones/sec/A07-authentication.md`, `AuthControllerTest`, `JwtCookieAuthenticationTest`, **evidencia HTTP real** `raw/A07-auth-rate-limit.txt` | PASS |
 | A09 | Eventos `AUTH_AUDIT` estructurados, sin contraseñas/JWT/cookies/JTI, con sanitización anti log-forging | `docs/mediciones/sec/A09-logging.md`, `AuthenticationAuditServiceTest`, **evidencia real de contenedor** `raw/A09-audit-logs.txt` | PASS |
+| A04 | Separación Controller/Service/Repository; autorización por rol y por propiedad (Usuarios, Citas); prevención de escalación de privilegios al editar el propio usuario; validez de rol del veterinario asignado en Citas; invariantes de servidor que ignoran campos de control enviados por el cliente; manejo centralizado de errores (`GlobalExceptionHandler`) | `docs/mediciones/sec/A04-insecure-design.md`, `UsuarioControllerTest`, `CitaControllerTest` | PASS |
+| A06 | Auditoría ejecutada realmente (`npm audit` contra el registro real de npm; `versions-maven-plugin` para desactualización de backend, que no detecta CVE); hallazgos del frontend documentados con severidad, dependencia y corrección disponible | `docs/mediciones/sec/A06-vulnerable-components.md`, `raw/A06-npm-audit.json`, `raw/A06-npm-audit-human.txt`, `raw/A06-mvn-versions-dependencies.txt` | ✅ **Evaluación completada con hallazgos documentados.** `npm audit` identificó 52 vulnerabilidades reales en dependencias del frontend (1 crítica, 32 altas, 15 moderadas, 4 bajas). Su remediación requiere una migración mayor de Angular que no forma parte del alcance de esta práctica. Backend: evaluado mediante inspección de versiones (`versions-maven-plugin`), sin CVE scanner configurado — no equivalente a un análisis de CVE |
+| XSS | Búsqueda exhaustiva de sumideros inseguros (`innerHTML`, `bypassSecurityTrust*`, `document.write`, `eval`, `i18n`, SVG) en todo `frontend/src/app`; sanitización por defecto de Angular; CSP sin `unsafe-inline`/`unsafe-eval` | `docs/mediciones/sec/XSS.md`, `SecurityHeadersTest` | ✅ PASS — análisis del código propio + CSP + comportamiento por defecto de Angular, sin sink explotable detectado. Los hallazgos relacionados con dependencias se encuentran documentados en el control A06 y forman parte de los resultados obtenidos durante la evaluación |
 
 "PASS" indica que las pruebas y evidencias referenciadas se ejecutaron
 realmente y su resultado coincide **exactamente** con el comportamiento que
 exige la guía — no implica ausencia total de riesgo residual, que se
 detalla en cada documento individual y en las limitaciones de cada
-categoría.
+categoría. La fila de A06 usa una redacción propia en vez de la palabra
+"PASS": el control A06 fue **ejecutado y documentado completamente** — los
+hallazgos corresponden a dependencias de terceros detectadas durante la
+auditoría real (`npm audit`), no a un control que el equipo haya
+implementado incorrectamente. La migración mayor necesaria para su
+remediación no forma parte de las actividades definidas para esta
+práctica; por eso tampoco se marca "FAIL", que implicaría un control
+propio fallido.
 
 **Historial de A03 (transparencia del proceso, no un problema abierto):**
 la primera ronda de evidencia HTTP real (2026-07-31) probó los payloads de
@@ -149,7 +179,10 @@ total real y verificado es **28**.
 - [A01-access-control.md](A01-access-control.md)
 - [A02-cryptography-tls.md](A02-cryptography-tls.md)
 - [A03-injection.md](A03-injection.md)
+- [A04-insecure-design.md](A04-insecure-design.md)
 - [A05-security-headers.md](A05-security-headers.md)
+- [A06-vulnerable-components.md](A06-vulnerable-components.md)
 - [A07-authentication.md](A07-authentication.md)
 - [A09-logging.md](A09-logging.md)
+- [XSS.md](XSS.md)
 - [jacoco-summary.md](jacoco-summary.md)

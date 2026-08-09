@@ -1,0 +1,33 @@
+[INFO] The following dependencies in Dependencies have newer versions:
+[INFO]   com.h2database:h2 ................................. 2.2.224 -> 2.4.240
+[INFO]   io.jsonwebtoken:jjwt-api ............................ 0.12.6 -> 0.13.0
+[INFO]   io.jsonwebtoken:jjwt-impl ........................... 0.12.6 -> 0.13.0
+[INFO]   io.jsonwebtoken:jjwt-jackson ........................ 0.12.6 -> 0.13.0
+[INFO]   org.flywaydb:flyway-core ............................ 9.22.3 -> 13.2.0
+[INFO]   org.postgresql:postgresql .......................... 42.6.2 -> 42.7.13
+[INFO]   org.projectlombok:lombok .......................... 1.18.36 -> 1.18.46
+[INFO]   org.springdoc:springdoc-openapi-starter-webmvc-ui ..... 2.5.0 -> 3.1.0
+[INFO]   org.springframework.boot:spring-boot-starter-actuator ...
+[INFO]                                                          3.2.12 -> 4.1.0
+[INFO]   org.springframework.boot:spring-boot-starter-cache ... 3.2.12 -> 4.1.0
+[INFO]   org.springframework.boot:spring-boot-starter-data-jpa ...
+[INFO]                                                          3.2.12 -> 4.1.0
+[INFO]   org.springframework.boot:spring-boot-starter-data-redis ...
+[INFO]                                                          3.2.12 -> 4.1.0
+[INFO]   org.springframework.boot:spring-boot-starter-security ...
+[INFO]                                                          3.2.12 -> 4.1.0
+[INFO]   org.springframework.boot:spring-boot-starter-test .... 3.2.12 -> 4.1.0
+[INFO]   org.springframework.boot:spring-boot-starter-validation ...
+[INFO]                                                          3.2.12 -> 4.1.0
+[INFO]   org.springframework.boot:spring-boot-starter-web ..... 3.2.12 -> 4.1.0
+[INFO]   org.springframework.security:spring-security-test ..... 6.2.8 -> 7.1.0
+[INFO] 
+[INFO] The following dependencies in pluginManagement of plugins have newer versions:
+[INFO]   org.springframework.boot:spring-boot-maven-plugin .... 3.2.12 -> 4.1.0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.068 s
+[INFO] Finished at: 2026-08-09T16:48:07-05:00
+[INFO] ------------------------------------------------------------------------
