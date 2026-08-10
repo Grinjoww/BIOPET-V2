@@ -1,0 +1,289 @@
+{
+  "info": {
+    "name": "BIOPET - Vacunas (Zaida, U4)",
+    "description": "Coleccion Postman de /api/vacunas. Pensada para IMPORTARSE junto al environment ya existente 'BIOPET - Local academico' (docs/postman/BIOPET-Local.postman_environment.json), reutilizando sus variables adminEmail/adminPassword y duenioEmail/duenioPassword. Se entrega como coleccion separada para no tocar BIOPET.postman_collection.json a mano; el paso final es copiar la carpeta 'Vacunas CRUD' dentro de esa coleccion principal (import > merge, o copiar/pegar la carpeta en Postman).\n\nOrden recomendado: 1) Login admin, 2) Crear mascota de prueba (reusa /api/mascotas), 3) Crear vacuna, 4) Listar, 5) Buscar por id, 6) Actualizar, 7) Casos negativos (403 dueno, 404, 422), 8) Eliminar.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "vacunaMascotaId", "value": "" },
+    { "key": "vacunaId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Vacunas CRUD",
+      "item": [
+        {
+          "name": "1. Login admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"{{adminEmail}}\",\"password\":\"{{adminPassword}}\"}"
+            },
+            "description": "Cookies HttpOnly (access_token/refresh_token) gestionadas por el cookie jar de Postman."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Crear mascota de prueba (dueno)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/mascotas", "host": ["{{baseUrl}}"], "path": ["api", "mascotas"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"duenioId\":{{duenioUsuarioId}},\"nombre\":\"MascotaVacunaTest\",\"especie\":\"Perro\",\"raza\":\"Mestizo\",\"fechaNacimiento\":\"2020-01-01\"}"
+            },
+            "description": "Requiere duenioUsuarioId ya seteado (ver carpeta 3 de la coleccion principal, que registra un dueno y guarda su id). Ejecutar logueado como admin."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.collectionVariables.set('vacunaMascotaId', body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Crear vacuna",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/vacunas", "host": ["{{baseUrl}}"], "path": ["api", "vacunas"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mascotaId\":{{vacunaMascotaId}},\"tipo\":\"Antirrábica\",\"fechaAplicacion\":\"2026-01-10\",\"observaciones\":\"Sin reacciones adversas\"}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Cuerpo contiene tipo y mascotaId', function () {",
+                  "    var body = pm.response.json();",
+                  "    pm.expect(body.tipo).to.eql('Antirrábica');",
+                  "    pm.expect(body.mascotaId).to.eql(Number(pm.collectionVariables.get('vacunaMascotaId')));",
+                  "    pm.collectionVariables.set('vacunaId', body.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Listar vacunas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/vacunas?page=0&size=10", "host": ["{{baseUrl}}"], "path": ["api", "vacunas"], "query": [{ "key": "page", "value": "0" }, { "key": "size", "value": "10" }] }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Devuelve una pagina con content', function () {",
+                  "    var body = pm.response.json();",
+                  "    pm.expect(body.content).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5. Buscar vacuna por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/vacunas/{{vacunaId}}", "host": ["{{baseUrl}}"], "path": ["api", "vacunas", "{{vacunaId}}"] }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Id coincide', function () {",
+                  "    var body = pm.response.json();",
+                  "    pm.expect(body.id).to.eql(Number(pm.collectionVariables.get('vacunaId')));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6. Actualizar vacuna",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/vacunas/{{vacunaId}}", "host": ["{{baseUrl}}"], "path": ["api", "vacunas", "{{vacunaId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mascotaId\":{{vacunaMascotaId}},\"tipo\":\"Refuerzo antirrábica\",\"fechaAplicacion\":\"2026-02-01\",\"proximaFecha\":\"2027-02-01\"}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('tipo actualizado', function () {",
+                  "    var body = pm.response.json();",
+                  "    pm.expect(body.tipo).to.eql('Refuerzo antirrábica');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7a. Login dueno (403 esperado al crear)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "body": { "mode": "raw", "raw": "{\"email\":\"{{duenioEmail}}\",\"password\":\"{{duenioPassword}}\"}" }
+          },
+          "response": [],
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"] } }
+          ]
+        },
+        {
+          "name": "7b. Dueno intenta crear vacuna -> 403",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/vacunas", "host": ["{{baseUrl}}"], "path": ["api", "vacunas"] },
+            "body": { "mode": "raw", "raw": "{\"mascotaId\":{{vacunaMascotaId}},\"tipo\":\"Antirrábica\",\"fechaAplicacion\":\"2026-01-10\"}" }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('ProblemDetail forbidden', function () {",
+                  "    var body = pm.response.json();",
+                  "    pm.expect(body.type).to.eql('urn:biopet:error:forbidden');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7c. Vacuna inexistente -> 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/vacunas/999999", "host": ["{{baseUrl}}"], "path": ["api", "vacunas", "999999"] }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('ProblemDetail not-found', function () {",
+                  "    var body = pm.response.json();",
+                  "    pm.expect(body.type).to.eql('urn:biopet:error:not-found');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7d. Login admin (para 422 y eliminar)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "body": { "mode": "raw", "raw": "{\"email\":\"{{adminEmail}}\",\"password\":\"{{adminPassword}}\"}" }
+          },
+          "response": [],
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"] } }
+          ]
+        },
+        {
+          "name": "7e. Crear vacuna con tipo vacio -> 422",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/vacunas", "host": ["{{baseUrl}}"], "path": ["api", "vacunas"] },
+            "body": { "mode": "raw", "raw": "{\"mascotaId\":{{vacunaMascotaId}},\"tipo\":\"\",\"fechaAplicacion\":\"2026-01-10\"}" }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 422', function () { pm.response.to.have.status(422); });",
+                  "pm.test('ProblemDetail validation con errors.tipo', function () {",
+                  "    var body = pm.response.json();",
+                  "    pm.expect(body.type).to.eql('urn:biopet:error:validation');",
+                  "    pm.expect(body.errors.tipo).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "8. Eliminar vacuna",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/vacunas/{{vacunaId}}", "host": ["{{baseUrl}}"], "path": ["api", "vacunas", "{{vacunaId}}"] }
+          },
+          "response": [],
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', function () { pm.response.to.have.status(204); });"] } }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -9,7 +9,7 @@ import { RouterOutlet, RouterLink } from '@angular/router';
     <header>
       <h1>BIOPET</h1>
       <p>Entrega 1B — JWT + Spring Data JPA</p>
-      <nav><a routerLink="/login">Login</a> · <a routerLink="/mascotas">Mascotas</a></nav>
+      <nav><a routerLink="/login">Login</a> · <a routerLink="/mascotas">Mascotas</a> · <a routerLink="/vacunas">Vacunas</a></nav>
     </header>
     <router-outlet />
   `
