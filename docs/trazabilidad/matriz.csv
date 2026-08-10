@@ -4,16 +4,16 @@ REQ-F-002,funcional,Must,HU-001,CU-01,GlobalExceptionHandler,POST /api/auth/regi
 REQ-F-003,funcional,Must,HU-002,CU-02,AuthController/JwtService,POST /api/auth/login,AuthControllerTest + JwtServiceTest,CRUD-ORM,,verificado
 REQ-F-004,funcional,Must,HU-003,CU-03,AuthController/AuthService,POST /api/auth/refresh,AuthControllerTest,CRUD-ORM,,verificado
 REQ-F-005,funcional,Must,HU-004,CU-04,AuthController/TokenBlacklistService,POST /api/auth/logout,AuthControllerTest,CRUD-ORM,,verificado
-REQ-F-006,funcional,Must,HU-005,CU-05,SecurityConfig/MascotaController,"@PreAuthorize en /api/mascotas/**",MascotaControllerTest,CRUD-ORM,docs/mediciones/sec/ (A01 - pendiente),verificado
-REQ-F-007,funcional,Should,HU-006,CU-06,UsuarioController,GET /api/usuarios/me,Inspeccion / prueba manual Postman,CRUD-ORM,,implementado
+REQ-F-006,funcional,Must,HU-005,CU-05,SecurityConfig/MascotaController,"@PreAuthorize en /api/mascotas/**",MascotaControllerTest,CRUD-ORM,docs/mediciones/sec/A01-access-control.md (raw/A01-access-control.txt),verificado
+REQ-F-007,funcional,Should,HU-006,CU-06,UsuarioController/AuthService,GET /api/usuarios/me,UsuarioControllerTest,CRUD-ORM,,verificado
 REQ-F-008,funcional,Must,HU-007,CU-07,MascotaController/MascotaService,POST /api/mascotas,MascotaControllerTest,CRUD-ORM,,verificado
 REQ-F-009,funcional,Must,HU-008,CU-08,MascotaController/MascotaService,GET /api/mascotas,MascotaControllerTest,CRUD-ORM,,verificado
 REQ-F-010,funcional,Must,HU-009,CU-09,MascotaController/MascotaService,GET /api/mascotas/{id},MascotaControllerTest,CRUD-ORM,,verificado
 REQ-F-011,funcional,Must,HU-010,CU-10,MascotaController/MascotaService,PUT /api/mascotas/{id},MascotaControllerTest,CRUD-ORM,,verificado
 REQ-F-012,funcional,Must,HU-011,CU-11,MascotaController/MascotaService,DELETE /api/mascotas/{id},MascotaControllerTest,CRUD-ORM,,verificado
-REQ-F-013,funcional,Should,HU-012,CU-12,,,,,,pendiente
+REQ-F-013,funcional,Should,HU-012,CU-12,ConsultaController/ConsultaService,GET /api/consultas,,CRUD-ORM,Sin prueba automatizada; ConsultaService.listar() no filtra por propietario para ROLE_DUENO pese a la regla general del sistema,implementado
 REQ-F-014,funcional,Could,HU-013,CU-13,,,,,,pendiente
-REQ-F-015,funcional,Should,HU-014,CU-14,,,,,,pendiente
+REQ-F-015,funcional,Should,HU-014,CU-14,CitaController/CitaService,GET /api/citas,CitaControllerTest,CRUD-ORM,"Backend implementado y probado (incluye filtrado por propietario para ROLE_DUENO); HU-014 pide calendario interactivo, no implementado en frontend",verificado
 REQ-F-016,funcional,Could,HU-015,CU-15,,,,,,pendiente
 REQ-F-017,funcional,Could,HU-016,CU-16,,,,,,pendiente
 REQ-F-018,funcional,Should,HU-017,CU-17,,,,,,pendiente
@@ -21,16 +21,36 @@ REQ-F-019,funcional,Could,HU-018,CU-18,,,,,,pendiente
 REQ-F-020,funcional,Should,HU-019,CU-19,,,,,,pendiente
 REQ-F-021,funcional,Should,HU-020,CU-20,MascotaController/MascotaRepository,GET /api/mascotas/resumen-especies,ResumenEspeciesIntegrationTest,SP,,verificado
 REQ-F-022,funcional,Could,HU-021,CU-21,,,,,,pendiente
-REQ-NF-001,no funcional,Must,,,Cache Redis (listado mascotas),GET /api/mascotas,k6 (pendiente de ejecutar),CRUD-ORM,docs/mediciones/perf/ (pendiente),pendiente
-REQ-NF-002,no funcional,Must,,,Cache Redis (listado mascotas),GET /api/mascotas,k6 (pendiente de ejecutar),CRUD-ORM,docs/mediciones/perf/ (pendiente),pendiente
-REQ-NF-003,no funcional,Must,,,Nginx / despliegue TLS,N/A,curl -v (pendiente),,docs/mediciones/sec/ (A02 - pendiente),pendiente
-REQ-NF-004,no funcional,Must,,,JwtService,N/A,JwtServiceTest,CRUD-ORM,,verificado
-REQ-NF-005,no funcional,Must,,,UserDetailsServiceImpl,N/A,Inspeccion de BD,CRUD-ORM,,verificado
-REQ-NF-006,no funcional,Must,,,GlobalExceptionHandler/ProblemDetailFactory,Todos los endpoints,Coleccion Postman,CRUD-ORM,,verificado
-REQ-NF-007,no funcional,Should,,,Frontend Angular,N/A,"lighthouserc.js (config lista, ejecucion real pendiente)",,docs/mediciones/lighthouse/ (pendiente de corrida real),pendiente
-REQ-NF-008,no funcional,Should,,,Frontend Angular,N/A,Prueba manual exploratoria (pendiente),,,pendiente
-REQ-NF-009,no funcional,Must,,,Logging de autenticacion,N/A,Auditoria OWASP A09 (pendiente),,docs/mediciones/sec/ (A09 - pendiente),pendiente
-REQ-NF-010,no funcional,Should,,,Rate limiting (no implementado),POST /api/auth/login,Auditoria OWASP A07 (pendiente),,docs/mediciones/sec/ (A07 - pendiente),pendiente
-REQ-NF-011,no funcional,Must,,,Makefile/docker-compose.yml,N/A,Validacion por tercero (pendiente),,,implementado
-REQ-NF-012,no funcional,Must,,,Estructura de paquetes backend,N/A,Revision de codigo,CRUD-ORM,,verificado
+REQ-F-023,funcional,Should,HU-014,CU-14,CitaController/CitaService,GET /api/citas/{id},CitaControllerTest,CRUD-ORM,,verificado
+REQ-F-024,funcional,Should,HU-014,CU-14,CitaController/CitaService,POST /api/citas,CitaControllerTest,CRUD-ORM,,verificado
+REQ-F-025,funcional,Should,HU-014,CU-14,CitaController/CitaService,PUT /api/citas/{id},CitaControllerTest,CRUD-ORM,Incluye regla: ROLE_VETERINARIO solo puede actualizar citas donde es el veterinario asignado,verificado
+REQ-F-026,funcional,Should,HU-014,CU-14,CitaController/CitaService,DELETE /api/citas/{id},CitaControllerTest,CRUD-ORM,,verificado
+REQ-F-027,funcional,Should,HU-012,CU-12,ConsultaController/ConsultaService,GET /api/consultas/{id},ConsultaControllerTest,CRUD-ORM,,verificado
+REQ-F-028,funcional,Should,HU-012,CU-12,ConsultaController/ConsultaService,POST /api/consultas,ConsultaControllerTest,CRUD-ORM,,verificado
+REQ-F-029,funcional,Should,HU-012,CU-12,ConsultaController/ConsultaService,PUT /api/consultas/{id},,CRUD-ORM,Sin prueba automatizada (no cubierta por ConsultaControllerTest),implementado
+REQ-F-030,funcional,Should,HU-012,CU-12,ConsultaController/ConsultaService,DELETE /api/consultas/{id},ConsultaControllerTest,CRUD-ORM,,verificado
+REQ-F-031,funcional,Should,,,VacunaController/VacunaService,GET /api/vacunas,VacunaControllerTest,CRUD-ORM,docs/postman/BIOPET-Vacunas.postman_collection.json,verificado
+REQ-F-032,funcional,Should,,,VacunaController/VacunaService,GET /api/vacunas/mascota/{mascotaId},,CRUD-ORM,Sin prueba automatizada dedicada (no cubierta por VacunaControllerTest),implementado
+REQ-F-033,funcional,Should,,,VacunaController/VacunaService,GET /api/vacunas/{id},VacunaControllerTest,CRUD-ORM,docs/postman/BIOPET-Vacunas.postman_collection.json,verificado
+REQ-F-034,funcional,Should,,,VacunaController/VacunaService,POST /api/vacunas,VacunaControllerTest,CRUD-ORM,docs/postman/BIOPET-Vacunas.postman_collection.json,verificado
+REQ-F-035,funcional,Should,,,VacunaController/VacunaService,PUT /api/vacunas/{id},VacunaControllerTest,CRUD-ORM,docs/postman/BIOPET-Vacunas.postman_collection.json,verificado
+REQ-F-036,funcional,Should,,,VacunaController/VacunaService,DELETE /api/vacunas/{id},VacunaControllerTest,CRUD-ORM,docs/postman/BIOPET-Vacunas.postman_collection.json,verificado
+REQ-F-037,funcional,Should,,,UsuarioController/UsuarioService,GET /api/usuarios,UsuarioControllerTest,CRUD-ORM,,verificado
+REQ-F-038,funcional,Should,,,UsuarioController/UsuarioService,GET /api/usuarios/{id},UsuarioControllerTest,CRUD-ORM,,verificado
+REQ-F-039,funcional,Should,,,UsuarioController/UsuarioService,POST /api/usuarios,UsuarioControllerTest,CRUD-ORM,,verificado
+REQ-F-040,funcional,Should,,,UsuarioController/UsuarioService,PUT /api/usuarios/{id},UsuarioControllerTest,CRUD-ORM,Incluye regla: ADMIN no puede escalar su propio rol,verificado
+REQ-F-041,funcional,Should,,,UsuarioController/UsuarioService,DELETE /api/usuarios/{id},UsuarioControllerTest,CRUD-ORM,,verificado
+REQ-F-042,funcional,Could,,,ExternalApiController/ExternalApiService/ExternalApiClient,GET /api/externa/especies,,HTTP-EXTERNO,docs/u4/evidencias/fred/redis-cache-comparacion.md,implementado
+REQ-NF-001,no funcional,Must,,,Cache Redis (listado mascotas),GET /api/mascotas,k6 v2.1.0 (6 corridas: 3 en frio + 3 en caliente),CRUD-ORM,docs/mediciones/perf/REPORT.md (p95 caliente maximo 21.09ms < 200ms; p95 frio maximo 27.35ms < 500ms),verificado
+REQ-NF-002,no funcional,Must,,,SecurityConfig/TomcatDualConnectorConfig,N/A,SecurityHeadersTest.peticionHttpNoIncluyeHsts + AuthControllerTest.loginExitoso,,docs/mediciones/sec/A02-cryptography-tls.md (raw/A02-tls.txt: TLSv1.3 TLS_AES_256_GCM_SHA384),verificado
+REQ-NF-003,no funcional,Must,,,JwtService,N/A,JwtServiceTest.tokenExpiradoEsRechazado,,application.yml: JWT_EXPIRATION_MS (default 3600000 = 1h) y JWT_REFRESH_EXPIRATION_MS (default 604800000 = 7d) configurables por variable de entorno,verificado
+REQ-NF-004,no funcional,Must,,,JwtService,N/A,JwtServiceTest (accessTokenContieneLosSieteClaims + refreshTokenContieneLosSieteClaims + nbfEsIgualAIat + jtiEsUnicoEntreTokens + issuerIncorrectoEsRechazado + audienceIncorrectaEsRechazada),,Verifica los 7 claims RFC 7519 (iss/sub/aud/exp/nbf/iat/jti) en JwtService.buildToken,verificado
+REQ-NF-005,no funcional,Must,,,Frontend Angular (styles.css),N/A,Lighthouse (movil simulado; solo /login auditado directamente) + inspeccion manual,,"frontend/src/styles.css @media (max-width: 600px) en pantalla Mascotas; docs/mediciones/lighthouse/README.md cubre solo perfil movil de /login, no el rango completo 320-1440px ni todas las pantallas",implementado
+REQ-NF-006,no funcional,Should,,,Frontend Angular,N/A,Prueba manual exploratoria (pendiente),,,pendiente
+REQ-NF-007,no funcional,Must,,,Makefile/docker-compose.yml,N/A,docker compose healthcheck (postgres/redis/backend/frontend),,Demuestra que el stack se levanta y se autoverifica de forma reproducible (make up); no existe evidencia de disponibilidad sostenida durante una semana completa de evaluacion,implementado
+REQ-NF-008,no funcional,Must,,,SecurityConfig (BCryptPasswordEncoder),N/A,AuthControllerTest (registro/login exitoso),CRUD-ORM,"db/seed.sql (hash BCrypt real del usuario admin, prefijo $2b$12$); SecurityConfig.passwordEncoder() = BCryptPasswordEncoder(12)",verificado
+REQ-NF-009,no funcional,Must,,,Logging de autenticacion,N/A,AuthenticationAuditServiceTest (10 pruebas) + AuthControllerTest,,docs/mediciones/sec/A09-logging.md (raw/A09-audit-logs.txt); sin integracion SIEM centralizada (ver Limitacion actual del documento),verificado
+REQ-NF-010,no funcional,Must,,,LoginRateLimiterService,POST /api/auth/login,LoginRateLimiterServiceTest + AuthControllerTest.sextoIntentoFallidoDevuelve429ProblemDetail,,docs/mediciones/sec/A07-authentication.md (raw/A07-auth-rate-limit.txt),verificado
+REQ-NF-011,no funcional,Must,,,Estructura de paquetes backend (controller/service/repository/entity),N/A,Revision de codigo,,,verificado
+REQ-NF-012,no funcional,Should,,,Cache Redis (listado mascotas) - TTL configurable,GET /api/mascotas,Inspeccion de configuracion + medicion Redis,CRUD-ORM,application.yml: CACHE_TTL_MS (default 300000ms); docs/mediciones/redis/ (ttl-cache-mascotas.txt + dbsize-durante-carga.txt + config-maxmemory.txt); hit ratio cercano al 100% documentado en docs/mediciones/perf/REPORT.md,verificado
 REQ-NF-013,no funcional,Must,,,MascotaRepository (fn_resumen_mascotas_por_especie),GET /api/mascotas/resumen-especies,ResumenEspeciesIntegrationTest,SP,docs/basedatos/CATALOGO-SP.md,verificado
