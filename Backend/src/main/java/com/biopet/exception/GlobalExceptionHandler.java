@@ -91,4 +91,11 @@ public class GlobalExceptionHandler {
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(problemDetail);
     }
+    @ExceptionHandler(ExternalApiException.class)
+public ResponseEntity<ProblemDetail> errorApiExterna(ExternalApiException ex, HttpServletRequest request) {
+    return problemResponse(HttpStatus.BAD_GATEWAY, ProblemType.BAD_GATEWAY,
+            "Servicio externo no disponible",
+            "No se pudo obtener información de la especie en este momento. Intente nuevamente más tarde.",
+            request);
+}
 }
