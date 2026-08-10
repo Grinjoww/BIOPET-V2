@@ -3,6 +3,7 @@ package com.biopet;
 import com.biopet.entity.Mascota;
 import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
+import com.biopet.repository.CitaRepository;
 import com.biopet.repository.MascotaRepository;
 import com.biopet.repository.UsuarioRepository;
 import com.biopet.security.TokenBlacklistService;
@@ -39,12 +40,18 @@ class MascotaControllerTest {
     @Autowired MockMvc mockMvc;
     @Autowired UsuarioRepository usuarioRepository;
     @Autowired MascotaRepository mascotaRepository;
+    @Autowired CitaRepository citaRepository;
     @Autowired PasswordEncoder passwordEncoder;
 
     @MockBean TokenBlacklistService tokenBlacklistService;
 
     @BeforeEach
     void setUp() {
+        // citaRepository se limpia primero porque citas.mascota_id tiene FK hacia
+        // mascotas (módulo Cita, agregado en el Bloque 2 de Jaime): sin este orden,
+        // deleteAll() de mascotas falla por violación de integridad referencial si
+        // CitaControllerTest dejó citas activas en el mismo contexto de Spring compartido.
+        citaRepository.deleteAll();
         mascotaRepository.deleteAll();
         usuarioRepository.deleteAll();
         Usuario usuario = Usuario.builder()
