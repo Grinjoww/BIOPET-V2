@@ -19,7 +19,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("BIOPET API")
                         .version("v0.1.0")
-                        .description("API REST de BIOPET con autenticación JWT y CRUD de mascotas"))
+                        .description("API REST de BIOPET para la gestión veterinaria, con autenticación y autorización, gestión de usuarios, mascotas, citas, consultas y vacunas, e integración con servicios externos."))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
                         .addSecuritySchemes(securitySchemeName,
