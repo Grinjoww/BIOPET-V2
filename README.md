@@ -86,9 +86,11 @@ La estructura prevista es:
 
 ```text
 docs/u4/
-├── PFC-SELECCIONADO.md
-├── EVIDENCIA-API-REST.md
 ├── RETROALIMENTACION-PFC.md
+│
+├── evidencias/
+│   ├── jaime/
+│   └── fred/
 │
 ├── revisiones/
 │   ├── REVISION-CARVAJAL.md
@@ -232,7 +234,8 @@ docker compose ps
 
 # 5. Acceder a la aplicación
 # Frontend:        http://localhost:4200
-# Swagger UI:       http://localhost:8080/api/swagger-ui.html
+# Swagger UI:       http://localhost:8080/api/docs
+# OpenAPI JSON:     http://localhost:8080/api/openapi
 # Actuator Health:  http://localhost:8080/actuator/health
 ```
 
@@ -314,13 +317,14 @@ Resultado real más reciente:
 
 | Métrica | Valor |
 |---|---|
-| Pruebas ejecutadas | 109 |
+| Pruebas ejecutadas | 166 |
 | Fallos | 0 |
 | Errores | 0 |
 | Omitidas | 0 |
-| Cobertura LINE | 95.87 % |
-| Cobertura BRANCH | 76.87 % |
-| Cobertura COMPLEXITY | 80.00 % |
+| Clases analizadas por JaCoCo | 45 |
+| Cobertura LINE | 87.45 % |
+| Cobertura BRANCH | 67.98 % |
+| Cobertura COMPLEXITY | 71.81 % |
 | Umbral automático (`jacoco:check`, regla `BUNDLE`) | ≥ 60 % en LINE, BRANCH y COMPLEXITY |
 | Resultado | `BUILD SUCCESS` |
 
@@ -423,8 +427,10 @@ generado localmente con `scripts/generate-dev-keystore.ps1`/`.sh` y
 
 ## Endpoints actuales
 
-Verificados contra `AuthController`, `MascotaController` y
-`UsuarioController`:
+Verificados contra `AuthController`, `UsuarioController`, `MascotaController`,
+`CitaController`, `ConsultaController`, `VacunaController` y
+`ExternalApiController` (y sus respectivos `Service` para las reglas de
+propiedad/veterinario asignado que no dependen solo del rol):
 
 | Método | Ruta | Autenticación | Rol requerido |
 |---|---|---|---|
@@ -433,14 +439,37 @@ Verificados contra `AuthController`, `MascotaController` y
 | POST | `/api/auth/refresh` | Cookie `refresh_token` | — |
 | POST | `/api/auth/logout` | Cookie (idempotente sin sesión) | — |
 | GET | `/api/usuarios/me` | Cookie `access_token` | Cualquier rol autenticado |
-| GET | `/api/mascotas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` |
+| GET | `/api/usuarios` | Cookie `access_token` | `ADMIN` únicamente |
+| GET | `/api/usuarios/{id}` | Cookie `access_token` | `ADMIN` únicamente |
+| POST | `/api/usuarios` | Cookie `access_token` | `ADMIN` únicamente |
+| PUT | `/api/usuarios/{id}` | Cookie `access_token` | `ADMIN` únicamente |
+| DELETE | `/api/usuarios/{id}` | Cookie `access_token` | `ADMIN` únicamente |
+| GET | `/api/mascotas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
 | GET | `/api/mascotas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
 | GET | `/api/mascotas/resumen-especies` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` |
 | POST | `/api/mascotas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` |
 | PUT | `/api/mascotas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` |
 | DELETE | `/api/mascotas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` (baja lógica) |
+| GET | `/api/citas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
+| GET | `/api/citas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
+| POST | `/api/citas` | Cookie `access_token` | `ADMIN`/`AUXILIAR` únicamente |
+| PUT | `/api/citas/{id}` | Cookie `access_token` | `ADMIN`/`AUXILIAR`/`VETERINARIO` (`VETERINARIO` solo si es el veterinario asignado a la cita) |
+| DELETE | `/api/citas/{id}` | Cookie `access_token` | `ADMIN` únicamente (baja lógica) |
+| GET | `/api/consultas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (el listado actual no filtra por propietario; el filtrado por propiedad se aplica en la consulta individual) |
+| GET | `/api/consultas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
+| POST | `/api/consultas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` |
+| PUT | `/api/consultas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` |
+| DELETE | `/api/consultas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` (baja lógica) |
+| GET | `/api/vacunas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
+| GET | `/api/vacunas/mascota/{mascotaId}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
+| GET | `/api/vacunas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
+| POST | `/api/vacunas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` |
+| PUT | `/api/vacunas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` |
+| DELETE | `/api/vacunas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` (baja lógica) |
+| GET | `/api/externa/especies` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` |
 | GET | `/actuator/health` | No | — |
-| GET | `/api/swagger-ui.html` | No | — |
+| GET | `/api/docs` | No | — (Swagger UI) |
+| GET | `/api/openapi` | No | — (documento OpenAPI en JSON) |
 
 ### Cuenta de desarrollo sembrada
 
@@ -471,11 +500,17 @@ actualizar o eliminar requiere una cuenta `ADMIN`/`VETERINARIO`/`AUXILIAR`.
 
 ## Postman
 
-Colección y entorno reproducibles, verificados contra el código actual
-(40 requests, cookies automáticas, sin JWT ni `Authorization: Bearer` en
-el flujo principal):
+Colección y entorno reproducibles, verificados contra el código actual,
+cookies automáticas, sin JWT ni `Authorization: Bearer` en el flujo
+principal:
 
 - [`docs/postman/BIOPET.postman_collection.json`](docs/postman/BIOPET.postman_collection.json)
+  — colección principal (Auth + Mascotas): 44 requests definidos en 7
+  carpetas. Ejecutada de punta a punta con Newman contra el backend real:
+  46 requests, 234 assertions, 0 fallos (resumen en
+  [`docs/mediciones/postman/newman-report.json`](docs/mediciones/postman/newman-report.json)).
+- [`docs/postman/BIOPET-Vacunas.postman_collection.json`](docs/postman/BIOPET-Vacunas.postman_collection.json)
+  — colección adicional del CRUD de Vacunas: 12 requests.
 - [`docs/postman/BIOPET-Local.postman_environment.json`](docs/postman/BIOPET-Local.postman_environment.json)
 - Instrucciones de uso: [`docs/postman/README.md`](docs/postman/README.md)
 
