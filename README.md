@@ -1,8 +1,163 @@
-# BIOPET — Tercera Entrega v0.9.0-rc
+# BIOPET — Unidad IV | GA — Revisión Cruzada del PFC
 
-Sistema web de gestión veterinaria: registro y autenticación de usuarios, y
-un CRUD de mascotas con autorización por rol y por propietario. Proyecto
-Fin de Curso de la asignatura Aplicaciones Web.
+Sistema web de gestión veterinaria desarrollado como Proyecto Fin de Curso (PFC) de la asignatura **Aplicaciones Web**.
+
+Este repositorio corresponde al trabajo de **GA de la Unidad IV** y utiliza como proyecto de referencia el PFC **BIOPET**, manteniendo íntegro su código fuente y su historial de desarrollo para realizar sobre él el proceso de revisión, análisis, retroalimentación e investigación solicitado para la práctica.
+
+---
+
+## Organización del trabajo en la Unidad IV
+
+Para esta actividad se está aplicando la modalidad de trabajo indicada para los grupos de GA: el **PFC es desarrollado y completado por sus integrantes originales**, mientras que los compañeros asignados al grupo de GA realizan una **revisión cruzada del proyecto**, con el objetivo de conocer el trabajo desarrollado por otro equipo, identificar fortalezas, detectar posibles limitaciones y plantear recomendaciones de mejora.
+
+Por esta razón, este repositorio **no representa un nuevo desarrollo de BIOPET ni un cambio de autoría del PFC**.
+
+El proyecto técnico fue desarrollado y completado por su equipo original de PFC:
+
+- **Mariscal Cabrera Jaime Josue**
+- **Beltrán Montiel Fred Adrian**
+- **Taipe Mora Zaida Melissa**
+
+Para la actividad de GA de Unidad IV, el grupo está conformado por:
+
+- **Mariscal Cabrera Jaime Josue**
+- **Carvajal Loor Johan Stalin**
+- **Fajardo Montes Michael Xavier**
+
+BIOPET fue seleccionado como el PFC que será analizado por este grupo.
+
+---
+
+## ¿Cómo se está trabajando?
+
+El proceso se divide en dos responsabilidades claramente diferenciadas.
+
+### 1. Desarrollo y finalización del PFC
+
+La implementación funcional de BIOPET corresponde a los integrantes originales del PFC.
+
+Antes de iniciar la revisión cruzada de GA, el proyecto fue completado e integrado con los elementos requeridos para la práctica, incluyendo los recursos REST, documentación de API, seguridad, pruebas automatizadas, persistencia, caché y demás componentes técnicos del sistema.
+
+Por lo tanto, **Carvajal y Fajardo reciben un PFC ya desarrollado y funcional para su evaluación**.
+
+Ellos no tienen como responsabilidad reconstruir módulos, apropiarse del código existente ni repetir el desarrollo realizado por el equipo original.
+
+### 2. Revisión cruzada del grupo GA
+
+A partir de la versión terminada de BIOPET, los integrantes del grupo GA que no pertenecen al equipo original realizan la revisión del proyecto.
+
+Su participación comprende principalmente:
+
+- analizar la organización y arquitectura del sistema;
+- revisar el uso del patrón MVC;
+- evaluar la API REST y su documentación;
+- revisar aspectos de seguridad, pruebas, mantenibilidad y estructura general;
+- identificar fortalezas del PFC;
+- detectar posibles limitaciones o aspectos mejorables;
+- proponer recomendaciones justificadas;
+- realizar la investigación correspondiente a la Unidad IV;
+- aportar a la documentación y al informe final de la práctica.
+
+El objetivo de esta dinámica es que los estudiantes puedan **examinar un PFC desarrollado por otros compañeros y generar retroalimentación técnica sobre un trabajo distinto al propio**, conservando al mismo tiempo la autoría original de cada contribución.
+
+---
+
+## Responsabilidades dentro del grupo GA
+
+| Integrante | Responsabilidad en esta actividad |
+|---|---|
+| **Jaime Mariscal** | Presentación del PFC seleccionado, evidencias técnicas de BIOPET, documentación del flujo MVC y API REST, integración de los aportes y elaboración del informe final. |
+| **Johan Carvajal** | Revisión crítica independiente de BIOPET, identificación de fortalezas y debilidades, y desarrollo de la investigación comparativa SOAP vs REST. |
+| **Michael Fajardo** | Segunda revisión crítica independiente de BIOPET y desarrollo de la investigación sobre Jamstack, PWA e inteligencia artificial generativa aplicada al desarrollo web. |
+
+Las revisiones de Carvajal y Fajardo se documentarán de forma independiente para posteriormente realizar un análisis conjunto de las coincidencias, diferencias y recomendaciones encontradas.
+
+---
+
+## Evidencia de la revisión cruzada
+
+La documentación específica de Unidad IV se organizará principalmente dentro de:
+
+```text
+docs/u4/
+```
+
+La estructura prevista es:
+
+```text
+docs/u4/
+├── PFC-SELECCIONADO.md
+├── EVIDENCIA-API-REST.md
+├── RETROALIMENTACION-PFC.md
+│
+├── revisiones/
+│   ├── REVISION-CARVAJAL.md
+│   └── REVISION-FAJARDO.md
+│
+└── investigacion/
+    ├── SOAP-VS-REST.md
+    └── TENDENCIAS-WEB.md
+```
+
+De esta manera se diferencia claramente:
+
+- el **código e historial técnico del PFC original**;
+- las **revisiones realizadas por los integrantes del GA**;
+- la **investigación de Unidad IV**;
+- y la **integración final para el informe de la práctica**.
+
+---
+
+## Autoría e historial del repositorio
+
+Este repositorio fue creado tomando como base la rama `main` del repositorio final de BIOPET y **conservando intencionalmente su historial de Git**.
+
+Esto permite mantener la trazabilidad y reconocer correctamente qué integrantes desarrollaron originalmente cada parte del sistema.
+
+Por este motivo, en la sección **Contributors** de GitHub pueden aparecer integrantes del equipo original del PFC, como Fred Beltrán y Zaida Taipe, aunque no formen parte del grupo actual de GA.
+
+Su presencia en el historial **no significa que formen parte del grupo GA**, sino que GitHub reconoce correctamente los commits que realizaron durante el desarrollo original de BIOPET.
+
+Del mismo modo, Carvajal y Fajardo comenzarán a registrar sus propias contribuciones en este repositorio mediante commits relacionados con:
+
+- revisión crítica;
+- retroalimentación;
+- investigación;
+- documentación;
+- y elaboración del informe de Unidad IV.
+
+De esta forma se conserva la autoría real del proyecto y, al mismo tiempo, queda registrada de manera independiente la participación correspondiente a la actividad GA.
+
+---
+
+## Alcance de este repositorio
+
+Este repositorio tiene dos propósitos:
+
+1. **Conservar una versión funcional y trazable del PFC BIOPET que será objeto de análisis.**
+2. **Centralizar las evidencias, revisiones, investigación y documentación desarrolladas por el grupo GA durante la Unidad IV.**
+
+No se pretende modificar el historial para atribuir el desarrollo del PFC a los integrantes nuevos del grupo.
+
+La finalidad académica es utilizar un proyecto ya desarrollado como base para realizar **evaluación cruzada, retroalimentación técnica, análisis de tecnologías web y elaboración del informe correspondiente a la Unidad IV**.
+
+---
+
+## Proyecto técnico utilizado para la revisión
+
+BIOPET implementa una arquitectura web con:
+
+- **Angular 17.3** para el frontend.
+- **Spring Boot 3.2.12 / Java 21** para el backend.
+- **PostgreSQL 16** para persistencia.
+- **Redis 7** para caché y soporte de revocación.
+- **Spring Security + JWT** para autenticación y autorización.
+- **OpenAPI / Swagger UI** para documentación de la API.
+- **Flyway** para migraciones.
+- **JUnit y JaCoCo** para pruebas y cobertura.
+- **Docker Compose** para orquestación del entorno.
+
+A partir de este punto se conserva la documentación técnica propia del PFC.
 
 ## Estado del proyecto
 
