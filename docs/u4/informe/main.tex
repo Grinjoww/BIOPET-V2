@@ -1,0 +1,262 @@
+% main.tex
+%
+% Documento maestro del Informe de la GA de Unidad IV (Equipo H) sobre el
+% PFC BIOPET. Clase: report. Idioma: espanol (babel). Codificacion: UTF-8.
+%
+% Este documento es DISTINTO del informe de la Tercera Entrega del PFC
+% original (docs/informe/informe-entrega-3.tex, equipo BMT). Ese informe
+% NO se modifica ni se sobrescribe: se usa unicamente como referencia de
+% plantilla (macro \evidencia, estilo de bibliografia, estructura de
+% portada).
+%
+% Compilacion clasica BibTeX (ver docs/u4/informe/README.md):
+%   pdflatex main.tex
+%   bibtex main
+%   pdflatex main.tex
+%   pdflatex main.tex
+% o, si esta disponible: latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
+%
+% IMPORTANTE (estado de esta entrega): varias secciones de este documento
+% contienen marcadores "% TODO" en lugar de contenido definitivo, porque
+% dependen de aportes que todavia no fueron integrados (revision critica de
+% Carvajal, revision critica de Fajardo, investigacion SOAP vs REST,
+% investigacion de tendencias web, y las conclusiones que se redactan a
+% partir de ambas revisiones). NO se generó todavía el PDF final de esta
+% entrega por la misma razón.
+
+\documentclass[12pt,a4paper]{report}
+
+% --- Idioma y codificacion --------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[spanish]{babel}
+
+% --- Geometria de pagina -------------------------------------------------
+\usepackage[a4paper,margin=2.5cm]{geometry}
+
+% --- Manejo seguro de guion bajo en modo texto (identificadores de
+%     codigo como ROLE_ADMIN, /api/openapi, etc. se escriben tal cual
+%     dentro de \texttt{} sin escapar "_")
+\usepackage{underscore}
+
+% --- Tablas, figuras, listados --------------------------------------------
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+
+% --- Encabezados/pies de pagina -------------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{BIOPET --- GA Unidad IV (Equipo H)}
+\fancyhead[R]{\leftmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Enlaces internos ------------------------------------------------------
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  pdftitle={BIOPET -- Revision cruzada del PFC: Informe de la GA de Unidad IV (Equipo H)},
+  pdfauthor={Mariscal Cabrera Jaime Josue; Carvajal Loor Johan Stalin; Fajardo Montes Michael Xavier},
+  pdfsubject={Informe de la GA de Unidad IV -- Aplicaciones Web},
+  bookmarksnumbered=true,
+  breaklinks=true,
+  colorlinks=false
+}
+
+% --- Bibliografia estilo IEEE (numerico), via BibTeX clasico, igual
+%     convencion que docs/informe/informe-entrega-3.tex -------------------
+% "ieeetr" es una hoja de estilo BibTeX estandar (numeros entre corchetes,
+% orden de aparicion), disponible en cualquier instalacion completa de
+% TeX Live o MiKTeX sin paquetes adicionales.
+
+% --- Comando auxiliar para evidencias condicionales -----------------------
+% Uso: \evidencia{ruta/relativa.png}{Caption academico}{fig:label-unico}
+% Reutilizado tal cual del informe anterior (docs/informe/): si el archivo
+% no existe todavia, no se imprime nada (ni hueco, ni texto de marcador).
+\newcommand{\evidencia}[3]{%
+  \IfFileExists{#1}{%
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.82\textwidth]{#1}
+      \caption{#2}
+      \label{#3}
+    \end{figure}
+  }{}%
+}
+
+% --- Marcador visible de contenido pendiente de integracion ---------------
+% Uso: \pendienteIntegracion{Texto breve de que falta y de quien}
+% A diferencia de un simple comentario "% TODO" (invisible en el PDF), este
+% comando SI se imprime en el documento, para que quede visible en el PDF
+% parcial que no se debe confundir con contenido definitivo.
+\newcommand{\pendienteIntegracion}[1]{%
+  \begin{quote}
+    \color{gray}\itshape
+    [Pendiente de integraci\'on -- #1]
+  \end{quote}
+}
+
+% --- Metadatos institucionales (reutilizados de docs/informe/, mismos
+%     datos reales del repositorio) ---------------------------------------
+\newcommand{\universidad}{Universidad T\'ecnica Estatal de Quevedo}
+\newcommand{\facultad}{Facultad de Ciencias de la Computaci\'on}
+\newcommand{\carrera}{Carrera de Software}
+\newcommand{\asignatura}{Aplicaciones Web}
+\newcommand{\docente}{Guerrero Ulloa Gleiston Ciceron}
+\newcommand{\periodoacademico}{2025 -- 2026}
+\newcommand{\cursoparalelo}{A}
+\newcommand{\equipoga}{Equipo H}
+\newcommand{\tituloinforme}{BIOPET --- Revisi\'on cruzada del PFC:\\ Informe de la GA de Unidad IV (Equipo H)}
+\newcommand{\ciudadfecha}{Quevedo, 10 de agosto de 2026 (borrador -- pendiente de integraci\'on final)}
+
+\begin{document}
+
+% ===========================================================================
+% PORTADA
+% ===========================================================================
+\begin{titlepage}
+  \centering
+  \vspace*{0.5cm}
+
+  {\large \universidad \par}
+  {\large \facultad \par}
+  \vspace{0.3cm}
+  {\normalsize \carrera \par}
+  {\normalsize Asignatura: \asignatura \par}
+
+  \vspace{2.2cm}
+  {\Huge \bfseries BIOPET \par}
+  \vspace{0.4cm}
+  {\Large Revisi\'on cruzada del PFC seleccionado \par}
+  \vspace{0.6cm}
+  {\Large\itshape Informe de la GA de Unidad IV \par}
+
+  \vspace{2.0cm}
+  {\large \equipoga \par}
+  \vspace{0.6cm}
+
+  {\normalsize
+    \begin{tabular}{c}
+      Mariscal Cabrera Jaime Josu\'e \\
+      Carvajal Loor Johan Stalin \\
+      Fajardo Montes Michael Xavier \\
+    \end{tabular}
+    \par
+  }
+
+  \vspace{1.2cm}
+  {\small\itshape
+    El PFC BIOPET, objeto de esta revisi\'on, fue desarrollado por su
+    equipo original (Mariscal Cabrera Jaime Josu\'e, Beltr\'an Montiel
+    Fred Adri\'an y Taipe Mora Zaida Melissa). El \equipoga\ no particip\'o
+    en su implementaci\'on: realiza sobre \'el la revisi\'on cruzada,
+    investigaci\'on y an\'alisis solicitados para esta actividad. \par
+  }
+
+  \vspace{1.6cm}
+  {\normalsize Docente: \docente \par}
+  \vspace{0.3cm}
+  {\normalsize Per\'iodo acad\'emico: \periodoacademico \quad --- \quad Curso/paralelo: \cursoparalelo \par}
+
+  \vfill
+
+  {\normalsize \ciudadfecha \par}
+  \vspace{0.5cm}
+
+\end{titlepage}
+
+% ===========================================================================
+% RESUMEN
+% ===========================================================================
+\pagenumbering{roman}
+
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+
+Este documento presenta el informe de la actividad de GA (grupo alterno) de
+la Unidad IV de la asignatura \asignatura, cuyo objetivo es realizar una
+revisi\'on cruzada de un Proyecto Fin de Curso (PFC) desarrollado por otro
+equipo. El PFC seleccionado es \textbf{BIOPET}, un sistema web de gesti\'on
+veterinaria desarrollado originalmente por Mariscal Cabrera Jaime Josu\'e,
+Beltr\'an Montiel Fred Adri\'an y Taipe Mora Zaida Melissa.
+
+El \equipoga\ --- conformado por Mariscal Cabrera Jaime Josu\'e, Carvajal
+Loor Johan Stalin y Fajardo Montes Michael Xavier --- recibi\'o BIOPET ya
+desarrollado y funcional, e independientemente de su participaci\'on
+original en el PFC, realiz\'o sobre \'el las tareas propias de esta
+actividad: presentaci\'on del proyecto, an\'alisis de su arquitectura y
+patr\'on MVC, evaluaci\'on de su API REST y documentaci\'on OpenAPI/Swagger,
+investigaci\'on comparativa SOAP vs REST, investigaci\'on de tendencias web
+(Jamstack, PWA e IA generativa), revisi\'on cr\'itica independiente por
+parte de cada integrante nuevo del grupo, y consolidaci\'on de hallazgos.
+
+Esta versi\'on del informe es un \textbf{borrador estructural}: las
+secciones que dependen de las revisiones cr\'iticas y de la investigaci\'on
+de Carvajal y Fajardo, as\'i como las conclusiones finales, quedan marcadas
+expl\'icitamente como pendientes de integraci\'on y no contienen todav\'ia
+contenido definitivo.
+
+% ===========================================================================
+% ABSTRACT
+% ===========================================================================
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This document presents the report for the Unit IV cross-review (GA)
+assignment of the Web Applications course, whose goal is to perform a
+cross-team review of a Course Final Project (PFC) developed by a different
+team. The selected PFC is \textbf{BIOPET}, a veterinary management web
+system originally developed by Mariscal Cabrera Jaime Josu\'e, Beltr\'an
+Montiel Fred Adri\'an, and Taipe Mora Zaida Melissa.
+
+\equipoga\ --- made up of Mariscal Cabrera Jaime Josu\'e, Carvajal Loor
+Johan Stalin, and Fajardo Montes Michael Xavier --- received BIOPET already
+developed and functional, and carried out the tasks proper to this
+activity on top of it: project presentation, analysis of its architecture
+and MVC pattern, evaluation of its REST API and OpenAPI/Swagger
+documentation, comparative SOAP vs REST research, web trends research
+(Jamstack, PWA, and generative AI), independent critical review by each
+new group member, and consolidation of findings.
+
+This version of the report is a \textbf{structural draft}: sections that
+depend on the critical reviews and research contributed by Carvajal and
+Fajardo, as well as the final conclusions, are explicitly marked as
+pending integration and do not yet contain definitive content.
+
+\clearpage
+\tableofcontents
+\clearpage
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+% ===========================================================================
+% CAPITULOS (uno por archivo de docs/u4/informe/secciones/)
+% ===========================================================================
+\input{secciones/01-introduccion}
+\input{secciones/02-presentacion-pfc}
+\input{secciones/03-mvc-api-rest}
+\input{secciones/04-soap-vs-rest}
+\input{secciones/05-tendencias-web}
+\input{secciones/06-revision-cruzada}
+\input{secciones/07-resultados}
+\input{secciones/08-conclusiones}
+\input{secciones/09-trabajo-futuro}
+
+% ===========================================================================
+% BIBLIOGRAFIA (IEEE, BibTeX clasico)
+% ===========================================================================
+\bibliographystyle{ieeetr}
+\bibliography{referencias}
+
+\end{document}

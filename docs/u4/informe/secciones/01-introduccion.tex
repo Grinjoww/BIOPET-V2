@@ -1,0 +1,91 @@
+\chapter{Introducci\'on}
+\label{cap:introduccion}
+
+\section{Contexto de la actividad}
+\label{sec:contexto-actividad}
+
+Esta actividad corresponde a la modalidad de trabajo de \textbf{GA (grupo
+alterno)} de la Unidad IV de la asignatura \asignatura. A diferencia de las
+entregas anteriores del curso, en esta modalidad el proyecto t\'ecnico
+(PFC) no es desarrollado por el propio grupo, sino que se selecciona el PFC
+de otro equipo ya terminado, y el grupo GA realiza sobre \'el un proceso de
+\textbf{revisi\'on cruzada}: an\'alisis de arquitectura, evaluaci\'on de la
+API REST y su documentaci\'on, investigaci\'on de tendencias relacionadas, y
+retroalimentaci\'on cr\'itica independiente por parte de cada integrante
+nuevo del grupo.
+
+\section{Distinci\'on entre el equipo original del PFC y el \equipoga}
+\label{sec:distincion-equipos}
+
+Es importante dejar expl\'icita, desde el inicio de este informe, una
+distinci\'on que se mantiene consistentemente en todo el documento:
+
+\begin{itemize}[nosep]
+  \item \textbf{Equipo original del PFC BIOPET (equipo BMT):} Mariscal
+    Cabrera Jaime Josu\'e, Beltr\'an Montiel Fred Adri\'an y Taipe Mora
+    Zaida Melissa. Este equipo dise\~n\'o, implement\'o y documento
+    t\'ecnicamente BIOPET a lo largo de las entregas previas del curso
+    (Entrega 1A, Entrega 1B, Tercera Entrega). El c\'odigo fuente, las
+    pruebas automatizadas, la arquitectura y la evidencia t\'ecnica
+    descrita en los cap\'itulos~\ref{cap:presentacion-pfc}
+    y~\ref{cap:mvc-api-rest} de este informe son obra de ese equipo.
+  \item \textbf{\equipoga\ (grupo de la actividad GA):} Mariscal Cabrera
+    Jaime Josu\'e, Carvajal Loor Johan Stalin y Fajardo Montes Michael
+    Xavier. Este es el grupo responsable de \textbf{este informe} y de la
+    actividad de Unidad IV: selecci\'on del PFC, presentaci\'on,
+    investigaci\'on comparativa, revisi\'on cr\'itica y consolidaci\'on de
+    hallazgos.
+\end{itemize}
+
+Mariscal Cabrera Jaime Josu\'e es la \'unica persona presente en ambos
+equipos: particip\'o en el desarrollo original de BIOPET y tambi\'en
+integra el \equipoga. Carvajal Loor Johan Stalin y Fajardo Montes Michael
+Xavier \textbf{no participaron en el desarrollo del PFC}: su rol en esta
+actividad es exclusivamente de revisi\'on cr\'itica independiente e
+investigaci\'on, nunca de implementaci\'on del c\'odigo de BIOPET. Ning\'un
+aporte de c\'odigo o funcionalidad del PFC debe atribuirse a Carvajal o a
+Fajardo en este informe.
+
+\section{Objetivo de este informe}
+\label{sec:objetivo-informe}
+
+El objetivo de este documento es consolidar, en un \'unico informe
+acad\'emico, los siguientes componentes exigidos por la actividad de
+Unidad IV:
+
+\begin{enumerate}[nosep]
+  \item Presentaci\'on del PFC seleccionado (BIOPET): prop\'osito,
+    arquitectura y tecnolog\'ias (cap\'itulo~\ref{cap:presentacion-pfc}).
+  \item An\'alisis del patr\'on MVC y de la API REST, incluyendo su
+    documentaci\'on Swagger/OpenAPI y la evidencia de endpoints probados
+    (cap\'itulo~\ref{cap:mvc-api-rest}).
+  \item Investigaci\'on comparativa SOAP vs REST
+    (cap\'itulo~\ref{cap:soap-vs-rest}).
+  \item Investigaci\'on de tendencias web actuales: Jamstack, PWA e IA
+    generativa (cap\'itulo~\ref{cap:tendencias-web}).
+  \item Revisi\'on cruzada consolidada del PFC, a partir de las revisiones
+    independientes de Carvajal y Fajardo
+    (cap\'itulo~\ref{cap:revision-cruzada}).
+  \item Resultados y evidencias t\'ecnicas verificables del estado actual
+    de BIOPET (cap\'itulo~\ref{cap:resultados}).
+  \item Conclusiones y trabajo futuro
+    (cap\'itulos~\ref{cap:conclusiones} y~\ref{cap:trabajo-futuro}).
+\end{enumerate}
+
+\section{Estado de este documento}
+\label{sec:estado-documento}
+
+Esta versi\'on del informe es un \textbf{borrador estructural}, preparado
+antes de integrar los aportes de investigaci\'on y revisi\'on cr\'itica de
+Carvajal y Fajardo. Los cap\'itulos~\ref{cap:soap-vs-rest}
+(SOAP vs REST), \ref{cap:tendencias-web} (tendencias web)
+y~\ref{cap:revision-cruzada} (revisi\'on cruzada), as\'i como las
+conclusiones (cap\'itulo~\ref{cap:conclusiones}) y el trabajo futuro
+(cap\'itulo~\ref{cap:trabajo-futuro}), dependen directamente de esos
+aportes y por eso se marcan expl\'icitamente como pendientes de
+integraci\'on en lugar de contener contenido definitivo o de relleno.
+
+Los cap\'itulos~\ref{cap:presentacion-pfc}, \ref{cap:mvc-api-rest}
+y~\ref{cap:resultados} s\'i contienen contenido inicial redactado a partir
+de evidencia real y verificable del repositorio actual de BIOPET (c\'odigo
+fuente, README, documentaci\'on de mediciones), sin datos inventados.

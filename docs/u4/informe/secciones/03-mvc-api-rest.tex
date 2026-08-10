@@ -1,0 +1,118 @@
+\chapter{Modelo MVC y API REST}
+\label{cap:mvc-api-rest}
+
+\section{Flujo MVC de una petici\'on autenticada}
+\label{sec:flujo-mvc}
+
+BIOPET implementa el patr\'on Modelo-Vista-Controlador de forma est\'andar
+para una aplicaci\'on Spring Boot: el cliente Angular consume la API REST
+del backend, que separa controladores (\texttt{controller}), l\'ogica de
+negocio (\texttt{service}) y acceso a datos (\texttt{repository}/
+\texttt{entity}). El README ra\'iz del repositorio documenta, paso a paso
+y verificado contra el c\'odigo, el ciclo de vida completo de una
+petici\'on autenticada (\texttt{GET /api/mascotas}):
+
+\begin{enumerate}[nosep]
+  \item \textbf{Cliente Angular:} \texttt{MascotaApiService.listar()} env\'ia
+    la petici\'on incluyendo la cookie de autenticaci\'on.
+  \item \textbf{JwtAuthenticationFilter:} intercepta la petici\'on y
+    resuelve el JWT desde la cookie.
+  \item \textbf{SecurityContextHolder:} Spring registra la autenticaci\'on
+    del usuario ya validado.
+  \item \textbf{MascotaController:} recibe la petici\'on autenticada y los
+    par\'ametros de paginaci\'on.
+  \item \textbf{MascotaService:} ejecuta la l\'ogica de negocio (incluye la
+    regla de acceso por rol y por propiedad) dentro de una transacci\'on de
+    solo lectura.
+  \item \textbf{UsuarioRepository / MascotaRepository:} obtienen al
+    usuario autenticado y, seg\'un su rol, ejecutan la consulta
+    correspondiente (global o filtrada por due\~no).
+  \item \textbf{PostgreSQL:} Hibernate genera y ejecuta la consulta SQL.
+  \item \textbf{Jackson:} serializa la respuesta a JSON.
+  \item \textbf{Cliente Angular:} recibe la respuesta \texttt{200 OK} con
+    el contenido paginado.
+\end{enumerate}
+
+\evidencia{../../diagramas/flujo-mvc-springboot.png}{Diagrama de secuencia del flujo MVC de BIOPET (cliente Angular a PostgreSQL).}{fig:flujo-mvc}
+
+Este mismo patr\'on de capas (\texttt{Controller} $\to$ \texttt{Service}
+$\to$ \texttt{Repository}) se repite consistentemente en los dem\'as
+m\'odulos descritos en la secci\'on~\ref{sec:proposito-alcance} (Citas,
+Consultas, Vacunas, Usuarios), verificado directamente en el c\'odigo
+fuente del backend.
+
+\section{Endpoints de la API REST}
+\label{sec:endpoints-rest}
+
+BIOPET expone una API REST organizada por recurso. La siguiente tabla
+resume los grupos de endpoints reales, verificados contra los controllers
+actuales del backend (\texttt{Backend/src/main/java/com/biopet/controller/}):
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Recursos REST de BIOPET, verificados contra el c\'odigo actual.}
+  \label{tab:recursos-rest}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    Recurso & Ruta base & Operaciones \\
+    \midrule
+    Autenticaci\'on & \texttt{/api/auth} & registro, login, refresh, logout \\
+    Usuarios & \texttt{/api/usuarios} & \texttt{/me} + CRUD administrativo \\
+    Mascotas & \texttt{/api/mascotas} & CRUD + resumen por especie \\
+    Citas & \texttt{/api/citas} & CRUD \\
+    Consultas & \texttt{/api/consultas} & CRUD \\
+    Vacunas & \texttt{/api/vacunas} & CRUD + listado por mascota \\
+    API externa & \texttt{/api/externa/especies} & consulta (con cach\'e Redis) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Todas las respuestas de error de la API usan el formato uniforme
+\texttt{ProblemDetail} (RFC 7807)~\cite{rfc7807}, y todos los recursos
+protegidos requieren la cookie de sesi\'on emitida por
+\texttt{/api/auth/login}, con autorizaci\'on adicional por rol
+(\texttt{@PreAuthorize}) y, en varios recursos, por propiedad del registro.
+
+\section{Documentaci\'on OpenAPI / Swagger}
+\label{sec:openapi-swagger}
+
+BIOPET documenta su API mediante \texttt{springdoc-openapi}, siguiendo la
+especificaci\'on OpenAPI~\cite{openapi-spec}. La configuraci\'on real
+(\texttt{Backend/src/main/resources/application.yml}) expone:
+
+\begin{itemize}[nosep]
+  \item \textbf{Swagger UI:} \texttt{/api/docs}.
+  \item \textbf{Documento OpenAPI (JSON):} \texttt{/api/openapi}.
+\end{itemize}
+
+Ambas rutas son p\'ublicas (no requieren autenticaci\'on), verificado en
+\texttt{SecurityConfig} y probado autom\'aticamente por
+\texttt{SwaggerUiTest}: la primera prueba confirma que \texttt{/api/docs}
+redirige a la interfaz real de Swagger UI (cuyo cuerpo contiene el
+marcador \texttt{swagger-ui}); la segunda confirma que \texttt{/api/openapi}
+responde \texttt{200} con un documento OpenAPI v\'alido cuyo t\'itulo es
+\texttt{BIOPET API}.
+
+\evidencia{../evidencias/jaime/swagger-ui.png}{Swagger UI de BIOPET, accesible en /api/docs, mostrando los grupos de endpoints reales.}{fig:swagger-ui}
+
+\section{Evidencia Postman / Newman}
+\label{sec:evidencia-postman}
+
+El repositorio incluye colecciones Postman reales y reproducibles,
+verificadas contra el c\'odigo actual y ejecutadas de punta a punta con
+Newman:
+
+\begin{itemize}[nosep]
+  \item \texttt{docs/postman/BIOPET.postman\_collection.json} --- colecci\'on
+    principal (Auth + Mascotas): 44 requests definidos en 7 carpetas.
+    Ejecuci\'on real con Newman: 46 requests, 234 assertions, 0 fallos.
+  \item \texttt{docs/postman/BIOPET-Vacunas.postman\_collection.json} ---
+    colecci\'on adicional del CRUD de Vacunas: 12 requests.
+\end{itemize}
+
+Esto demuestra, muy por encima del m\'inimo de tres endpoints exigido por
+la actividad, que la API REST de BIOPET funciona de extremo a extremo
+contra el backend real, incluyendo casos de \'exito, de validaci\'on
+(\texttt{422}), de autenticaci\'on (\texttt{401}), de autorizaci\'on
+(\texttt{403}) y de limitaci\'on de intentos de login (\texttt{429}).
