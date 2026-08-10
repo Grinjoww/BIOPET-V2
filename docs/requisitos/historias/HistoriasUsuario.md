@@ -748,3 +748,124 @@ Escenario: Fallo del servicio de correo no bloquea la operación principal
 el proveedor de correo antes de implementarse. No sustituye ni duplica
 HU-006/REQ-F-007 (consulta del perfil propio), que cubre una funcionalidad
 distinta ya implementada.
+
+---
+
+## HU-022 — Gestión administrativa de usuarios
+
+| Campo | Contenido |
+|---|---|
+| **Identificador** | HU-022 |
+| **Requisitos SRS asociados** | REQ-F-023 |
+| **Prioridad (MoSCoW)** | Should |
+| **Estado** | Implementada |
+
+**Historia (Connextra)**
+> Como administrador
+> quiero listar, consultar, crear, actualizar y dar de baja cuentas de usuario de cualquier rol
+> para gestionar el acceso al sistema sin depender del registro público, que siempre asigna `ROLE_DUENO`.
+
+**Descripción:** el sistema permite a un usuario con rol `ADMIN` administrar
+cuentas de usuario completas (incluida la asignación de rol), a diferencia
+del registro público (`POST /api/auth/registro`), que siempre crea cuentas
+`ROLE_DUENO`. Un administrador no puede modificar el rol de su propia
+cuenta.
+
+**Criterios de aceptación (Gherkin)**
+```gherkin
+Escenario: Creación de usuario por administrador
+  Given un usuario autenticado con rol ADMIN
+  When envía POST /api/usuarios con datos válidos y un rol distinto de ROLE_DUENO
+  Then el sistema responde 201 Created con la cuenta creada
+
+Escenario: Un administrador no puede escalar su propio rol
+  Given un usuario autenticado con rol ADMIN
+  When envía PUT /api/usuarios/{id} sobre su propia cuenta cambiando el campo rol
+  Then el sistema responde 403 Forbidden
+```
+
+**Dependencias:** HU-005 (control de acceso por rol).
+**Observaciones:** verificado con `UsuarioControllerTest`. No sustituye ni
+duplica HU-006/REQ-F-007 (consulta del perfil propio, `/api/usuarios/me`),
+que cubre una funcionalidad distinta ya implementada.
+
+---
+
+## HU-023 — Gestión de vacunas
+
+| Campo | Contenido |
+|---|---|
+| **Identificador** | HU-023 |
+| **Requisitos SRS asociados** | REQ-F-024 |
+| **Prioridad (MoSCoW)** | Should |
+| **Estado** | Implementada |
+
+**Historia (Connextra)**
+> Como administrador, veterinario o auxiliar
+> quiero registrar, actualizar y dar de baja las vacunas aplicadas a una mascota, y como cualquier usuario autenticado quiero consultarlas
+> para mantener un historial de vacunación por mascota.
+
+**Descripción:** el sistema permite gestionar las vacunas aplicadas a cada
+mascota. La escritura (crear, actualizar, eliminar) está restringida a
+`ADMIN`, `VETERINARIO` y `AUXILIAR`; la consulta está disponible para
+cualquier rol autenticado, con `ROLE_DUENO` restringido a las vacunas de
+sus propias mascotas.
+
+**Criterios de aceptación (Gherkin)**
+```gherkin
+Escenario: Registro de vacuna
+  Given un usuario autenticado con rol ADMIN, VETERINARIO o AUXILIAR
+  When envía POST /api/vacunas con datos válidos
+  Then el sistema responde 201 Created
+
+Escenario: Un dueño solo ve vacunas de sus propias mascotas
+  Given un usuario autenticado con rol DUENO
+  When envía GET /api/vacunas
+  Then el sistema responde 200 con únicamente las vacunas de sus propias mascotas
+```
+
+**Dependencias:** HU-007 (registro de mascota, requiere que la mascota exista).
+**Observaciones:** verificado con `VacunaControllerTest` y con la colección
+Postman `docs/postman/BIOPET-Vacunas.postman_collection.json` (12
+requests). La operación de listado filtrado por mascota
+(`GET /api/vacunas/mascota/{mascotaId}`) no tiene prueba automatizada
+dedicada.
+
+---
+
+## HU-024 — Consulta de información externa de especies
+
+| Campo | Contenido |
+|---|---|
+| **Identificador** | HU-024 |
+| **Requisitos SRS asociados** | REQ-F-025 |
+| **Prioridad (MoSCoW)** | Could |
+| **Estado** | Implementada |
+
+**Historia (Connextra)**
+> Como usuario autenticado de cualquier rol
+> quiero consultar información de una especie desde un servicio externo
+> para complementar los datos clínicos de una mascota, con respuesta rápida gracias a una caché.
+
+**Descripción:** el sistema consulta un servicio externo (API Ninjas) para
+obtener información de una especie y almacena el resultado en una caché
+Redis con un tiempo de vida configurable, para evitar llamadas repetidas al
+servicio externo dentro de esa ventana.
+
+**Criterios de aceptación (Gherkin)**
+```gherkin
+Escenario: Consulta con caché fría
+  Given que no existe información cacheada para una especie
+  When un usuario autenticado envía GET /api/externa/especies?especie=dog
+  Then el sistema consulta el servicio externo, guarda el resultado en caché y responde 200
+
+Escenario: Consulta con caché caliente
+  Given que ya existe información cacheada para una especie
+  When un usuario autenticado envía GET /api/externa/especies?especie=dog
+  Then el sistema responde 200 con el resultado cacheado, sin consultar de nuevo el servicio externo
+```
+
+**Dependencias:** ninguna directa.
+**Observaciones:** sin prueba automatizada dedicada; evidencia empírica
+manual real en `docs/u4/evidencias/fred/redis-cache-comparacion.md`
+(comparación de tiempos cache-miss vs. cache-hit).

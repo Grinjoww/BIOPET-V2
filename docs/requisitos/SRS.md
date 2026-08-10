@@ -510,6 +510,80 @@ Correos, RF-07 recuperado)**
   ni servicio implementados en el backend).
 - **Estado:** pendiente.
 
+#### Incorporados en Unidad IV (REQ-F-023 a REQ-F-025)
+
+> **Nota de alcance:** los tres requisitos siguientes formalizan
+> funcionalidades reales incorporadas al backend durante la Unidad IV
+> (Citas y Consultas ya tenían requisito formal propio — `REQ-F-015` y
+> `REQ-F-013` respectivamente — y no se duplican aquí). Cada uno agrupa el
+> módulo completo, no una operación HTTP individual: la trazabilidad hacia
+> cada endpoint real se detalla en `docs/trazabilidad/matriz.csv`.
+
+**REQ-F-023 — Gestión administrativa de usuarios**
+- **Tipo:** Funcional · **Prioridad:** Should
+- **Enunciado:** El sistema deberá permitir que un usuario con rol `ADMIN`
+  liste, consulte por identificador, cree, actualice y dé de baja lógica
+  cuentas de usuario de cualquier rol, sin permitir que un administrador
+  modifique el rol de su propia cuenta.
+- **Rationale:** nuevo requisito de la actividad de Unidad IV; formaliza el
+  CRUD administrativo de `UsuarioController`/`UsuarioService`, funcionalidad
+  distinta de `REQ-F-007` (consulta del perfil propio, `/api/usuarios/me`),
+  que no se modifica ni se duplica. Se numera 023 (siguiente identificador
+  libre después de `REQ-F-022`).
+- **Verificación:** Test `UsuarioControllerTest` (16 pruebas: listado,
+  consulta, creación, actualización, baja lógica, correo duplicado,
+  contraseña obligatoria, no autoescalada de rol propio, control de acceso
+  por rol).
+- **Trazabilidad:** → HU-022 → CU-22 →
+  `UsuarioController.{listar,buscar,crear,actualizar,eliminar}` →
+  `UsuarioService` → `GET /api/usuarios`, `GET /api/usuarios/{id}`,
+  `POST /api/usuarios`, `PUT /api/usuarios/{id}`,
+  `DELETE /api/usuarios/{id}`.
+- **Estado:** verificado.
+
+**REQ-F-024 — Gestión de vacunas**
+- **Tipo:** Funcional · **Prioridad:** Should
+- **Enunciado:** El sistema deberá permitir registrar, consultar (de forma
+  global, filtrada por mascota, o por identificador), actualizar y dar de
+  baja lógica las vacunas aplicadas a una mascota, restringiendo la consulta
+  de un usuario con rol `ROLE_DUENO` a las vacunas de sus propias mascotas.
+- **Rationale:** nuevo requisito de la actividad de Unidad IV; formaliza el
+  módulo `VacunaController`/`VacunaService`, sin requisito formal previo en
+  el SRS.
+- **Verificación:** Test `VacunaControllerTest` (10 pruebas); colección
+  Postman `docs/postman/BIOPET-Vacunas.postman_collection.json` (12
+  requests, ejecutable con Newman). La operación
+  `GET /api/vacunas/mascota/{mascotaId}` no tiene prueba automatizada
+  dedicada en `VacunaControllerTest`; las demás operaciones sí.
+- **Trazabilidad:** → HU-023 → CU-23 →
+  `VacunaController.{listar,listarPorMascota,buscar,crear,actualizar,eliminar}`
+  → `VacunaService` → `GET /api/vacunas`,
+  `GET /api/vacunas/mascota/{mascotaId}`, `GET /api/vacunas/{id}`,
+  `POST /api/vacunas`, `PUT /api/vacunas/{id}`, `DELETE /api/vacunas/{id}`.
+- **Estado:** verificado.
+
+**REQ-F-025 — Consulta de información externa de especies**
+- **Tipo:** Funcional · **Prioridad:** Could
+- **Enunciado:** El sistema deberá permitir consultar información de una
+  especie (nombre científico, hábitat, dieta) desde un servicio externo,
+  utilizando una caché Redis para evitar llamadas repetidas al servicio
+  externo dentro de una ventana de tiempo configurable.
+- **Rationale:** nuevo requisito de la actividad de Unidad IV; integración
+  con un proveedor externo (API Ninjas) vía `ExternalApiClient`, con patrón
+  *cache-aside* en `ExternalApiService` (TTL configurable mediante
+  `app.external-api.cache-ttl-seconds`, valor por defecto 600 s).
+- **Verificación:** sin prueba automatizada dedicada (no existe una clase de
+  test para `ExternalApiController`/`ExternalApiService` en
+  `Backend/src/test/`). Evidencia empírica manual en
+  `docs/u4/evidencias/fred/redis-cache-comparacion.md` (comparación real de
+  tiempos de respuesta con caché fría vs. caché caliente).
+- **Trazabilidad:** → HU-024 → CU-24 →
+  `ExternalApiController.infoEspecie` → `ExternalApiService.obtenerInfoEspecie`
+  → `ExternalApiClient` → `GET /api/externa/especies`.
+- **Estado:** implementado (sin prueba automatizada; no se marca
+  "verificado" siguiendo la misma convención ya usada en el resto de este
+  SRS y en la matriz de trazabilidad).
+
 ### 3.2. Requisitos no funcionales (REQ-NF)
 
 **REQ-NF-001 — Rendimiento del listado de mascotas**

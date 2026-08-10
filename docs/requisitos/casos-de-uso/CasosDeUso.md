@@ -761,3 +761,134 @@ bloqueante para el éxito de la operación de dominio que lo origina.
 
 **Tipo de acceso a datos:** no aplica — no involucra acceso directo a base
 de datos; consume un servicio externo.
+
+---
+
+## CU-22 — Gestionar usuarios (administración)
+
+| Campo | Contenido |
+|---|---|
+| **Objetivo** | Administrar cuentas de usuario del sistema: listar, consultar, crear, actualizar y dar de baja lógica |
+| **Actor principal** | Administrador |
+| **Actores secundarios** | — |
+| **Disparador** | El actor envía una petición `GET`/`POST`/`PUT`/`DELETE` sobre `/api/usuarios`. |
+| **Precondiciones** | El actor está autenticado y tiene rol `ADMIN` (CU-05). |
+| **Postcondiciones** | Éxito: la operación solicitada (listado, consulta, creación, actualización o baja lógica) se completa sobre la cuenta indicada. |
+| **Requisitos relacionados** | REQ-F-023 |
+| **Historias relacionadas** | HU-022 |
+| **Estado** | Implementado y verificado |
+
+**Descripción:** el actor administra cuentas de usuario completas,
+incluida la asignación de rol, distinto del autoregistro público (CU-01)
+que siempre crea cuentas `ROLE_DUENO`.
+
+**Flujo principal**
+1. El actor envía la operación deseada (listar, consultar por id, crear,
+   actualizar o eliminar) sobre `/api/usuarios`.
+2. El sistema verifica que el actor tiene rol `ADMIN` (incluye CU-05).
+3. Si la operación es crear, el sistema valida que el correo no esté
+   duplicado y que se haya enviado una contraseña.
+4. Si la operación es actualizar, el sistema verifica que el actor no esté
+   modificando el rol de su propia cuenta.
+5. El sistema ejecuta la operación y responde con el código HTTP
+   correspondiente (`200`/`201`/`204`).
+
+**Flujos alternativos:** ninguno identificado.
+
+**Flujos de excepción**
+- 2a. Rol no autorizado (no `ADMIN`): ver CU-05 (403 Forbidden).
+- 3a. Correo ya registrado: `409 Conflict`.
+- 3b. Contraseña ausente al crear: `400 Bad Request`.
+- 4a. El actor intenta modificar el rol de su propia cuenta:
+  `403 Forbidden`.
+- Recurso inexistente (consultar, actualizar o eliminar un id que no
+  existe): `404 Not Found`.
+
+**Reglas de negocio:** solo `ROLE_ADMIN` puede acceder a estas
+operaciones; un administrador no puede modificar el rol de su propia
+cuenta; la baja es lógica (`activo = false`), no elimina el registro.
+
+---
+
+## CU-23 — Gestionar vacunas
+
+| Campo | Contenido |
+|---|---|
+| **Objetivo** | Registrar, actualizar, dar de baja y consultar las vacunas aplicadas a una mascota |
+| **Actor principal** | Administrador, Veterinario o Auxiliar (escritura); cualquier rol autenticado (consulta) |
+| **Actores secundarios** | Dueño de mascota (consulta de sus propias vacunas) |
+| **Disparador** | El actor envía una petición sobre `/api/vacunas`. |
+| **Precondiciones** | El actor está autenticado (CU-05); para escritura, su rol está autorizado; la mascota referenciada existe (CU-07). |
+| **Postcondiciones** | Éxito: la vacuna queda registrada, actualizada o dada de baja, o se devuelve el listado/detalle solicitado, respetando la restricción de propiedad para `ROLE_DUENO`. |
+| **Requisitos relacionados** | REQ-F-024 |
+| **Historias relacionadas** | HU-023 |
+| **Estado** | Implementado y verificado |
+
+**Descripción:** el actor gestiona las vacunas aplicadas a una mascota;
+`ROLE_DUENO` solo puede consultar, y únicamente las vacunas de sus propias
+mascotas.
+
+**Flujo principal**
+1. El actor envía la operación deseada (listar, listar por mascota,
+   consultar por id, crear, actualizar o eliminar) sobre `/api/vacunas`.
+2. El sistema verifica el rol del actor según la operación (incluye CU-05).
+3. Si el actor tiene rol `ROLE_DUENO`, el sistema restringe el resultado a
+   las vacunas de sus propias mascotas.
+4. El sistema ejecuta la operación y responde con el código HTTP
+   correspondiente.
+
+**Flujos alternativos:** ninguno identificado.
+
+**Flujos de excepción**
+- 2a. Rol no autorizado para escritura (`ROLE_DUENO` intenta crear,
+  actualizar o eliminar): `403 Forbidden`.
+- 3a. Un dueño intenta consultar una vacuna de una mascota ajena:
+  `403 Forbidden`.
+- Vacuna o mascota inexistente: `404 Not Found`.
+- Datos inválidos al crear: `422 Unprocessable Entity`.
+
+**Reglas de negocio:** solo `ADMIN`/`VETERINARIO`/`AUXILIAR` pueden crear,
+actualizar o eliminar vacunas; `ROLE_DUENO` solo puede consultar, y
+únicamente las de sus propias mascotas.
+
+---
+
+## CU-24 — Consultar información externa de especies
+
+| Campo | Contenido |
+|---|---|
+| **Objetivo** | Obtener información de una especie (nombre científico, hábitat, dieta) desde un servicio externo, usando caché |
+| **Actor principal** | Usuario autenticado (cualquier rol) |
+| **Actores secundarios** | Servicio externo de información de especies (API Ninjas) |
+| **Disparador** | El actor envía `GET /api/externa/especies` con el parámetro `especie`. |
+| **Precondiciones** | El actor está autenticado (CU-05, sin restricción adicional de rol). |
+| **Postcondiciones** | Éxito: se devuelve la información de la especie solicitada, proveniente de la caché o del servicio externo. |
+| **Requisitos relacionados** | REQ-F-025 |
+| **Historias relacionadas** | HU-024 |
+| **Estado** | Implementado (verificación por inspección; sin prueba automatizada) |
+
+**Descripción:** el sistema resuelve la consulta desde una caché Redis si
+existe una entrada vigente para la especie solicitada; en caso contrario,
+consulta el servicio externo y guarda el resultado en caché.
+
+**Flujo principal**
+1. El actor solicita información de una especie.
+2. El sistema busca la clave correspondiente en la caché Redis.
+3. Si existe en caché (*cache hit*), el sistema responde con el valor
+   cacheado.
+4. Si no existe (*cache miss*), el sistema consulta el servicio externo,
+   guarda el resultado en caché con un TTL configurable y responde con el
+   resultado.
+
+**Flujos alternativos:** ninguno identificado.
+
+**Flujos de excepción**
+- 4a. El servicio externo no encuentra información para la especie: error
+  (el resultado no se guarda en caché).
+
+**Reglas de negocio:** el resultado se cachea por especie normalizada
+(minúsculas, sin espacios extremos), con un TTL configurable por variable
+de entorno.
+
+**Tipo de acceso a datos:** no aplica a base de datos relacional — consume
+un servicio externo con caché Redis (`external-api:animal:<especie>`).

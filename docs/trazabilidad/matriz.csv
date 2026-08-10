@@ -11,9 +11,9 @@ REQ-F-009,funcional,Must,HU-008,CU-08,MascotaController/MascotaService,GET /api/
 REQ-F-010,funcional,Must,HU-009,CU-09,MascotaController/MascotaService,GET /api/mascotas/{id},MascotaControllerTest,CRUD-ORM,,verificado
 REQ-F-011,funcional,Must,HU-010,CU-10,MascotaController/MascotaService,PUT /api/mascotas/{id},MascotaControllerTest,CRUD-ORM,,verificado
 REQ-F-012,funcional,Must,HU-011,CU-11,MascotaController/MascotaService,DELETE /api/mascotas/{id},MascotaControllerTest,CRUD-ORM,,verificado
-REQ-F-013,funcional,Should,HU-012,CU-12,ConsultaController/ConsultaService,GET /api/consultas,,CRUD-ORM,Sin prueba automatizada; ConsultaService.listar() no filtra por propietario para ROLE_DUENO pese a la regla general del sistema,implementado
+REQ-F-013,funcional,Should,HU-012,CU-12,ConsultaController/ConsultaService,GET /api/consultas; GET /api/consultas/{id}; POST /api/consultas; PUT /api/consultas/{id}; DELETE /api/consultas/{id},ConsultaControllerTest,CRUD-ORM,ConsultaControllerTest cubre GET/{id} POST y DELETE; GET (listado) y PUT no tienen prueba automatizada dedicada; ademas ConsultaService.listar() no filtra por propietario para ROLE_DUENO pese a la regla general del sistema,implementado
 REQ-F-014,funcional,Could,HU-013,CU-13,,,,,,pendiente
-REQ-F-015,funcional,Should,HU-014,CU-14,CitaController/CitaService,GET /api/citas,CitaControllerTest,CRUD-ORM,"Backend implementado y probado (incluye filtrado por propietario para ROLE_DUENO); HU-014 pide calendario interactivo, no implementado en frontend",verificado
+REQ-F-015,funcional,Should,HU-014,CU-14,CitaController/CitaService,GET /api/citas; GET /api/citas/{id}; POST /api/citas; PUT /api/citas/{id}; DELETE /api/citas/{id},CitaControllerTest,CRUD-ORM,Backend implementado y probado en las 5 operaciones (incluye filtrado por propietario para ROLE_DUENO y regla de que ROLE_VETERINARIO solo actualiza citas donde es el veterinario asignado); HU-014 exige un calendario interactivo que no esta implementado en el frontend; por eso el requisito no se marca verificado en su totalidad,implementado
 REQ-F-016,funcional,Could,HU-015,CU-15,,,,,,pendiente
 REQ-F-017,funcional,Could,HU-016,CU-16,,,,,,pendiente
 REQ-F-018,funcional,Should,HU-017,CU-17,,,,,,pendiente
@@ -21,26 +21,9 @@ REQ-F-019,funcional,Could,HU-018,CU-18,,,,,,pendiente
 REQ-F-020,funcional,Should,HU-019,CU-19,,,,,,pendiente
 REQ-F-021,funcional,Should,HU-020,CU-20,MascotaController/MascotaRepository,GET /api/mascotas/resumen-especies,ResumenEspeciesIntegrationTest,SP,,verificado
 REQ-F-022,funcional,Could,HU-021,CU-21,,,,,,pendiente
-REQ-F-023,funcional,Should,HU-014,CU-14,CitaController/CitaService,GET /api/citas/{id},CitaControllerTest,CRUD-ORM,,verificado
-REQ-F-024,funcional,Should,HU-014,CU-14,CitaController/CitaService,POST /api/citas,CitaControllerTest,CRUD-ORM,,verificado
-REQ-F-025,funcional,Should,HU-014,CU-14,CitaController/CitaService,PUT /api/citas/{id},CitaControllerTest,CRUD-ORM,Incluye regla: ROLE_VETERINARIO solo puede actualizar citas donde es el veterinario asignado,verificado
-REQ-F-026,funcional,Should,HU-014,CU-14,CitaController/CitaService,DELETE /api/citas/{id},CitaControllerTest,CRUD-ORM,,verificado
-REQ-F-027,funcional,Should,HU-012,CU-12,ConsultaController/ConsultaService,GET /api/consultas/{id},ConsultaControllerTest,CRUD-ORM,,verificado
-REQ-F-028,funcional,Should,HU-012,CU-12,ConsultaController/ConsultaService,POST /api/consultas,ConsultaControllerTest,CRUD-ORM,,verificado
-REQ-F-029,funcional,Should,HU-012,CU-12,ConsultaController/ConsultaService,PUT /api/consultas/{id},,CRUD-ORM,Sin prueba automatizada (no cubierta por ConsultaControllerTest),implementado
-REQ-F-030,funcional,Should,HU-012,CU-12,ConsultaController/ConsultaService,DELETE /api/consultas/{id},ConsultaControllerTest,CRUD-ORM,,verificado
-REQ-F-031,funcional,Should,,,VacunaController/VacunaService,GET /api/vacunas,VacunaControllerTest,CRUD-ORM,docs/postman/BIOPET-Vacunas.postman_collection.json,verificado
-REQ-F-032,funcional,Should,,,VacunaController/VacunaService,GET /api/vacunas/mascota/{mascotaId},,CRUD-ORM,Sin prueba automatizada dedicada (no cubierta por VacunaControllerTest),implementado
-REQ-F-033,funcional,Should,,,VacunaController/VacunaService,GET /api/vacunas/{id},VacunaControllerTest,CRUD-ORM,docs/postman/BIOPET-Vacunas.postman_collection.json,verificado
-REQ-F-034,funcional,Should,,,VacunaController/VacunaService,POST /api/vacunas,VacunaControllerTest,CRUD-ORM,docs/postman/BIOPET-Vacunas.postman_collection.json,verificado
-REQ-F-035,funcional,Should,,,VacunaController/VacunaService,PUT /api/vacunas/{id},VacunaControllerTest,CRUD-ORM,docs/postman/BIOPET-Vacunas.postman_collection.json,verificado
-REQ-F-036,funcional,Should,,,VacunaController/VacunaService,DELETE /api/vacunas/{id},VacunaControllerTest,CRUD-ORM,docs/postman/BIOPET-Vacunas.postman_collection.json,verificado
-REQ-F-037,funcional,Should,,,UsuarioController/UsuarioService,GET /api/usuarios,UsuarioControllerTest,CRUD-ORM,,verificado
-REQ-F-038,funcional,Should,,,UsuarioController/UsuarioService,GET /api/usuarios/{id},UsuarioControllerTest,CRUD-ORM,,verificado
-REQ-F-039,funcional,Should,,,UsuarioController/UsuarioService,POST /api/usuarios,UsuarioControllerTest,CRUD-ORM,,verificado
-REQ-F-040,funcional,Should,,,UsuarioController/UsuarioService,PUT /api/usuarios/{id},UsuarioControllerTest,CRUD-ORM,Incluye regla: ADMIN no puede escalar su propio rol,verificado
-REQ-F-041,funcional,Should,,,UsuarioController/UsuarioService,DELETE /api/usuarios/{id},UsuarioControllerTest,CRUD-ORM,,verificado
-REQ-F-042,funcional,Could,,,ExternalApiController/ExternalApiService/ExternalApiClient,GET /api/externa/especies,,HTTP-EXTERNO,docs/u4/evidencias/fred/redis-cache-comparacion.md,implementado
+REQ-F-023,funcional,Should,HU-022,CU-22,UsuarioController/UsuarioService,GET /api/usuarios; GET /api/usuarios/{id}; POST /api/usuarios; PUT /api/usuarios/{id}; DELETE /api/usuarios/{id},UsuarioControllerTest,CRUD-ORM,Incluye regla: ADMIN no puede escalar su propio rol; no incluye GET /api/usuarios/me (ese endpoint pertenece a REQ-F-007/HU-006/CU-06),verificado
+REQ-F-024,funcional,Should,HU-023,CU-23,VacunaController/VacunaService,GET /api/vacunas; GET /api/vacunas/mascota/{mascotaId}; GET /api/vacunas/{id}; POST /api/vacunas; PUT /api/vacunas/{id}; DELETE /api/vacunas/{id},VacunaControllerTest,CRUD-ORM,VacunaControllerTest cubre 5 de 6 operaciones (no cubre GET /api/vacunas/mascota/{mascotaId}); colección Postman docs/postman/BIOPET-Vacunas.postman_collection.json (12 requests ejecutables con Newman),verificado
+REQ-F-025,funcional,Could,HU-024,CU-24,ExternalApiController/ExternalApiService/ExternalApiClient,GET /api/externa/especies,,HTTP-EXTERNO,docs/u4/evidencias/fred/redis-cache-comparacion.md (comparacion real cache-miss vs cache-hit); sin prueba automatizada dedicada,implementado
 REQ-NF-001,no funcional,Must,,,Cache Redis (listado mascotas),GET /api/mascotas,k6 v2.1.0 (6 corridas: 3 en frio + 3 en caliente),CRUD-ORM,docs/mediciones/perf/REPORT.md (p95 caliente maximo 21.09ms < 200ms; p95 frio maximo 27.35ms < 500ms),verificado
 REQ-NF-002,no funcional,Must,,,SecurityConfig/TomcatDualConnectorConfig,N/A,SecurityHeadersTest.peticionHttpNoIncluyeHsts + AuthControllerTest.loginExitoso,,docs/mediciones/sec/A02-cryptography-tls.md (raw/A02-tls.txt: TLSv1.3 TLS_AES_256_GCM_SHA384),verificado
 REQ-NF-003,no funcional,Must,,,JwtService,N/A,JwtServiceTest.tokenExpiradoEsRechazado,,application.yml: JWT_EXPIRATION_MS (default 3600000 = 1h) y JWT_REFRESH_EXPIRATION_MS (default 604800000 = 7d) configurables por variable de entorno,verificado

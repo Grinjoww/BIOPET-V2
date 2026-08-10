@@ -6,6 +6,70 @@ de la Guía de la Tercera Entrega). No reemplaza a `docs/requisitos/cambios/CAMB
 (que narra el contexto general de la migración de pila ASP.NET → Spring Boot);
 este archivo es el registro formal, fila por requisito, exigido por A.3.4.
 
+## [v0.9.0-rc] - 2026-08-10 (reconciliación GA Unidad IV)
+
+Corrige el fallo del CI de trazabilidad (`CI BIOPET / traceability`, job
+`scripts/validate-traceability.sh`, bloque A.3.3 de la Guía), causado por
+20 identificadores `REQ-F-023` a `REQ-F-042` agregados a
+`docs/trazabilidad/matriz.csv` sin correspondencia en el SRS, fragmentando
+funcionalidades completas (Citas, Consultas, Vacunas, Usuarios, API
+externa) en un requisito por endpoint HTTP en lugar de un requisito por
+módulo.
+
+### Added
+- **REQ-F-023** — Gestión administrativa de usuarios (`UsuarioController`
+  CRUD, excluye `/api/usuarios/me`, ya cubierto por `REQ-F-007`). Historia
+  `HU-022`, caso de uso `CU-22`. Estado: verificado
+  (`UsuarioControllerTest`). Autor: Jaime Josué Mariscal Cabrera.
+- **REQ-F-024** — Gestión de vacunas (`VacunaController`/`VacunaService`,
+  registro, consulta global/por mascota/por id, actualización y baja
+  lógica). Historia `HU-023`, caso de uso `CU-23`. Estado: verificado
+  (`VacunaControllerTest`, colección Postman
+  `docs/postman/BIOPET-Vacunas.postman_collection.json`), con la
+  salvedad documentada de que `GET /api/vacunas/mascota/{mascotaId}` no
+  tiene prueba automatizada dedicada. Autor: Jaime Josué Mariscal Cabrera.
+- **REQ-F-025** — Consulta de información externa de especies
+  (`ExternalApiController`/`ExternalApiService`, integración con API
+  Ninjas y caché Redis *cache-aside*). Historia `HU-024`, caso de uso
+  `CU-24`. Estado: implementado (sin prueba automatizada dedicada;
+  evidencia empírica manual en
+  `docs/u4/evidencias/fred/redis-cache-comparacion.md`). Autor: Jaime
+  Josué Mariscal Cabrera.
+- Historias `HU-022`, `HU-023`, `HU-024` en `HistoriasUsuario.md` y casos
+  de uso `CU-22`, `CU-23`, `CU-24` en `CasosDeUso.md`, correspondientes a
+  los tres requisitos anteriores.
+
+### Changed
+- **REQ-F-013** (historial clínico / Consultas) — la fila de
+  `matriz.csv` ahora consolida las 5 operaciones reales de
+  `ConsultaController` (`GET`, `GET /{id}`, `POST`, `PUT`, `DELETE`) en un
+  único identificador, en vez de fragmentarlas en `REQ-F-013` y
+  `REQ-F-027` a `REQ-F-030`. No cambia el enunciado del requisito en el
+  SRS. Se preserva, sin ocultarla, la limitación real ya detectada: el
+  listado no filtra por propietario para `ROLE_DUENO`, y el listado y
+  `PUT` no tienen prueba automatizada dedicada; por eso el estado se
+  mantiene en "implementado", no "verificado". Autor: Jaime Josué
+  Mariscal Cabrera.
+- **REQ-F-015** (gestión de citas) — la fila de `matriz.csv` ahora
+  consolida las 5 operaciones reales de `CitaController` en un único
+  identificador, en vez de fragmentarlas en `REQ-F-015` y `REQ-F-023` a
+  `REQ-F-026`. No cambia el enunciado del requisito en el SRS. El backend
+  está completamente probado (`CitaControllerTest`), pero como el
+  enunciado formal de `HU-014`/`REQ-F-015` exige un "calendario
+  interactivo" que no existe en el frontend, el estado se mantiene en
+  "implementado", no "verificado", para no certificar como cumplido un
+  requisito que solo se satisface parcialmente. Autor: Jaime Josué
+  Mariscal Cabrera.
+
+### Removed
+- **`REQ-F-023` a `REQ-F-042`** (numeración anterior, 20 identificadores)
+  — eliminados de `docs/trazabilidad/matriz.csv` por no existir en el SRS.
+  Ninguna evidencia técnica se perdió: la trazabilidad de Citas y
+  Consultas se conservó consolidada en `REQ-F-015`/`REQ-F-013`; la de
+  Usuarios, Vacunas y API externa se conservó formalizándola en los
+  nuevos `REQ-F-023`, `REQ-F-024` y `REQ-F-025` de esta misma entrada.
+  Autor: Jaime Josué Mariscal Cabrera.
+
 ## [v0.9.0-rc] - 2026-07-31 (rama `jaime/cierre-observaciones-1a-1b`)
 
 Cierre de las observaciones de requisitos de la Entrega 1A (OBS-02, OBS-03,
