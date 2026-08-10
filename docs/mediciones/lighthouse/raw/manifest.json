@@ -1,0 +1,74 @@
+[
+  {
+    "url": "http://localhost:4200/login",
+    "isRepresentativeRun": false,
+    "htmlPath": "C:\\Users\\USER_REDACTED\\OneDrive\\Documentos\\GitHub\\PFC-VET-ENTR3-v0.9.0-rc\\.lighthouseci\\localhost-_login-2026_08_01_04_57_49.report.html",
+    "jsonPath": "C:\\Users\\USER_REDACTED\\OneDrive\\Documentos\\GitHub\\PFC-VET-ENTR3-v0.9.0-rc\\.lighthouseci\\localhost-_login-2026_08_01_04_57_49.report.json",
+    "summary": {
+      "performance": 0.93,
+      "accessibility": 0.91,
+      "best-practices": 1,
+      "seo": 0.82
+    }
+  },
+  {
+    "url": "http://localhost:4200/login",
+    "isRepresentativeRun": false,
+    "htmlPath": "C:\\Users\\USER_REDACTED\\OneDrive\\Documentos\\GitHub\\PFC-VET-ENTR3-v0.9.0-rc\\.lighthouseci\\localhost-_login-2026_08_01_04_58_01.report.html",
+    "jsonPath": "C:\\Users\\USER_REDACTED\\OneDrive\\Documentos\\GitHub\\PFC-VET-ENTR3-v0.9.0-rc\\.lighthouseci\\localhost-_login-2026_08_01_04_58_01.report.json",
+    "summary": {
+      "performance": 0.94,
+      "accessibility": 0.91,
+      "best-practices": 1,
+      "seo": 0.82
+    }
+  },
+  {
+    "url": "http://localhost:4200/mascotas",
+    "isRepresentativeRun": false,
+    "htmlPath": "C:\\Users\\USER_REDACTED\\OneDrive\\Documentos\\GitHub\\PFC-VET-ENTR3-v0.9.0-rc\\.lighthouseci\\localhost-_mascotas-2026_08_01_04_58_34.report.html",
+    "jsonPath": "C:\\Users\\USER_REDACTED\\OneDrive\\Documentos\\GitHub\\PFC-VET-ENTR3-v0.9.0-rc\\.lighthouseci\\localhost-_mascotas-2026_08_01_04_58_34.report.json",
+    "summary": {
+      "performance": 0.92,
+      "accessibility": 0.91,
+      "best-practices": 0.96,
+      "seo": 0.82
+    }
+  },
+  {
+    "url": "http://localhost:4200/mascotas",
+    "isRepresentativeRun": false,
+    "htmlPath": "C:\\Users\\USER_REDACTED\\OneDrive\\Documentos\\GitHub\\PFC-VET-ENTR3-v0.9.0-rc\\.lighthouseci\\localhost-_mascotas-2026_08_01_04_58_53.report.html",
+    "jsonPath": "C:\\Users\\USER_REDACTED\\OneDrive\\Documentos\\GitHub\\PFC-VET-ENTR3-v0.9.0-rc\\.lighthouseci\\localhost-_mascotas-2026_08_01_04_58_53.report.json",
+    "summary": {
+      "performance": 0.92,
+      "accessibility": 0.91,
+      "best-practices": 0.96,
+      "seo": 0.82
+    }
+  },
+  {
+    "url": "http://localhost:4200/login",
+    "isRepresentativeRun": true,
+    "htmlPath": "C:\\Users\\USER_REDACTED\\OneDrive\\Documentos\\GitHub\\PFC-VET-ENTR3-v0.9.0-rc\\.lighthouseci\\localhost-_login-2026_08_01_04_58_12.report.html",
+    "jsonPath": "C:\\Users\\USER_REDACTED\\OneDrive\\Documentos\\GitHub\\PFC-VET-ENTR3-v0.9.0-rc\\.lighthouseci\\localhost-_login-2026_08_01_04_58_12.report.json",
+    "summary": {
+      "performance": 0.94,
+      "accessibility": 0.91,
+      "best-practices": 1,
+      "seo": 0.82
+    }
+  },
+  {
+    "url": "http://localhost:4200/mascotas",
+    "isRepresentativeRun": true,
+    "htmlPath": "C:\\Users\\USER_REDACTED\\OneDrive\\Documentos\\GitHub\\PFC-VET-ENTR3-v0.9.0-rc\\.lighthouseci\\localhost-_mascotas-2026_08_01_04_58_23.report.html",
+    "jsonPath": "C:\\Users\\USER_REDACTED\\OneDrive\\Documentos\\GitHub\\PFC-VET-ENTR3-v0.9.0-rc\\.lighthouseci\\localhost-_mascotas-2026_08_01_04_58_23.report.json",
+    "summary": {
+      "performance": 0.92,
+      "accessibility": 0.91,
+      "best-practices": 0.96,
+      "seo": 0.82
+    }
+  }
+]

@@ -163,13 +163,25 @@ A partir de este punto se conserva la documentación técnica propia del PFC.
 
 ## Estado del proyecto
 
-`v0.9.0-rc` es una **candidata a versión de la Tercera Entrega**, no una
-versión de producción. El sistema es funcional y está respaldado por
-pruebas automatizadas y evidencia reproducible (ver
-[Pruebas y cobertura](#pruebas-y-cobertura) y [Limitaciones](#limitaciones)),
-pero usa un certificado TLS autofirmado, credenciales de desarrollo y no ha
-sido evaluado en un entorno equivalente a producción. **No debe
-desplegarse tal cual en producción.**
+BIOPET está **terminado para el alcance académico** definido en esta
+actividad de Unidad IV. Las funcionalidades requeridas están integradas:
+autenticación y autorización por rol y por propiedad, CRUD de
+Usuarios/Mascotas/Citas/Consultas/Vacunas, integración con una API externa
+con caché Redis, y documentación OpenAPI/Swagger de la API.
+
+Las pruebas automatizadas actuales pasan sin incidencias — 166 pruebas,
+0 fallos, 0 errores, `BUILD SUCCESS` — y la cobertura verificada por
+JaCoCo cumple los umbrales automáticos configurados (`jacoco:check`, ≥ 60 %
+en LINE, BRANCH y COMPLEXITY; ver
+[Pruebas y cobertura](#pruebas-y-cobertura)). Existe además documentación
+técnica y evidencia reproducible respaldando cada componente (ADRs,
+diagramas C4, evidencia de seguridad OWASP, rendimiento, caché y
+accesibilidad — ver
+[Consideraciones para evolución y despliegue](#consideraciones-para-evolución-y-despliegue)).
+
+Esto **no equivale a certificar el sistema como listo para un entorno
+productivo real**: usa un certificado TLS autofirmado, credenciales de
+desarrollo y no ha sido evaluado en un entorno equivalente a producción.
 
 ## Stack tecnológico
 
@@ -277,7 +289,7 @@ Objetivos reales, verificados contra `Makefile` (raíz del repositorio):
 | `make audit` | Implementado | Ejecuta la auditoría de seguridad OWASP (`scripts/security-evidence.sh`) y genera evidencia cruda en `docs/mediciones/sec/raw/` (config de docker-compose, headers HTTP/HTTPS, resultado de `mvn clean verify`). |
 | `make clean` | Implementado | Detiene contenedores y elimina huérfanos, conservando los datos. |
 | `make reset-db` | Implementado (**destructivo**) | Elimina también los volúmenes (borra los datos de Postgres y Redis) para reiniciar desde cero. |
-| `make lighthouse` | Implementado | Ejecuta `scripts/run-lighthouse.sh` contra el frontend servido por Docker. Requiere `make up` previo. A la fecha de este README no hay resultados versionados en `docs/mediciones/lighthouse/`. |
+| `make lighthouse` | Implementado | Ejecuta `scripts/run-lighthouse.sh` contra el frontend servido por Docker. Requiere `make up` previo. Existen resultados versionados en [`docs/mediciones/lighthouse/`](docs/mediciones/lighthouse/README.md) (6 corridas oficiales del 2026-08-01, solicitando `/login` y `/mascotas`; la solicitud a `/mascotas` redirige a `/login` sin sesión, por lo que solo `/login` fue auditada directamente); no cubren cambios de frontend posteriores a esa fecha (ver el propio README de esa carpeta). |
 
 ## Ejecución HTTP y HTTPS
 
@@ -523,6 +535,7 @@ principal:
 | [`docs/mediciones/sec/`](docs/mediciones/sec/) | Evidencia OWASP (A01, A02, A03, A05, A07, A09) y resumen JaCoCo, con [`REPORT.md`](docs/mediciones/sec/REPORT.md) como índice. |
 | [`docs/mediciones/redis/`](docs/mediciones/redis/) | Evidencia cruda de caché: configuración `maxmemory`/`maxmemory-policy`, tamaño de la base (`DBSIZE`), TTL y claves activas del caché de listado de mascotas. |
 | [`docs/mediciones/postgres/`](docs/mediciones/postgres/) | Evidencia formal de privilegios de rol: confirma que `biopet_app` opera con privilegios mínimos (`arwd`, sin `Superuser`/`Create role`/`Create DB`/owner completo) sobre `usuarios` y `mascotas`. |
+| [`docs/mediciones/lighthouse/`](docs/mediciones/lighthouse/README.md) | Resultados Lighthouse disponibles (Performance, Accessibility, Best Practices, SEO), 6 corridas oficiales del 2026-08-01 sobre las solicitudes `/login` y `/mascotas` (esta última redirige a `/login` sin sesión), con assertions configuradas y cuáles se cumplieron o no. |
 | [`docs/mediciones/DATA-DICTIONARY.md`](docs/mediciones/DATA-DICTIONARY.md) | Diccionario de datos de todas las mediciones (seguridad, cobertura, rendimiento, usabilidad). |
 | [`docs/informe/`](docs/informe/README.md) | Código fuente LaTeX del informe final de la Tercera Entrega; ver `docs/informe/README.md` para compilarlo. |
 | [`docs/requisitos/`](docs/requisitos/) | SRS, historias de usuario, casos de uso. |
@@ -557,7 +570,14 @@ correspondiente, valida con `docker compose config`, y confirma con
 `make up && docker compose ps` que el sistema arranca correctamente con la
 nueva imagen.
 
-## Limitaciones
+## Consideraciones para evolución y despliegue
+
+BIOPET está **terminado para el alcance académico definido** en esta
+Unidad IV: los módulos funcionales, la seguridad, las pruebas automatizadas
+y la evidencia reproducible descritas en este README ya están integradas y
+verificadas. Lo que sigue no son funcionalidades académicas faltantes, sino
+condiciones reales del entorno de desarrollo/evaluación que habría que
+resolver **antes de un hipotético despliegue productivo**:
 
 - El certificado TLS es autofirmado y exclusivamente académico; no válido
   para producción.
@@ -567,9 +587,19 @@ nueva imagen.
   (`docker-compose.yml`, sin réplicas).
 - Los logs de auditoría (`AUTH_AUDIT`) son locales al proceso/contenedor,
   sin integración con un SIEM centralizado.
-- Las mediciones de usabilidad (SUS) y de accesibilidad automatizada
-  (Lighthouse) todavía no se han ejecutado y no tienen resultados
-  versionados.
-- **Este sistema no está listo para producción**: certificado académico,
-  secretos de desarrollo en `.env.example`/código, sin SIEM, sin evaluación
+- Existen mediciones Lighthouse versionadas ([`docs/mediciones/lighthouse/`](docs/mediciones/lighthouse/README.md)),
+  6 corridas oficiales del 2026-08-01, solicitando `/login` y `/mascotas`.
+  La solicitud a `/mascotas` redirige a `/login` al ejecutarse sin sesión
+  (comportamiento esperado del `authGuard`), por lo que esta evidencia no
+  constituye todavía una auditoría de la vista autenticada de Mascotas,
+  solo de `/login` y del comportamiento de esa redirección. Performance,
+  Accessibility y Best Practices alcanzaron sus umbrales configurados; SEO
+  obtuvo 82 frente al umbral configurado de 90, documentado como
+  oportunidad de mejora identificada por la medición. La evidencia cubre
+  únicamente lo efectivamente auditado en esa fecha; no incluye cambios de
+  frontend posteriores (ver el README de esa carpeta).
+- Las credenciales y secretos de `.env.example`/código son de desarrollo,
+  no aptos para un entorno real.
+- **Este sistema no está certificado como listo para producción**:
+  certificado académico, secretos de desarrollo, sin SIEM, sin evaluación
   de alta disponibilidad.

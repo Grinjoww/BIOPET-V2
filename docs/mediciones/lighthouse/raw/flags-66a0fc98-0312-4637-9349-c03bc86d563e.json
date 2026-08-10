@@ -1,0 +1,1 @@
+{"throttlingMethod":"simulate","skipAudits":["uses-http2"],"chromeFlags":" --headless=new --headless=new --headless=new"}
