@@ -4,6 +4,7 @@ import com.biopet.entity.Consulta;
 import com.biopet.entity.Mascota;
 import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
+import com.biopet.repository.CitaRepository;
 import com.biopet.repository.ConsultaRepository;
 import com.biopet.repository.MascotaRepository;
 import com.biopet.repository.UsuarioRepository;
@@ -34,13 +35,27 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class ConsultaControllerTest {
-    @Autowired MockMvc mockMvc;
-    @Autowired UsuarioRepository usuarioRepository;
-    @Autowired MascotaRepository mascotaRepository;
-    @Autowired ConsultaRepository consultaRepository;
-    @Autowired PasswordEncoder passwordEncoder;
 
-    @MockBean TokenBlacklistService tokenBlacklistService;
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
+    UsuarioRepository usuarioRepository;
+
+    @Autowired
+    MascotaRepository mascotaRepository;
+
+    @Autowired
+    ConsultaRepository consultaRepository;
+
+    @Autowired
+    CitaRepository citaRepository;
+
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
+    @MockBean
+    TokenBlacklistService tokenBlacklistService;
 
     private Long veterinarioId;
     private Long mascotaId;
@@ -48,6 +63,7 @@ class ConsultaControllerTest {
     @BeforeEach
     void setUp() {
         consultaRepository.deleteAll();
+        citaRepository.deleteAll();
         mascotaRepository.deleteAll();
         usuarioRepository.deleteAll();
 
@@ -67,6 +83,7 @@ class ConsultaControllerTest {
                 .rol(Rol.ROLE_VETERINARIO)
                 .activo(true)
                 .build();
+
         veterinarioId = usuarioRepository.save(veterinario).getId();
 
         Usuario dueno = Usuario.builder()
@@ -76,6 +93,7 @@ class ConsultaControllerTest {
                 .rol(Rol.ROLE_DUENO)
                 .activo(true)
                 .build();
+
         Usuario duenoGuardado = usuarioRepository.save(dueno);
 
         Mascota mascota = Mascota.builder()
@@ -86,6 +104,7 @@ class ConsultaControllerTest {
                 .fechaNacimiento(java.time.LocalDate.of(2020, 1, 1))
                 .activo(true)
                 .build();
+
         mascotaId = mascotaRepository.save(mascota).getId();
 
         when(tokenBlacklistService.isRevoked(anyString())).thenReturn(false);
@@ -93,7 +112,10 @@ class ConsultaControllerTest {
 
     @Test
     void adminCreaConsultaExitosamente() throws Exception {
-        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"),
+                "access_token"
+        );
 
         mockMvc.perform(post("/api/consultas")
                         .header("Authorization", "Bearer " + tokenAdmin)
@@ -110,7 +132,10 @@ class ConsultaControllerTest {
 
     @Test
     void duenoNoPuedeCrearConsultaDevuelve403() throws Exception {
-        String tokenDueno = extractCookieValue(iniciarSesion("dueno@biopet.com", "ClaveDueno123*"), "access_token");
+        String tokenDueno = extractCookieValue(
+                iniciarSesion("dueno@biopet.com", "ClaveDueno123*"),
+                "access_token"
+        );
 
         mockMvc.perform(post("/api/consultas")
                         .header("Authorization", "Bearer " + tokenDueno)
@@ -125,7 +150,10 @@ class ConsultaControllerTest {
 
     @Test
     void buscarConsultaInexistenteDevuelve404() throws Exception {
-        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"),
+                "access_token"
+        );
 
         mockMvc.perform(get("/api/consultas/999999")
                         .header("Authorization", "Bearer " + tokenAdmin))
@@ -137,7 +165,10 @@ class ConsultaControllerTest {
 
     @Test
     void crearConsultaConCamposInvalidosDevuelve422() throws Exception {
-        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"),
+                "access_token"
+        );
 
         mockMvc.perform(post("/api/consultas")
                         .header("Authorization", "Bearer " + tokenAdmin)
@@ -152,15 +183,18 @@ class ConsultaControllerTest {
 
     @Test
     void duenoDeOtraMascotaNoPuedeVerConsultaAjena() throws Exception {
-        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
-        MvcResult creado = mockMvc.perform(post("/api/consultas")
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"),
+                "access_token"
+        );
+
+        mockMvc.perform(post("/api/consultas")
                         .header("Authorization", "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"mascotaId":%d,"veterinarioId":%d,"fechaConsulta":"%s","motivo":"Chequeo general"}
                                 """.formatted(mascotaId, veterinarioId, Instant.now())))
-                .andExpect(status().isCreated())
-                .andReturn();
+                .andExpect(status().isCreated());
 
         Long consultaId = consultaRepository.findAll().stream()
                 .findFirst()
@@ -174,9 +208,13 @@ class ConsultaControllerTest {
                 .rol(Rol.ROLE_DUENO)
                 .activo(true)
                 .build();
+
         usuarioRepository.save(otroDueno);
 
-        String tokenOtroDueno = extractCookieValue(iniciarSesion("otro.dueno@biopet.com", "ClaveOtro123*"), "access_token");
+        String tokenOtroDueno = extractCookieValue(
+                iniciarSesion("otro.dueno@biopet.com", "ClaveOtro123*"),
+                "access_token"
+        );
 
         mockMvc.perform(get("/api/consultas/" + consultaId)
                         .header("Authorization", "Bearer " + tokenOtroDueno))
@@ -185,7 +223,11 @@ class ConsultaControllerTest {
 
     @Test
     void adminEliminaConsultaExitosamente() throws Exception {
-        String tokenAdmin = extractCookieValue(iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token");
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"),
+                "access_token"
+        );
+
         mockMvc.perform(post("/api/consultas")
                         .header("Authorization", "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -204,7 +246,10 @@ class ConsultaControllerTest {
                 .andExpect(status().isNoContent());
 
         Consulta eliminada = consultaRepository.findById(consultaId)
-                .orElseThrow(() -> new AssertionError("Consulta eliminada físicamente: " + consultaId));
+                .orElseThrow(() ->
+                        new AssertionError("Consulta eliminada físicamente: " + consultaId)
+                );
+
         assertFalse(eliminada.isActivo());
     }
 
@@ -219,13 +264,26 @@ class ConsultaControllerTest {
     }
 
     private String extractCookieValue(MvcResult result, String cookieName) {
-        List<String> setCookieHeaders = result.getResponse().getHeaders(HttpHeaders.SET_COOKIE);
+        List<String> setCookieHeaders =
+                result.getResponse().getHeaders(HttpHeaders.SET_COOKIE);
+
         String header = setCookieHeaders.stream()
                 .filter(value -> value.startsWith(cookieName + "="))
                 .findFirst()
-                .orElseThrow(() -> new AssertionError("No se encontró la cookie '" + cookieName + "' en las cabeceras Set-Cookie"));
+                .orElseThrow(() ->
+                        new AssertionError(
+                                "No se encontró la cookie '" +
+                                        cookieName +
+                                        "' en las cabeceras Set-Cookie"
+                        )
+                );
+
         int separatorIndex = header.indexOf(';');
-        String pair = separatorIndex >= 0 ? header.substring(0, separatorIndex) : header;
+
+        String pair = separatorIndex >= 0
+                ? header.substring(0, separatorIndex)
+                : header;
+
         return pair.substring(cookieName.length() + 1);
     }
 }
