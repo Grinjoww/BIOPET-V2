@@ -113,3 +113,53 @@
   year      = {1996},
   note      = {[reutilizada de docs/informe/referencias.bib] Referencia estandar del instrumento SUS, aplicado en docs/mediciones/sus/REPORT.md (n=10, SUS=74.75/100).}
 }
+
+% --- Agregadas al integrar el capitulo 4 (SOAP vs REST), fuentes citadas
+%     por Carvajal en docs/u4/investigacion/SOAP-VS-REST.md y verificadas
+%     contra la pagina oficial correspondiente antes de incorporarlas -----
+@misc{w3c-wsdl11,
+  author       = {{World Wide Web Consortium (W3C)}},
+  title        = {{Web Services Description Language (WSDL) 1.1}},
+  year         = {2001},
+  howpublished = {\url{https://www.w3.org/TR/wsdl}},
+  note         = {W3C Note. Especifica el contrato formal (WSDL) que describe las operaciones de un servicio SOAP.}
+}
+
+@misc{oasis-ws-security,
+  author       = {{OASIS}},
+  title        = {{Web Services Security}: SOAP Message Security 1.1},
+  year         = {2006},
+  howpublished = {\url{https://docs.oasis-open.org/wss/v1.1/}},
+  note         = {Estandar OASIS para seguridad a nivel de mensaje (firma y cifrado del sobre SOAP), citado en la comparacion de seguridad SOAP vs REST.}
+}
+
+@techreport{rfc9110,
+  author      = {R. Fielding and M. Nottingham and J. Reschke},
+  title       = {{HTTP Semantics}},
+  institution = {IETF},
+  type        = {RFC},
+  number      = {9110},
+  year        = {2022},
+  month       = {June},
+  howpublished = {\url{https://www.rfc-editor.org/rfc/rfc9110}},
+  note        = {Define la semantica de metodos y codigos de estado HTTP en la que se apoya la interfaz uniforme de REST.}
+}
+
+@techreport{rfc9457,
+  author      = {M. Nottingham and E. Wilde and S. Dalal},
+  title       = {{Problem Details for HTTP APIs}},
+  institution = {IETF},
+  type        = {RFC},
+  number      = {9457},
+  year        = {2023},
+  month       = {July},
+  howpublished = {\url{https://www.rfc-editor.org/rfc/rfc9457}},
+  note        = {Sustituye a RFC 7807 (\cite{rfc7807}); BIOPET implementa el formato ProblemDetail bajo la version RFC 7807, citada en su propio ADR-006, sin haber migrado todavia a RFC 9457.}
+}
+
+@misc{sri-facturacion-electronica,
+  author       = {{Servicio de Rentas Internas del Ecuador}},
+  title        = {Ficha t\'ecnica de comprobantes electr\'onicos},
+  howpublished = {\url{https://www.sri.gob.ec/facturacion-electronica}},
+  note         = {Fuente oficial del esquema de comprobantes electronicos del Ecuador, que opera mediante servicios web SOAP con WSDL; citada como caso de uso real de SOAP en el capitulo 4.}
+}

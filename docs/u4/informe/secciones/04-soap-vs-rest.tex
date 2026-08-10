@@ -1,33 +1,323 @@
 \chapter{SOAP vs REST}
 \label{cap:soap-vs-rest}
 
-% TODO: integrar el aporte validado de Carvajal Loor Johan Stalin
-% (investigacion comparativa SOAP vs REST, minimo 8 criterios, casos de
-% uso aplicables, ejemplo SOAP y su equivalente REST).
-%
-% Fuente prevista (no integrada todavia en este capitulo):
-%   docs/u4/investigacion/SOAP-VS-REST.md
-%
-% Al integrar, citar como minimo:
-%   \cite{fielding2000} -- Fielding (2000), REST como estilo arquitectonico
-%   \cite{w3c-soap12}   -- especificacion oficial SOAP 1.2 (W3C)
-% y anadir aqui las entradas bibliograficas adicionales que Carvajal
-% verifique para SOAP/REST (sin inventar autores, anios ni URLs).
+\section{Prop\'osito de esta comparaci\'on}
+\label{sec:soap-rest-proposito}
 
-\pendienteIntegracion{Investigaci\'on comparativa SOAP vs REST (Carvajal Loor Johan Stalin). Este cap\'itulo se completar\'a con el aporte validado, incluyendo al menos 8 criterios de comparaci\'on, casos de uso aplicables a cada estilo, y un ejemplo SOAP con su equivalente REST.}
+La actividad de Unidad IV exige, adem\'as de la revisi\'on cruzada del PFC
+seleccionado, una investigaci\'on comparativa entre los estilos SOAP y REST.
+Este cap\'itulo desarrolla esa comparaci\'on tomando como referencia
+concreta el propio backend de BIOPET (Spring Boot, API REST documentada con
+OpenAPI/Swagger), de modo que la comparaci\'on no quede en el plano
+puramente te\'orico. La investigaci\'on y redacci\'on original de este
+an\'alisis corresponde a Carvajal Loor Johan Stalin, integrante del
+\equipoga\ responsable de esta l\'inea de trabajo dentro de la GA; su aporte
+en esta secci\'on es de investigaci\'on y an\'alisis documental, no de
+implementaci\'on: Carvajal no particip\'o en el desarrollo del c\'odigo de
+BIOPET (ver secci\'on~\ref{sec:distincion-equipos}). El contenido de este
+cap\'itulo adapta y reorganiza ese aporte al formato del informe, integrando
+sus citas bibliogr\'aficas y precisando un detalle t\'ecnico puntual del
+ejemplo REST (ver observaci\'on al final de la
+secci\'on~\ref{sec:soap-rest-ejemplo}).
 
-\section{Alcance previsto}
-\label{sec:soap-rest-alcance}
+\section{Qu\'e es SOAP}
+\label{sec:que-es-soap}
 
-Este cap\'itulo integrar\'a, cuando est\'e disponible, la investigaci\'on
-comparativa entre los estilos arquitect\'onicos SOAP y REST, con al menos
-ocho criterios de comparaci\'on (por ejemplo: protocolo de transporte,
-formato de mensaje, contrato de interfaz, manejo de estado, cach\'e,
-seguridad, tolerancia a fallos y curva de adopci\'on), casos de uso donde
-cada estilo resulta m\'as apropiado, y un ejemplo concreto de una operaci\'on
-expresada en SOAP junto con su equivalente REST real de BIOPET (por
-ejemplo, \texttt{GET /api/mascotas}).
+SOAP (\emph{Simple Object Access Protocol}) es un protocolo de intercambio
+de mensajes estructurados, con especificaci\'on formal publicada por el
+W3C~\cite{w3c-soap12}. Su unidad de comunicaci\'on es el \textbf{sobre}
+(\emph{Envelope}): un documento XML compuesto por una cabecera opcional
+(\emph{Header}), que transporta metadatos de procesamiento como seguridad o
+enrutamiento, y un cuerpo obligatorio (\emph{Body}), que contiene la
+operaci\'on invocada y sus par\'ametros.
 
-No se redacta contenido definitivo de comparaci\'on en esta versi\'on del
-informe porque depende de la investigaci\'on independiente asignada a
-Carvajal Loor Johan Stalin, todav\'ia no incorporada a este documento.
+El contrato entre cliente y servidor se declara mediante \textbf{WSDL}
+(\emph{Web Services Description Language}~\cite{w3c-wsdl11}): un documento
+XML que especifica de forma \emph{prescriptiva} qu\'e operaciones existen,
+qu\'e tipos de datos aceptan y devuelven, y d\'onde est\'an disponibles en
+la red. Al ser procesable por m\'aquinas, herramientas de generaci\'on de
+c\'odigo pueden construir autom\'aticamente el cliente completo a partir del
+WSDL. Alrededor de SOAP existe adem\'as la familia de especificaciones
+\textbf{WS-*}, entre ellas WS-Security~\cite{oasis-ws-security} para firma y
+cifrado a nivel de mensaje, lo que explica su vigencia en entornos
+corporativos con requisitos formales de seguridad y auditor\'ia.
+
+Conviene precisar que SOAP no est\'a atado a HTTP: el mismo mensaje puede
+transportarse sobre HTTP, SMTP, JMS o una cola de mensajer\'ia, lo cual
+resulta valioso en arquitecturas de integraci\'on empresarial donde no todos
+los sistemas hablan HTTP nativamente.
+
+\section{Qu\'e es REST}
+\label{sec:que-es-rest}
+
+REST (\emph{Representational State Transfer}) no es un protocolo sino un
+\textbf{estilo arquitect\'onico}: un conjunto de restricciones de dise\~no
+--- cliente-servidor, ausencia de estado, cacheabilidad, sistema en capas,
+interfaz uniforme y c\'odigo bajo demanda (opcional) --- formuladas por
+Fielding~\cite{fielding2000} al describir los principios que hicieron
+escalable a la propia World Wide Web.
+
+En la pr\'actica, una API REST modela el dominio como \textbf{recursos}
+identificados por URI, sobre los que se opera mediante los m\'etodos y
+c\'odigos de estado definidos por la sem\'antica de
+HTTP~\cite{rfc9110}. El formato de representaci\'on \textbf{no est\'a
+prescrito por REST}: aunque JSON se ha impuesto en la pr\'actica por su
+ligereza y su soporte nativo en los navegadores, una API REST puede
+representar sus recursos en XML, texto plano o un formato binario sin dejar
+de ser REST. Es tambi\'en relevante precisar que la mayor\'ia de las API
+llamadas ``REST'' en la industria --- incluida la de BIOPET --- alcanzan el
+nivel~2 del modelo de madurez de Richardson (uso correcto de recursos y
+verbos HTTP), sin implementar hipermedia (HATEOAS), que ser\'ia el nivel~3 y
+el \'unico que Fielding considera REST en sentido estricto.
+
+\section{Comparaci\'on por criterios}
+\label{sec:soap-rest-criterios}
+
+La tabla~\ref{tab:soap-vs-rest} resume diez criterios de comparaci\'on entre
+ambos enfoques, verificados contra la especificaci\'on oficial de cada uno.
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Comparaci\'on SOAP vs REST por criterio t\'ecnico.}
+  \label{tab:soap-vs-rest}
+  \begin{tabular}{@{}p{2.6cm}p{6.2cm}p{6.2cm}@{}}
+    \toprule
+    Criterio & SOAP & REST \\
+    \midrule
+    Naturaleza & Protocolo con especificaci\'on W3C & Estilo arquitect\'onico (restricciones de dise\~no) \\
+    Formato de datos & XML obligatorio (\emph{Envelope}) & Libre (JSON, XML, texto, binario); JSON predomina en la pr\'actica \\
+    Contrato & WSDL, formal y prescriptivo (existe antes que el c\'odigo) & OpenAPI, descriptivo y habitualmente generado desde el c\'odigo \\
+    Transporte & Independiente: HTTP, SMTP, JMS, colas de mensajer\'ia & Ligado a la sem\'antica de HTTP/HTTPS \\
+    Complejidad de consumo & Alta: requiere WSDL, \emph{stubs} generados y manejo de \texttt{SOAPFault} & Baja: basta un cliente HTTP (\texttt{curl}, \texttt{fetch}, Postman) \\
+    Rendimiento y cach\'e & Mayor sobrecarga por el sobre XML; toda operaci\'on viaja por \texttt{POST}, no cacheable & Payload m\'as liviano; los \texttt{GET} son cacheables por la infraestructura HTTP est\'andar \\
+    Seguridad & WS-Security protege el \emph{mensaje} (firma/cifrado, sobrevive a intermediarios) & TLS protege el \emph{canal} (se descifra en cada salto) \\
+    Manejo de estado & Admite transacciones distribuidas (WS-AtomicTransaction) & \emph{Stateless} por restricci\'on arquitect\'onica \\
+    Uso empresarial t\'ipico & Banca, seguros, gobierno, sistemas legados & Web, m\'ovil, microservicios, SaaS \\
+    Manejo de errores & Fallos viajan dentro del sobre (\texttt{SOAPFault}), t\'ipicamente bajo HTTP 500 & El c\'odigo de estado HTTP es parte del contrato (por ejemplo, \texttt{404}) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Tres de estos diez criterios merecen desarrollo adicional porque suelen
+malinterpretarse. \textbf{Primero, el contrato.} El WSDL es prescriptivo:
+existe antes que el c\'odigo y de \'el se genera el cliente, lo que
+garantiza que contrato e implementaci\'on no diverjan. OpenAPI, en cambio,
+cumple una funci\'on descriptiva y normalmente se produce \emph{a partir}
+del c\'odigo ya escrito, sin que nada obligue a que refleje fielmente el
+comportamiento real; en BIOPET, por ejemplo, el esquema de seguridad
+declarado en el documento OpenAPI (\texttt{bearerAuth}, tipo HTTP Bearer)
+no corresponde al mecanismo de autenticaci\'on que el sistema realmente usa
+en su flujo web principal (cookies \texttt{HttpOnly}), una divergencia entre
+contrato y comportamiento que ser\'ia estructuralmente imposible en un
+servicio SOAP, donde el WSDL \emph{es} el contrato ejecutable.
+
+\textbf{Segundo, la seguridad.} Es habitual asumir que REST es
+autom\'aticamente m\'as seguro por usar HTTPS, pero eso confunde dos capas
+distintas: WS-Security protege el contenido del mensaje --- firma y cifrado
+que viajan con el documento y sobreviven a cualquier intermediario ---
+mientras que TLS protege \'unicamente el canal de transporte, y el mensaje
+queda en claro en cada punto donde se termina esa conexi\'on (por ejemplo,
+en un balanceador de carga). Para una API web autenticada con JWT sobre
+HTTPS, como BIOPET, la protecci\'on de transporte es suficiente; para un
+documento con valor legal que deba conservar garantías de no repudio m\'as
+all\'a de la conexi\'on que lo transport\'o, no lo es.
+
+\textbf{Tercero, el rendimiento.} La diferencia no se reduce al tama\~no del
+mensaje. El factor m\'as determinante es la cacheabilidad: en REST, un
+\texttt{GET} es seguro e idempotente por definici\'on, por lo que proxies,
+CDN y cach\'es de aplicaci\'on pueden almacenar la respuesta usando la
+infraestructura est\'andar de HTTP (as\'i opera BIOPET con su cach\'e Redis
+sobre el listado de mascotas). En SOAP, toda operaci\'on viaja t\'ipicamente
+por \texttt{POST}, que HTTP no cachea, por lo que cualquier optimizaci\'on
+de cach\'e debe construirse expl\'icitamente.
+
+\section{Ejemplo pr\'actico: la misma operaci\'on en SOAP y en REST}
+\label{sec:soap-rest-ejemplo}
+
+Para hacer la comparaci\'on concreta, se muestra una misma operaci\'on ---
+\textbf{consultar los datos de la mascota con identificador 15} --- en
+ambos enfoques. El lado SOAP es una implementaci\'on hipot\'etica con fines
+comparativos (BIOPET no expone una interfaz SOAP real); el lado REST es la
+implementaci\'on real de BIOPET.
+
+\subsection{Enfoque SOAP (hipot\'etico, con fines comparativos)}
+
+\begin{verbatim}
+POST /ws/mascotas HTTP/1.1
+Host: biopet.ec
+Content-Type: text/xml; charset=utf-8
+SOAPAction: "http://biopet.ec/ws/ObtenerMascota"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Header>
+    <wsse:Security xmlns:wsse="...oasis-200401-wss-wssecurity-secext-1.0.xsd">
+      <wsse:UsernameToken>
+        <wsse:Username>vet@biopet.ec</wsse:Username>
+        <wsse:Password>...</wsse:Password>
+      </wsse:UsernameToken>
+    </wsse:Security>
+  </soap:Header>
+  <soap:Body>
+    <ObtenerMascota xmlns="http://biopet.ec/ws">
+      <mascotaId>15</mascotaId>
+    </ObtenerMascota>
+  </soap:Body>
+</soap:Envelope>
+\end{verbatim}
+
+Respuesta exitosa (recorte de los campos relevantes):
+
+\begin{verbatim}
+HTTP/1.1 200 OK
+Content-Type: text/xml; charset=utf-8
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <ObtenerMascotaResponse xmlns="http://biopet.ec/ws">
+      <mascota>
+        <id>15</id><nombre>Luna</nombre><especie>Canino</especie>
+        <raza>Labrador</raza><fechaNacimiento>2021-03-14</fechaNacimiento>
+      </mascota>
+    </ObtenerMascotaResponse>
+  </soap:Body>
+</soap:Envelope>
+\end{verbatim}
+
+Si la mascota no existe, la respuesta HTTP \textbf{sigue siendo un
+\texttt{500}} y el detalle del error viaja dentro del sobre:
+
+\begin{verbatim}
+<soap:Fault>
+  <faultcode>soap:Client</faultcode>
+  <faultstring>Mascota no encontrada: 15</faultstring>
+</soap:Fault>
+\end{verbatim}
+
+\subsection{Enfoque REST (implementaci\'on real de BIOPET)}
+
+\begin{verbatim}
+GET /api/mascotas/15 HTTP/1.1
+Host: localhost:8080
+Accept: application/json
+Cookie: access_token=eyJhbGciOiJIUzI1NiJ9...
+\end{verbatim}
+
+Respuesta exitosa:
+
+\begin{verbatim}
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "id": 15, "duenioId": 4, "duenioNombre": "Maria Perez",
+  "nombre": "Luna", "especie": "Canino", "raza": "Labrador",
+  "fechaNacimiento": "2021-03-14", "activo": true
+}
+\end{verbatim}
+
+Si la mascota no existe, el c\'odigo de estado forma parte del contrato:
+
+\begin{verbatim}
+HTTP/1.1 404 Not Found
+Content-Type: application/problem+json
+
+{
+  "type": "urn:biopet:error:not-found",
+  "title": "Recurso no encontrado",
+  "status": 404,
+  "detail": "Mascota no encontrada: 15",
+  "instance": "/api/mascotas/15"
+}
+\end{verbatim}
+
+Este cuerpo de error usa el formato \texttt{ProblemDetail} real de BIOPET
+(RFC~7807~\cite{rfc7807}, citado as\'i en el propio \texttt{ADR-006} del
+proyecto; la IETF public\'o en 2023 el RFC~9457~\cite{rfc9457} como sucesor,
+que BIOPET todav\'ia no adopta).
+
+Tres diferencias resaltan de este ejemplo. Primera, el \textbf{volumen}: el
+mensaje SOAP ocupa varias veces el tama\~no del JSON para transportar
+exactamente los mismos datos. Segunda, el \textbf{manejo de errores}: SOAP
+devuelve \texttt{500} incluso cuando el problema es del cliente (un
+identificador inexistente), obligando a interpretar el cuerpo para saber
+qu\'e ocurri\'o realmente; REST usa el c\'odigo de estado como primer nivel
+de informaci\'on. Tercera, la \textbf{identificaci\'on del recurso}: en REST
+la mascota~15 tiene una URI propia y estable (\texttt{/api/mascotas/15}),
+enlazable y cacheable; en SOAP el identificador es un par\'ametro dentro de
+un cuerpo enviado siempre a la misma direcci\'on, por lo que ninguna capa
+intermedia puede cachearlo.
+
+\subsection*{Precisi\'on aplicada a este ejemplo}
+
+El aporte original de Carvajal representaba el error \texttt{404} con
+\texttt{"type": "https://biopet.ec/problems/not-found"}. Al adaptarlo a
+este informe se corrigi\'o ese valor por el real de BIOPET,
+\texttt{urn:biopet:error:not-found}, verificado directamente en
+\texttt{Backend/src/main/java/com/biopet/exception/ProblemType.java} y en
+\texttt{GlobalExceptionHandler}. El resto del cuerpo (\texttt{title},
+\texttt{detail}, formato general) ya coincid\'ia con el c\'odigo real.
+
+\section{Casos de uso en el contexto ecuatoriano}
+\label{sec:soap-rest-ecuador}
+
+\textbf{Facturaci\'on electr\'onica del SRI --- SOAP (caso sustentado).} El
+esquema de comprobantes electr\'onicos del Servicio de Rentas Internas del
+Ecuador opera mediante servicios web SOAP descritos por
+WSDL~\cite{sri-facturacion-electronica}: el contribuyente env\'ia el
+comprobante en XML al servicio de recepci\'on y luego consulta su
+autorizaci\'on. La elecci\'on es coherente con el requisito: el comprobante
+debe llevar firma digital con valor tributario \emph{por s\'i mismo},
+independientemente del canal por el que viaje --- exactamente lo que
+WS-Security resuelve y que TLS, al proteger solo el canal, no resuelve. A
+esto se suma que miles de emisores heterog\'eneos deben implementar un
+contrato id\'entico y verificable, la fortaleza principal del WSDL.
+
+\textbf{Integraciones del sector financiero --- SOAP (escenario aplicable,
+no atribuido a una entidad espec\'ifica).} En el sector financiero
+ecuatoriano es un escenario razonable que la integraci\'on entre sistemas
+\emph{core} bancarios, buses de servicios empresariales y validaci\'on de
+identidad se apoye en servicios SOAP, dadas la necesidad de trazabilidad y
+garant\'ias transaccionales en operaciones que mueven dinero, y la
+convivencia con sistemas legados cuya reescritura no siempre se justifica.
+Este informe no afirma que una entidad bancaria concreta use SOAP: se
+presenta como un escenario de aplicaci\'on t\'ipico del sector, no como un
+hecho verificado sobre una instituci\'on particular.
+
+\textbf{Aplicaciones web y m\'oviles de consumo, incluida BIOPET ---
+REST.} Plataformas de env\'io a domicilio, comercio electr\'onico,
+telemedicina y gesti\'on cl\'inica en Ecuador se construyen t\'ipicamente
+sobre APIs REST/JSON, porque el consumidor es un navegador o una app
+m\'ovil, el payload debe ser liviano y el ciclo de cambios es r\'apido.
+BIOPET encaja en este perfil de forma verificable: frontend Angular,
+autenticaci\'on JWT, documentaci\'on Swagger y despliegue en contenedores
+(cap\'itulos~\ref{cap:presentacion-pfc} y~\ref{cap:mvc-api-rest}).
+
+En la pr\'actica, muchas organizaciones ecuatorianas operan en un modelo
+h\'ibrido: mantienen integraciones SOAP hacia sistemas legados o
+regulatorios (como el SRI) y exponen simult\'aneamente una fachada REST
+hacia sus aplicaciones web y m\'oviles. La pregunta relevante no es
+``\textquestiondown SOAP o REST?'', sino en qu\'e frontera de la
+arquitectura conviene cada uno.
+
+\section{Cu\'ando conviene cada enfoque}
+\label{sec:soap-rest-cuando}
+
+Ninguno de los dos estilos es superior en abstracto; la elecci\'on depende
+de los requisitos del dominio. \textbf{SOAP} resulta apropiado cuando el
+contrato debe ser formal y verificable por m\'aquinas antes de escribir
+c\'odigo, cuando se exige no repudio o firma a nivel de mensaje, cuando hay
+transacciones distribuidas entre varios servicios, o cuando el transporte
+no es necesariamente HTTP. \textbf{REST} resulta apropiado cuando el
+consumidor principal es un navegador o una aplicaci\'on m\'ovil, cuando se
+prioriza la velocidad de desarrollo y una curva de adopci\'on baja para
+terceros, cuando conviene aprovechar la cach\'e de HTTP, o cuando el sistema
+debe escalar horizontalmente sin estado compartido.
+
+Para BIOPET, REST es la elecci\'on adecuada: el consumidor es un frontend
+Angular que se beneficia de JSON nativo, la autenticaci\'on con JWT y
+cookies encaja en el modelo \emph{stateless} que REST exige, y la cach\'e en
+Redis se apoya en que los \texttt{GET} son seguros e idempotentes. Ninguno
+de los requisitos del dominio veterinario del sistema --- agendar citas,
+registrar consultas, controlar vacunas --- exige no repudio, transaccionalidad
+distribuida entre servicios ni transporte fuera de HTTP.
