@@ -1,33 +1,104 @@
 \chapter{Conclusiones}
 \label{cap:conclusiones}
 
-% TODO: redactar las conclusiones finales una vez integrados:
-%   - Capitulo 4 (SOAP vs REST, Carvajal)
-%   - Capitulo 5 (Tendencias web, Fajardo)
-%   - Capitulo 6 (Revision cruzada consolidada, Carvajal + Fajardo)
-%
-% Las conclusiones deben derivarse de esos aportes y de los resultados del
-% capitulo 7, no redactarse de forma independiente ni anticipada.
+Las conclusiones de este informe se derivan directamente del trabajo
+realizado por el \equipoga\ durante la Unidad IV: la presentaci\'on y
+verificaci\'on t\'ecnica de BIOPET (cap\'itulos~\ref{cap:presentacion-pfc}
+y~\ref{cap:mvc-api-rest}), la investigaci\'on comparativa
+(cap\'itulos~\ref{cap:soap-vs-rest} y~\ref{cap:tendencias-web}), la
+revisi\'on cruzada consolidada (cap\'itulo~\ref{cap:revision-cruzada}) y la
+evidencia emp\'irica recopilada (cap\'itulo~\ref{cap:resultados}). No
+resumen esos cap\'itulos: sintetizan lo que ese trabajo permite afirmar, y
+lo que todav\'ia no permite afirmar, sobre el sistema revisado.
 
-\pendienteIntegracion{Conclusiones finales del informe de la GA de Unidad IV. Se redactar\'an a partir de los cap\'itulos~\ref{cap:soap-vs-rest}, \ref{cap:tendencias-web}, \ref{cap:revision-cruzada}\ y~\ref{cap:resultados}, una vez integrados los aportes de Carvajal Loor Johan Stalin y Fajardo Montes Michael Xavier.}
+\begin{enumerate}[nosep]
 
-\section{Alcance previsto}
-\label{sec:conclusiones-alcance}
+\item \textbf{La arquitectura por capas y el dise\~no REST facilitaron la
+revisi\'on, sin que eso signifique que est\'en libres de fricciones.} La
+separaci\'on \texttt{controller~$\to$~service~$\to$~repository} que se
+verific\'o en los siete recursos del backend (cap\'itulo~\ref{cap:mvc-api-rest})
+permiti\'o razonar sobre cada capa por separado, documentar los endpoints de
+forma consistente y ejecutar pruebas de extremo a extremo con Postman/Newman
+sin necesidad de levantar el frontend. Esa misma revisi\'on, sin embargo,
+tambi\'en dej\'o ver que una arquitectura ordenada no elimina por s\'i sola
+inconsistencias puntuales de comportamiento entre recursos que deber\'ian
+tratarse igual --- la revisi\'on cruzada document\'o expresiones de
+autorizaci\'on repetidas y diferencias de estrategia de cach\'e entre
+controladores an\'alogos (cap\'itulo~\ref{cap:revision-cruzada}) ---, lo
+que confirma que el patr\'on MVC ordena el c\'odigo pero no sustituye a la
+disciplina de revisi\'on caso por caso.
 
-Las conclusiones finales de este informe abordar\'an, como m\'inimo:
+\item \textbf{La evidencia t\'ecnica disponible es real y verificable, no una
+declaraci\'on de intenciones.} El backend supera 166 pruebas autom\'aticas
+sin fallos ni errores, con un umbral de cobertura (\texttt{jacoco:check})
+que exige al menos 60\,\% en LINE, BRANCH y COMPLEXITY sobre 45 clases
+analizadas, y la documentaci\'on OpenAPI expuesta en \texttt{/api/docs} est\'a
+respaldada por una prueba propia que confirma su disponibilidad real
+(cap\'itulo~\ref{cap:mvc-api-rest}). Esa misma evidencia, le\'ida con
+cuidado, tambi\'en marca sus propios l\'imites: la cobertura de BRANCH
+(67.98\,\%) queda casi veinte puntos por debajo de la de LINE (87.45\,\%), y
+la medici\'on de usabilidad con SUS (74.75/100, $n=10$) corresponde a una
+muestra externa reducida, no a una validaci\'on a gran escala. Contar con
+evidencia no equivale a que esa evidencia agote todo lo que habr\'ia que
+medir.
 
-\begin{itemize}[nosep]
-  \item El cumplimiento t\'ecnico de BIOPET frente al alcance definido
-    para esta actividad, con base en la evidencia del
-    cap\'itulo~\ref{cap:resultados}.
-  \item Las principales fortalezas y debilidades identificadas en la
-    revisi\'on cruzada consolidada (cap\'itulo~\ref{cap:revision-cruzada}).
-  \item Las lecciones aprendidas de la comparaci\'on SOAP vs REST aplicadas
-    al caso real de BIOPET (cap\'itulo~\ref{cap:soap-vs-rest}).
-  \item La pertinencia de las tendencias web analizadas
-    (cap\'itulo~\ref{cap:tendencias-web}) para la evoluci\'on futura del
-    sistema.
-\end{itemize}
+\item \textbf{Ni SOAP ni REST resultaron superiores en abstracto: la
+elecci\'on depende del dominio.} La comparaci\'on del
+cap\'itulo~\ref{cap:soap-vs-rest} mostr\'o que REST es la opci\'on adecuada
+para BIOPET porque su consumidor es un frontend web, prioriza velocidad de
+desarrollo y se beneficia de la cacheabilidad nativa de HTTP que el sistema
+efectivamente usa con Redis. Eso no convierte a SOAP en una tecnolog\'ia
+obsoleta: en escenarios donde el contrato debe ser formal y verificable
+antes de escribir c\'odigo, donde se exige seguridad a nivel de mensaje que
+sobreviva a intermediarios, o donde hay integraci\'on empresarial con
+sistemas legados --- como el propio caso de la facturaci\'on electr\'onica
+del SRI analizado en ese cap\'itulo ---, SOAP conserva ventajas concretas
+que REST no reproduce de forma nativa.
 
-No se redactan conclusiones definitivas en esta versi\'on del informe
-porque dependen directamente de contenido todav\'ia no integrado.
+\item \textbf{De las tres tendencias web analizadas, ninguna deber\'ia
+adoptarse en BIOPET solo porque est\'a de moda.} Jamstack no encaja bien con
+un sistema intr\'insecamente transaccional, multirol y con contenido
+distinto por usuario autenticado (cap\'itulo~\ref{cap:tendencias-web}); una
+migraci\'on completa trasladar\'ia complejidad del backend al cliente sin
+beneficio real. PWA s\'i aparece como una evoluci\'on razonable, porque el
+frontend ya es una SPA en Angular y el problema que resolver\'ia ---
+conectividad intermitente del personal cl\'inico o de los due\~nos --- es
+concreto, aunque hoy no est\'e implementada. La IA generativa puede apoyar
+tareas de desarrollo, documentaci\'on y pruebas, pero la evidencia citada en
+ese cap\'itulo tambi\'en mostr\'o que el c\'odigo que produce introduce
+vulnerabilidades con una frecuencia medible, por lo que su uso razonable
+exige revisi\'on humana expl\'icita y criterios de seguridad y privacidad,
+no adopci\'on autom\'atica.
+
+\item \textbf{Revisar el mismo proyecto desde dos perspectivas
+independientes sac\'o a la luz riesgos que no eran evidentes solo con
+observar que el sistema funcionaba.} La primera revisi\'on profundiz\'o en
+el backend y su configuraci\'on; la segunda verific\'o qu\'e tan sostenida
+estaba cada afirmaci\'on del proyecto frente a evidencia medible
+(cap\'itulo~\ref{cap:revision-cruzada}). El contraste entre ambas, adem\'as,
+permiti\'o detectar un hallazgo que ninguna de las dos hab\'ia se\~nalado
+por separado: \texttt{GET~/api/consultas} no filtra por propietario para el
+rol \texttt{DUENO}, a diferencia del acceso individual por \texttt{id}, que
+s\'i lo hace correctamente. Ese hallazgo qued\'o \textbf{documentado y
+priorizado, no corregido}: este informe no modifica c\'odigo del PFC, y la
+decisi\'on de c\'omo resolverlo corresponde al equipo original.
+
+\item \textbf{Que un sistema funcione no significa que est\'e terminado ni
+libre de deuda t\'ecnica, y BIOPET no es una excepci\'on a esa
+distinci\'on.} El propio \texttt{README.md} del proyecto es expl\'icito en
+que la versi\'on actual no equivale a un sistema certificado para
+producci\'on: usa un certificado TLS autofirmado, credenciales de
+desarrollo y no fue evaluado en un entorno equivalente a uno productivo
+(cap\'itulo~\ref{cap:presentacion-pfc}). A eso se suman los hallazgos de la
+revisi\'on cruzada --- secretos con valores por defecto versionados, un
+limitador de intentos de login que no est\'a distribuido, un contrato
+OpenAPI que no describe el mecanismo de autenticaci\'on real que usa el
+frontend --- y la inconsistencia de autorizaci\'on en Consultas del punto
+anterior. Ninguno de esos aspectos impide que BIOPET cumpla el alcance
+acad\'emico definido para esta actividad; todos, sin embargo, distinguen con
+claridad un sistema que \emph{funciona bajo las condiciones en que fue
+evaluado} de un sistema \emph{completamente maduro y sin deuda t\'ecnica
+pendiente}, y esa distinci\'on es, en s\'i misma, uno de los resultados m\'as
+\'utiles de haber sometido el proyecto a una revisi\'on cruzada real.
+
+\end{enumerate}
