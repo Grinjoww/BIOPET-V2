@@ -11,20 +11,19 @@ plantilla (macro `\evidencia`, estilo de bibliografía, estructura de
 portada). Ver [`docs/u4/informe/main.tex`](main.tex) para el detalle de qué
 se reutilizó y qué se adaptó.
 
-## Estado actual: borrador estructural
+## Estado actual: contenido completo, pendiente de validación/compilación final
 
-Esta es una **estructura preparada**, no un informe terminado. Los
-capítulos que dependen de aportes de Carvajal Loor Johan Stalin y Fajardo
-Montes Michael Xavier (investigación SOAP vs REST, investigación de
-tendencias web, revisión cruzada consolidada) y las conclusiones finales
-contienen marcadores `% TODO` explícitos en el `.tex` y un aviso visible
-`[Pendiente de integración -- ...]` en el propio PDF, en lugar de contenido
-definitivo o de relleno. **No se ha generado todavía el PDF final** de esta
-entrega.
+Los nueve capítulos del informe ya integran contenido definitivo, incluyendo
+los aportes de investigación y revisión crítica de Carvajal Loor Johan
+Stalin (SOAP vs REST) y de Fajardo Montes Michael Xavier (tendencias web),
+la revisión cruzada consolidada, y las conclusiones y el trabajo futuro
+derivados de ambas. No quedan marcadores `% TODO` ni
+`\pendienteIntegracion{...}` activos en las secciones.
 
-Los capítulos 1 (introducción), 2 (presentación del PFC), 3 (MVC y API
-REST) y 7 (resultados) sí contienen contenido inicial redactado a partir de
-evidencia real y verificable del repositorio actual de BIOPET.
+Lo que sigue pendiente es la etapa de cierre técnico: generar el PDF final
+con la cadena de compilación descrita más abajo y validar el resultado
+(referencias resueltas, figuras incluidas, tabla de contenidos correcta).
+Esa generación **todavía no se ha realizado** en este repositorio.
 
 ## Estructura
 
@@ -37,12 +36,12 @@ docs/u4/informe/
     ├── 01-introduccion.tex           # contexto de la GA, distinción PFC original vs Equipo H — listo
     ├── 02-presentacion-pfc.tex       # qué es BIOPET, arquitectura, stack — listo
     ├── 03-mvc-api-rest.tex           # flujo MVC, endpoints, Swagger/OpenAPI, Postman — listo
-    ├── 04-soap-vs-rest.tex           # TODO: aporte de Carvajal
-    ├── 05-tendencias-web.tex         # TODO: aporte de Fajardo
-    ├── 06-revision-cruzada.tex       # TODO: consolidación Carvajal + Fajardo
+    ├── 04-soap-vs-rest.tex           # aporte de Carvajal: SOAP vs REST — listo
+    ├── 05-tendencias-web.tex         # aporte de Fajardo: Jamstack, PWA, IA generativa — listo
+    ├── 06-revision-cruzada.tex       # consolidación Carvajal + Fajardo — listo
     ├── 07-resultados.tex             # JaCoCo, Lighthouse, SUS, seguridad — listo
-    ├── 08-conclusiones.tex           # TODO: depende de 4, 5, 6 y 7
-    └── 09-trabajo-futuro.tex         # TODO: depende de 6 y 8
+    ├── 08-conclusiones.tex           # conclusiones finales — listo
+    └── 09-trabajo-futuro.tex         # trabajo futuro priorizado — listo
 ```
 
 ## Datos institucionales y de equipo
@@ -82,10 +81,11 @@ pdflatex -interaction=nonstopmode main.tex
 pdflatex -interaction=nonstopmode main.tex
 ```
 
-**No se generó el PDF en esta tarea** (explícitamente fuera de alcance
-mientras falten los aportes de Carvajal y Fajardo). Cuando se compile,
-guardar el resultado como `docs/u4/informe/informe-u4-equipo-h.pdf` (no
-versionado todavía).
+**El PDF todavía no se ha generado en este repositorio.** El contenido de
+los nueve capítulos ya está completo; la generación y validación del PDF
+final es el siguiente paso de cierre. Cuando se compile, guardar el
+resultado como `docs/u4/informe/informe-u4-equipo-h.pdf` (no versionado
+todavía).
 
 ## Evidencias condicionales (`\evidencia`)
 

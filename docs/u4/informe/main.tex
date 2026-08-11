@@ -16,13 +16,15 @@
 %   pdflatex main.tex
 % o, si esta disponible: latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 %
-% IMPORTANTE (estado de esta entrega): varias secciones de este documento
-% contienen marcadores "% TODO" en lugar de contenido definitivo, porque
-% dependen de aportes que todavia no fueron integrados (revision critica de
-% Carvajal, revision critica de Fajardo, investigacion SOAP vs REST,
-% investigacion de tendencias web, y las conclusiones que se redactan a
-% partir de ambas revisiones). NO se generó todavía el PDF final de esta
-% entrega por la misma razón.
+% ESTADO DE ESTA ENTREGA: los nueve capitulos (introduccion, presentacion
+% del PFC, MVC/API REST, SOAP vs REST, tendencias web, revision cruzada,
+% resultados, conclusiones y trabajo futuro) ya fueron integrados con
+% contenido definitivo, incluyendo los aportes de revision critica e
+% investigacion de Carvajal Loor Johan Stalin y de Fajardo Montes Michael
+% Xavier. No quedan marcadores "% TODO" ni \pendienteIntegracion{} activos
+% en las secciones. Lo que resta es la etapa de validacion/compilacion
+% final del documento (generar y revisar el PDF con la cadena de
+% compilacion de arriba), no contenido academico pendiente.
 
 \documentclass[12pt,a4paper]{report}
 
@@ -117,7 +119,7 @@
 \newcommand{\cursoparalelo}{A}
 \newcommand{\equipoga}{Equipo H}
 \newcommand{\tituloinforme}{BIOPET --- Revisi\'on cruzada del PFC:\\ Informe de la GA de Unidad IV (Equipo H)}
-\newcommand{\ciudadfecha}{Quevedo, 10 de agosto de 2026 (borrador -- pendiente de integraci\'on final)}
+\newcommand{\ciudadfecha}{Quevedo, 10 de agosto de 2026}
 
 \begin{document}
 
@@ -183,28 +185,31 @@
 \chapter*{Resumen}
 \addcontentsline{toc}{chapter}{Resumen}
 
-Este documento presenta el informe de la actividad de GA (grupo alterno) de
-la Unidad IV de la asignatura \asignatura, cuyo objetivo es realizar una
-revisi\'on cruzada de un Proyecto Fin de Curso (PFC) desarrollado por otro
-equipo. El PFC seleccionado es \textbf{BIOPET}, un sistema web de gesti\'on
-veterinaria desarrollado originalmente por Mariscal Cabrera Jaime Josu\'e,
-Beltr\'an Montiel Fred Adri\'an y Taipe Mora Zaida Melissa.
+Este documento presenta el informe final de la actividad de GA (grupo
+alterno) de la Unidad IV de la asignatura \asignatura, cuyo objetivo es
+realizar una revisi\'on cruzada de un Proyecto Fin de Curso (PFC)
+desarrollado por otro equipo. El PFC seleccionado es \textbf{BIOPET}, un
+sistema web de gesti\'on veterinaria desarrollado originalmente por
+Mariscal Cabrera Jaime Josu\'e, Beltr\'an Montiel Fred Adri\'an y Taipe Mora
+Zaida Melissa.
 
-El \equipoga\ --- conformado por Mariscal Cabrera Jaime Josu\'e, Carvajal
-Loor Johan Stalin y Fajardo Montes Michael Xavier --- recibi\'o BIOPET ya
-desarrollado y funcional, e independientemente de su participaci\'on
-original en el PFC, realiz\'o sobre \'el las tareas propias de esta
-actividad: presentaci\'on del proyecto, an\'alisis de su arquitectura y
-patr\'on MVC, evaluaci\'on de su API REST y documentaci\'on OpenAPI/Swagger,
-investigaci\'on comparativa SOAP vs REST, investigaci\'on de tendencias web
-(Jamstack, PWA e IA generativa), revisi\'on cr\'itica independiente por
-parte de cada integrante nuevo del grupo, y consolidaci\'on de hallazgos.
-
-Esta versi\'on del informe es un \textbf{borrador estructural}: las
-secciones que dependen de las revisiones cr\'iticas y de la investigaci\'on
-de Carvajal y Fajardo, as\'i como las conclusiones finales, quedan marcadas
-expl\'icitamente como pendientes de integraci\'on y no contienen todav\'ia
-contenido definitivo.
+El \equipoga\ --- Mariscal Cabrera Jaime Josu\'e, Carvajal Loor Johan Stalin
+y Fajardo Montes Michael Xavier --- recibi\'o BIOPET ya desarrollado y
+funcional, y realiz\'o sobre \'el: an\'alisis de su arquitectura por capas y
+del patr\'on MVC, evaluaci\'on de la API REST y su documentaci\'on
+Swagger/OpenAPI respaldada con pruebas automatizadas, colecciones Postman y
+mediciones t\'ecnicas (JaCoCo, SUS, Lighthouse); una comparaci\'on SOAP vs
+REST, donde SOAP se \textbf{compara} con el caso real de BIOPET sin haber
+sido implementado; una investigaci\'on sobre Jamstack, \emph{Progressive
+Web Apps} (PWA) e inteligencia artificial generativa, \textbf{analizadas}
+como tendencias aplicables y no como funcionalidades existentes en el
+sistema; y una revisi\'on cr\'itica independiente por integrante,
+consolidada en un cap\'itulo de revisi\'on cruzada que identific\'o
+fortalezas verificables junto con riesgos concretos --- entre ellos una
+inconsistencia de autorizaci\'on en el listado de consultas m\'edicas,
+documentada como pendiente de correcci\'on, no como resuelta. El informe
+cierra con conclusiones y trabajo futuro priorizado, sin declarar a BIOPET
+listo para producci\'on.
 
 % ===========================================================================
 % ABSTRACT
@@ -212,26 +217,29 @@ contenido definitivo.
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-This document presents the report for the Unit IV cross-review (GA)
-assignment of the Web Applications course, whose goal is to perform a
+This document presents the final report for the Unit IV cross-review (GA)
+assignment of the Web Applications course, whose goal is to carry out a
 cross-team review of a Course Final Project (PFC) developed by a different
 team. The selected PFC is \textbf{BIOPET}, a veterinary management web
 system originally developed by Mariscal Cabrera Jaime Josu\'e, Beltr\'an
 Montiel Fred Adri\'an, and Taipe Mora Zaida Melissa.
 
-\equipoga\ --- made up of Mariscal Cabrera Jaime Josu\'e, Carvajal Loor
-Johan Stalin, and Fajardo Montes Michael Xavier --- received BIOPET already
-developed and functional, and carried out the tasks proper to this
-activity on top of it: project presentation, analysis of its architecture
-and MVC pattern, evaluation of its REST API and OpenAPI/Swagger
-documentation, comparative SOAP vs REST research, web trends research
-(Jamstack, PWA, and generative AI), independent critical review by each
-new group member, and consolidation of findings.
-
-This version of the report is a \textbf{structural draft}: sections that
-depend on the critical reviews and research contributed by Carvajal and
-Fajardo, as well as the final conclusions, are explicitly marked as
-pending integration and do not yet contain definitive content.
+\equipoga\ --- Mariscal Cabrera Jaime Josu\'e, Carvajal Loor Johan Stalin,
+and Fajardo Montes Michael Xavier --- received BIOPET already developed and
+functional, and carried out: analysis of its layered architecture and MVC
+pattern, evaluation of its REST API and Swagger/OpenAPI documentation
+backed by automated tests, Postman collections, and technical measurements
+(JaCoCo, SUS, Lighthouse); a SOAP vs REST comparison, where SOAP is
+\textbf{compared} against BIOPET's real case without having been
+implemented; research on Jamstack, Progressive Web Apps (PWA), and
+generative AI, \textbf{analyzed} as applicable trends rather than as
+features already existing in the system; and an independent critical
+review per member, consolidated into a cross-review chapter that
+identified verifiable strengths together with concrete risks ---
+including an authorization inconsistency in the medical consultations
+listing endpoint, documented as pending correction, not as resolved. The
+report closes with conclusions and prioritized future work, without
+declaring BIOPET ready for production.
 
 \clearpage
 \tableofcontents
