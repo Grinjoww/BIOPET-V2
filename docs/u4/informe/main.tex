@@ -9,12 +9,13 @@
 % plantilla (macro \evidencia, estilo de bibliografia, estructura de
 % portada).
 %
-% Compilacion clasica BibTeX (ver docs/u4/informe/README.md):
+% Compilacion con biblatex + biber (ver docs/u4/informe/README.md):
 %   pdflatex main.tex
-%   bibtex main
+%   biber main
 %   pdflatex main.tex
 %   pdflatex main.tex
 % o, si esta disponible: latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
+% (latexmk detecta automaticamente que este documento usa biber, no bibtex).
 %
 % ESTADO DE ESTA ENTREGA: los nueve capitulos (introduccion, presentacion
 % del PFC, MVC/API REST, SOAP vs REST, tendencias web, revision cruzada,
@@ -42,6 +43,11 @@
 %     dentro de \texttt{} sin escapar "_")
 \usepackage{underscore}
 
+% --- Microtipografia: expansion/protrusion de fuente para reducir Overfull
+%     \hbox menores sin recurrir a \sloppy (no cambia el contenido, solo el
+%     ajuste fino del interletraje) ---------------------------------------
+\usepackage{microtype}
+
 % --- Tablas, figuras, listados --------------------------------------------
 \usepackage{graphicx}
 \usepackage{float}
@@ -58,8 +64,17 @@
 % --- Encabezados/pies de pagina -------------------------------------------
 \usepackage{fancyhdr}
 \pagestyle{fancy}
+% \headheight por defecto (12.0pt) es insuficiente para esta fuente/tamano;
+% fancyhdr recomienda un minimo de 15.35403pt (ver warning de compilacion).
+\setlength{\headheight}{15.35403pt}
 \fancyhf{}
-\fancyhead[L]{BIOPET --- GA Unidad IV (Equipo H)}
+% Encabezado compacto: con titulos de capitulo largos (p. ej. "Revision
+% cruzada del PFC"), el marcador de capitulo completo en mayusculas
+% (\leftmark por defecto) se solapaba con el texto de la izquierda. Se
+% acorta ambos lados: izquierda sin "(Equipo H)", derecha solo "Cap. N"
+% (el titulo completo ya aparece al inicio del propio capitulo).
+\renewcommand{\chaptermark}[1]{\markboth{Cap.~\thechapter}{}}
+\fancyhead[L]{BIOPET --- GA Unidad IV}
 \fancyhead[R]{\leftmark}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -75,23 +90,28 @@
   colorlinks=false
 }
 
-% --- Bibliografia estilo IEEE (numerico), via BibTeX clasico, igual
-%     convencion que docs/informe/informe-entrega-3.tex -------------------
-% "ieeetr" es una hoja de estilo BibTeX estandar (numeros entre corchetes,
-% orden de aparicion), disponible en cualquier instalacion completa de
-% TeX Live o MiKTeX sin paquetes adicionales.
+% --- Bibliografia en formato APA, via biblatex + biber --------------------
+% Reemplaza el estilo IEEE numerico (ieeetr) usado en versiones anteriores
+% de este informe. csquotes se recomienda junto a biblatex (evita el aviso
+% de compilacion correspondiente); no se usa \enquote{} en el cuerpo.
+\usepackage{csquotes}
+\usepackage[style=apa,backend=biber]{biblatex}
+\addbibresource{referencias.bib}
 
 % --- Comando auxiliar para evidencias condicionales -----------------------
 % Uso: \evidencia{ruta/relativa.png}{Caption academico}{fig:label-unico}
+%   o, con ancho puntual distinto del 0.82\textwidth por defecto (por
+%   ejemplo para evitar una pagina casi vacia por una figura de mas):
+%   \evidencia[0.62\textwidth]{ruta.png}{Caption}{fig:label-unico}
 % Reutilizado tal cual del informe anterior (docs/informe/): si el archivo
 % no existe todavia, no se imprime nada (ni hueco, ni texto de marcador).
-\newcommand{\evidencia}[3]{%
-  \IfFileExists{#1}{%
+\newcommand{\evidencia}[4][0.82\textwidth]{%
+  \IfFileExists{#2}{%
     \begin{figure}[H]
       \centering
-      \includegraphics[width=0.82\textwidth]{#1}
-      \caption{#2}
-      \label{#3}
+      \includegraphics[width=#1]{#2}
+      \caption{#3}
+      \label{#4}
     \end{figure}
   }{}%
 }
@@ -160,9 +180,11 @@
   {\small\itshape
     El PFC BIOPET, objeto de esta revisi\'on, fue desarrollado por su
     equipo original (Mariscal Cabrera Jaime Josu\'e, Beltr\'an Montiel
-    Fred Adri\'an y Taipe Mora Zaida Melissa). El \equipoga\ no particip\'o
-    en su implementaci\'on: realiza sobre \'el la revisi\'on cruzada,
-    investigaci\'on y an\'alisis solicitados para esta actividad. \par
+    Fred Adri\'an y Taipe Mora Zaida Melissa); Jaime Mariscal integra
+    adem\'as el \equipoga. Carvajal Loor Johan Stalin y Fajardo Montes
+    Michael Xavier no participaron en su implementaci\'on: realizan
+    sobre \'el la revisi\'on cruzada, investigaci\'on y an\'alisis
+    solicitados para esta actividad. \par
   }
 
   \vspace{1.6cm}
@@ -203,8 +225,9 @@ REST, donde SOAP se \textbf{compara} con el caso real de BIOPET sin haber
 sido implementado; una investigaci\'on sobre Jamstack, \emph{Progressive
 Web Apps} (PWA) e inteligencia artificial generativa, \textbf{analizadas}
 como tendencias aplicables y no como funcionalidades existentes en el
-sistema; y una revisi\'on cr\'itica independiente por integrante,
-consolidada en un cap\'itulo de revisi\'on cruzada que identific\'o
+sistema; y dos revisiones cr\'iticas independientes realizadas por
+Carvajal y Fajardo, consolidadas en un cap\'itulo de revisi\'on cruzada
+que identific\'o
 fortalezas verificables junto con riesgos concretos --- entre ellos una
 inconsistencia de autorizaci\'on en el listado de consultas m\'edicas,
 documentada como pendiente de correcci\'on, no como resuelta. El informe
@@ -233,9 +256,10 @@ backed by automated tests, Postman collections, and technical measurements
 \textbf{compared} against BIOPET's real case without having been
 implemented; research on Jamstack, Progressive Web Apps (PWA), and
 generative AI, \textbf{analyzed} as applicable trends rather than as
-features already existing in the system; and an independent critical
-review per member, consolidated into a cross-review chapter that
-identified verifiable strengths together with concrete risks ---
+features already existing in the system; and two independent critical
+reviews carried out by Carvajal and Fajardo, consolidated into a
+cross-review chapter that identified verifiable strengths together with
+concrete risks ---
 including an authorization inconsistency in the medical consultations
 listing endpoint, documented as pending correction, not as resolved. The
 report closes with conclusions and prioritized future work, without
@@ -262,9 +286,8 @@ declaring BIOPET ready for production.
 \input{secciones/09-trabajo-futuro}
 
 % ===========================================================================
-% BIBLIOGRAFIA (IEEE, BibTeX clasico)
+% BIBLIOGRAFIA (APA, biblatex + biber)
 % ===========================================================================
-\bibliographystyle{ieeetr}
-\bibliography{referencias}
+\printbibliography[title={Referencias}]
 
 \end{document}

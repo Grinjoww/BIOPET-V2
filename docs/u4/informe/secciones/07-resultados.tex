@@ -11,7 +11,7 @@ de los documentos de evidencia citados.
 
 \begin{table}[H]
   \centering
-  \caption{Resultado real de \texttt{mvn clean verify} (\texttt{docs/mediciones/sec/jacoco-summary.md}).}
+  \caption{Resultado real de \texttt{mvn clean verify} (\url{docs/mediciones/sec/jacoco-summary.md}).}
   \label{tab:jacoco}
   \begin{tabular}{@{}ll@{}}
     \toprule
@@ -35,14 +35,14 @@ l\'ineas no implica, por s\'i sola, que todas las ramas condicionales
 (casos de error, combinaciones de rol) est\'en ejercitadas con la misma
 profundidad.
 
-\section{Calidad web autom\'atizada (Lighthouse)}
+\section{Calidad web automatizada (Lighthouse)}
 \label{sec:resultados-lighthouse}
 
 \begin{table}[H]
   \centering
-  \caption{Corridas representativas de Lighthouse (\texttt{docs/mediciones/lighthouse/README.md}), escala 0-100.}
+  \caption{Corridas representativas de Lighthouse (\url{docs/mediciones/lighthouse/README.md}), escala 0-100.}
   \label{tab:lighthouse}
-  \begin{tabular}{@{}lrrrr@{}}
+  \begin{tabular}{@{}p{5.4cm}rrrr@{}}
     \toprule
     Solicitud & Performance & Accessibility & Best Practices & SEO \\
     \midrule
@@ -68,7 +68,7 @@ la medici\'on.
 \label{sec:resultados-sus}
 
 Seg\'un \texttt{docs/mediciones/sus/REPORT.md}, se aplic\'o el
-instrumento System Usability Scale de Brooke (1996)~\cite{sus-brooke1996} a
+instrumento System Usability Scale de \textcite{sus-brooke1996} a
 $n=10$ participantes externos al equipo del PFC, con una tarea com\'un de
 onboarding (login, alta, edici\'on y baja l\'ogica de una mascota, cierre
 de sesi\'on). El puntaje SUS promedio obtenido fue \textbf{74.75/100}
@@ -81,12 +81,12 @@ $[57.82,\ 91.68]$.
 
 El repositorio documenta evidencia real (c\'odigo, pruebas automatizadas y
 capturas de ejecuci\'on contra el stack Docker real) para las categor\'ias
-OWASP Top 10~\cite{owasp-top10} A01 (control de acceso roto), A02 (fallos
+OWASP Top 10~\parencite{owasp-top10} A01 (control de acceso roto), A02 (fallos
 criptogr\'aficos / TLS), A03 (inyecci\'on), A05 (configuraci\'on de
 seguridad), A07 (fallos de identificaci\'on y autenticaci\'on) y A09
 (registro y monitoreo de seguridad), en \texttt{docs/mediciones/sec/}. Esto
 incluye, entre otros controles: JWT firmado HMAC-SHA256 con los siete
-claims est\'andar de RFC 7519~\cite{rfc7519}, TLS~1.3 real verificado con
+claims est\'andar de RFC 7519~\parencite{rfc7519}, TLS~1.3 real verificado con
 \texttt{openssl s\_client}, limitaci\'on de intentos de login (bloqueo tras
 6 fallos consecutivos) y registro estructurado de eventos de autenticaci\'on
 sin datos sensibles.
@@ -96,7 +96,7 @@ sin datos sensibles.
 
 En conjunto, la evidencia disponible muestra un backend con pruebas
 automatizadas extensas y cobertura verificada por umbral autom\'atico, una
-API REST document\'ada y probada de extremo a extremo, y evidencia de
+API REST documentada y probada de extremo a extremo, y evidencia de
 seguridad archivada para los controles OWASP aplicables. Las \'areas con
 evidencia parcial y expl\'icitamente documentadas como tal son: la
 cobertura de rama/complejidad (por debajo del margen de LINE), el umbral

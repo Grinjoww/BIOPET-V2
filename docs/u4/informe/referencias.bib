@@ -1,214 +1,183 @@
 % referencias.bib
 %
 % Bibliografia del Informe de la GA de Unidad IV (Equipo H) sobre el PFC
-% BIOPET. Estilo de compilacion: BibTeX clasico con \bibliographystyle{ieeetr}
-% (ver main.tex). No se inventaron autores, titulos, anios ni
-% identificadores: cada entrada corresponde a una fuente academica primaria
-% (Fielding, 2000), a una norma tecnica oficial (RFC, W3C, OpenAPI), o a la
-% documentacion oficial de una herramienta o marco realmente usado en
-% BIOPET (Spring Boot, Angular), o a una referencia academica/de la
-% industria ampliamente citada por su nombre estandar (OWASP Top 10,
-% modelo C4, SUS de Brooke).
+% BIOPET. Estilo de compilacion: biblatex (backend=biber, style=apa); ver
+% main.tex. No se inventaron autores, titulos, anios, DOI ni identificadores:
+% cada entrada corresponde a una fuente academica primaria (Fielding, 2000),
+% a una norma tecnica oficial (RFC, W3C, OASIS, OpenAPI), a la documentacion
+% oficial de una herramienta o marco realmente usado en BIOPET (Spring Boot,
+% Angular), o a una referencia academica/de la industria ampliamente citada
+% (OWASP Top 10, modelo C4, SUS de Brooke, Jamstack, PWA, IA generativa).
 %
-% Las entradas marcadas "[reutilizada]" ya existian, con estos mismos datos,
-% en docs/informe/referencias.bib (bibliografia del informe de la Tercera
-% Entrega del PFC original); se copian aqui porque siguen siendo validas
-% para este informe, sin modificar el archivo original.
-%
-% Los campos "url"/"howpublished" se limitan a la pagina oficial de la
-% fuente correspondiente, sin DOI inventado. No se agregaron blogs
-% genericos ni URLs sin verificar.
+% El campo "url" se limita a la pagina oficial de la fuente correspondiente
+% (o al DOI real cuando existe, en el campo "doi"); no hay URLs sin verificar
+% ni DOI inventados. No se incluyen notas internas del repositorio (rutas de
+% archivo, capitulo que cita la fuente, estado de integracion): esa
+% trazabilidad ya queda documentada en el cuerpo del informe, no en la
+% bibliografia.
 
 % --- Fuente primaria para la investigacion SOAP vs REST (capitulo 4) -----
 @phdthesis{fielding2000,
-  author       = {Fielding, Roy Thomas},
-  title        = {Architectural Styles and the Design of Network-based Software Architectures},
-  school       = {University of California, Irvine},
-  year         = {2000},
-  type         = {Doctoral dissertation},
-  howpublished = {\url{https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm}},
-  note         = {Fuente primaria del estilo arquitectonico REST (capitulo 5 de la disertacion); no se inventa DOI, la disertacion no tiene uno asignado.}
+  author = {Fielding, Roy Thomas},
+  title  = {Architectural Styles and the Design of Network-based Software Architectures},
+  school = {University of California, Irvine},
+  year   = {2000},
+  type   = {Doctoral dissertation},
+  url    = {https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm}
 }
 
-% --- Especificacion oficial de SOAP, para el capitulo 4 cuando se integre -
+% --- Especificacion oficial de SOAP ---------------------------------------
 @misc{w3c-soap12,
-  author       = {{World Wide Web Consortium (W3C)}},
-  title        = {{SOAP} Version 1.2},
-  howpublished = {\url{https://www.w3.org/TR/soap12/}},
-  note         = {Recomendacion oficial W3C, usada como fuente primaria de la especificacion SOAP para el capitulo 4 (SOAP vs REST) cuando se integre.}
+  author = {{World Wide Web Consortium (W3C)}},
+  title  = {{SOAP} Version 1.2},
+  url    = {https://www.w3.org/TR/soap12/}
 }
 
 % --- Documentacion oficial del stack real de BIOPET -----------------------
 @misc{spring-boot-docs,
-  author       = {{Spring Team}},
-  title        = {{Spring Boot} Reference Documentation},
-  howpublished = {\url{https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/}},
-  note         = {[reutilizada de docs/informe/referencias.bib] Version 3.2.x, usada en Backend/pom.xml.}
+  author = {{Spring Team}},
+  title  = {{Spring Boot} Reference Documentation},
+  url    = {https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/}
 }
 
 @misc{angular-docs,
-  author       = {{Angular Team, Google}},
-  title        = {{Angular} Documentation},
-  howpublished = {\url{https://angular.dev/}},
-  note         = {Version 17.x, usada en frontend/package.json de BIOPET.}
+  author = {{Angular Team, Google}},
+  title  = {{Angular} Documentation},
+  url    = {https://angular.dev/}
 }
 
 @misc{openapi-spec,
-  author       = {{OpenAPI Initiative}},
-  title        = {{OpenAPI} Specification},
-  howpublished = {\url{https://spec.openapis.org/oas/latest.html}},
-  note         = {Especificacion consumida por springdoc-openapi 2.5.0 en Backend/pom.xml; expuesta por BIOPET en /api/openapi (ver capitulo 3).}
+  author = {{OpenAPI Initiative}},
+  title  = {{OpenAPI} Specification},
+  url    = {https://spec.openapis.org/oas/latest.html}
 }
 
-% --- Normas tecnicas (RFC), ya usadas por el backend real de BIOPET ------
+% --- Normas tecnicas (RFC), usadas por el backend real de BIOPET ---------
 @techreport{rfc7519,
-  author      = {M. Jones and J. Bradley and N. Sakimura},
+  author      = {Jones, M. and Bradley, J. and Sakimura, N.},
   title       = {{JSON Web Token (JWT)}},
   institution = {IETF},
   type        = {RFC},
   number      = {7519},
   year        = {2015},
-  month       = {May},
-  howpublished = {\url{https://www.rfc-editor.org/rfc/rfc7519}},
-  note        = {[reutilizada de docs/informe/referencias.bib]}
+  month       = {5},
+  url         = {https://www.rfc-editor.org/rfc/rfc7519}
 }
 
 @techreport{rfc7807,
-  author      = {M. Nottingham and E. Wilde},
+  author      = {Nottingham, M. and Wilde, E.},
   title       = {{Problem Details for HTTP APIs}},
   institution = {IETF},
   type        = {RFC},
   number      = {7807},
   year        = {2016},
-  month       = {March},
-  howpublished = {\url{https://www.rfc-editor.org/rfc/rfc7807}},
-  note        = {[reutilizada de docs/informe/referencias.bib] Version citada por ADR-006 y por Spring ProblemDetail; obsoleta desde 2023 por RFC 9457, no usada en este repositorio.}
+  month       = {3},
+  url         = {https://www.rfc-editor.org/rfc/rfc7807}
 }
 
 % --- OWASP Top 10, usado en el capitulo de resultados de seguridad -------
 @misc{owasp-top10,
-  author       = {{OWASP Foundation}},
-  title        = {{OWASP} Top 10:2021 -- The Ten Most Critical Web Application Security Risks},
-  year         = {2021},
-  howpublished = {\url{https://owasp.org/Top10/}},
-  note         = {[reutilizada de docs/informe/referencias.bib] Consultada como referencia de las categorias A01, A02, A03, A05, A07 y A09 auditadas en docs/mediciones/sec/.}
+  author = {{OWASP Foundation}},
+  title  = {{OWASP} Top 10:2021 -- The Ten Most Critical Web Application Security Risks},
+  year   = {2021},
+  url    = {https://owasp.org/Top10/}
 }
 
 % --- Modelo C4, usado para los diagramas de arquitectura citados --------
 @misc{c4-model,
-  author       = {Simon Brown},
-  title        = {The {C4} Model for Visualising Software Architecture},
-  howpublished = {\url{https://c4model.com/}},
-  note         = {[reutilizada de docs/informe/referencias.bib]}
+  author = {Brown, Simon},
+  title  = {The {C4} Model for Visualising Software Architecture},
+  url    = {https://c4model.com/}
 }
 
 % --- SUS, usado en el capitulo de resultados de usabilidad --------------
 @incollection{sus-brooke1996,
-  author    = {John Brooke},
+  author    = {Brooke, John},
   title     = {{SUS}: A Quick and Dirty Usability Scale},
   booktitle = {Usability Evaluation in Industry},
-  editor    = {P. W. Jordan and B. Thomas and B. A. Weerdmeester and A. L. McClelland},
+  editor    = {Jordan, P. W. and Thomas, B. and Weerdmeester, B. A. and McClelland, A. L.},
   publisher = {Taylor \& Francis},
   address   = {London},
-  year      = {1996},
-  note      = {[reutilizada de docs/informe/referencias.bib] Referencia estandar del instrumento SUS, aplicado en docs/mediciones/sus/REPORT.md (n=10, SUS=74.75/100).}
+  year      = {1996}
 }
 
-% --- Agregadas al integrar el capitulo 4 (SOAP vs REST), fuentes citadas
-%     por Carvajal en docs/u4/investigacion/SOAP-VS-REST.md y verificadas
-%     contra la pagina oficial correspondiente antes de incorporarlas -----
+% --- Fuentes citadas en la comparacion SOAP vs REST (capitulo 4) ---------
 @misc{w3c-wsdl11,
-  author       = {{World Wide Web Consortium (W3C)}},
-  title        = {{Web Services Description Language (WSDL) 1.1}},
-  year         = {2001},
-  howpublished = {\url{https://www.w3.org/TR/wsdl}},
-  note         = {W3C Note. Especifica el contrato formal (WSDL) que describe las operaciones de un servicio SOAP.}
+  author = {{World Wide Web Consortium (W3C)}},
+  title  = {{Web Services Description Language (WSDL) 1.1}},
+  year   = {2001},
+  url    = {https://www.w3.org/TR/wsdl}
 }
 
 @misc{oasis-ws-security,
-  author       = {{OASIS}},
-  title        = {{Web Services Security}: SOAP Message Security 1.1},
-  year         = {2006},
-  howpublished = {\url{https://docs.oasis-open.org/wss/v1.1/}},
-  note         = {Estandar OASIS para seguridad a nivel de mensaje (firma y cifrado del sobre SOAP), citado en la comparacion de seguridad SOAP vs REST.}
+  author = {{OASIS}},
+  title  = {{Web Services Security}: SOAP Message Security 1.1},
+  year   = {2006},
+  url    = {https://docs.oasis-open.org/wss/v1.1/}
 }
 
 @techreport{rfc9110,
-  author      = {R. Fielding and M. Nottingham and J. Reschke},
+  author      = {Fielding, R. and Nottingham, M. and Reschke, J.},
   title       = {{HTTP Semantics}},
   institution = {IETF},
   type        = {RFC},
   number      = {9110},
   year        = {2022},
-  month       = {June},
-  howpublished = {\url{https://www.rfc-editor.org/rfc/rfc9110}},
-  note        = {Define la semantica de metodos y codigos de estado HTTP en la que se apoya la interfaz uniforme de REST.}
+  month       = {6},
+  url         = {https://www.rfc-editor.org/rfc/rfc9110}
 }
 
 @techreport{rfc9457,
-  author      = {M. Nottingham and E. Wilde and S. Dalal},
+  author      = {Nottingham, M. and Wilde, E. and Dalal, S.},
   title       = {{Problem Details for HTTP APIs}},
   institution = {IETF},
   type        = {RFC},
   number      = {9457},
   year        = {2023},
-  month       = {July},
-  howpublished = {\url{https://www.rfc-editor.org/rfc/rfc9457}},
-  note        = {Sustituye a RFC 7807 (\cite{rfc7807}); BIOPET implementa el formato ProblemDetail bajo la version RFC 7807, citada en su propio ADR-006, sin haber migrado todavia a RFC 9457.}
+  month       = {7},
+  url         = {https://www.rfc-editor.org/rfc/rfc9457}
 }
 
 @misc{sri-facturacion-electronica,
-  author       = {{Servicio de Rentas Internas del Ecuador}},
-  title        = {Ficha t\'ecnica de comprobantes electr\'onicos},
-  howpublished = {\url{https://www.sri.gob.ec/facturacion-electronica}},
-  note         = {Fuente oficial del esquema de comprobantes electronicos del Ecuador, que opera mediante servicios web SOAP con WSDL; citada como caso de uso real de SOAP en el capitulo 4.}
+  author = {{Servicio de Rentas Internas del Ecuador}},
+  title  = {Ficha t\'ecnica de comprobantes electr\'onicos},
+  url    = {https://www.sri.gob.ec/facturacion-electronica}
 }
 
-% --- Agregadas al integrar el capitulo 5 (tendencias web), fuentes citadas
-%     por Fajardo en docs/u4/investigacion/TENDENCIAS-WEB.md y verificadas
-%     antes de incorporarlas. Se descartaron del Markdown original las
-%     fuentes de blog sin respaldo institucional claro (Umbraco, NashTech
-%     Blog, Loop Studio, Modall) y una cifra (2.74x mas vulnerabilidades)
-%     cuya fuente no quedaba identificada con claridad en el texto citado;
-%     se conservo la idea cualitativa sin esa cifra puntual. -----------------
+% --- Fuentes citadas en la investigacion de tendencias web (capitulo 5) --
 @misc{jamstack-org,
-  author       = {{Jamstack.org}},
-  title        = {What is the {Jamstack}?},
-  year         = {2026},
-  howpublished = {\url{https://jamstack.org/what-is-jamstack/}},
-  note         = {Sitio oficial del movimiento Jamstack; fuente primaria de la definicion como patron arquitectonico (no framework) usada en el capitulo 5.}
+  author = {{Jamstack.org}},
+  title  = {What is the {Jamstack}?},
+  year   = {2026},
+  url    = {https://jamstack.org/what-is-jamstack/}
 }
 
 @misc{cloudflare-jamstack,
-  author       = {{Cloudflare}},
-  title        = {What is {JAMstack}?},
-  year         = {2026},
-  howpublished = {\url{https://www.cloudflare.com/learning/performance/what-is-jamstack/}},
-  note         = {Documentacion tecnica de Cloudflare (organizacion de infraestructura CDN); usada para el desacoplamiento frontend/APIs y la distribucion desde CDN en el capitulo 5.}
+  author = {{Cloudflare}},
+  title  = {What is {JAMstack}?},
+  year   = {2026},
+  url    = {https://www.cloudflare.com/learning/performance/what-is-jamstack/}
 }
 
 @misc{mdn-pwa-guide,
-  author       = {{MDN Web Docs}},
-  title        = {What is a progressive web app?},
-  year         = {2026},
-  howpublished = {\url{https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/What_is_a_progressive_web_app}},
-  note         = {Documentacion oficial de Mozilla; fuente primaria de la definicion de PWA y del manifiesto web usada en el capitulo 5.}
+  author = {{MDN Web Docs}},
+  title  = {What is a progressive web app?},
+  year   = {2026},
+  url    = {https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/What_is_a_progressive_web_app}
 }
 
 @misc{mdn-pwa-serviceworkers,
-  author       = {{MDN Web Docs}},
-  title        = {js13kGames: Making the {PWA} work offline with service workers},
-  year         = {2025},
-  howpublished = {\url{https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Tutorials/js13kGames/Offline_Service_workers}},
-  note         = {Documentacion oficial de Mozilla sobre el funcionamiento de los service workers y el cacheo de assets, usada en el capitulo 5.}
+  author = {{MDN Web Docs}},
+  title  = {js13kGames: Making the {PWA} work offline with service workers},
+  year   = {2025},
+  url    = {https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Tutorials/js13kGames/Offline_Service_workers}
 }
 
 @misc{veracode-genai-2026,
-  author       = {{Veracode}},
-  title        = {{2026} {GenAI} Code Security Report: {AI} Is Writing More of Your Code but Security Hasn't Caught Up},
-  year         = {2026},
-  howpublished = {\url{https://www.veracode.com/blog/2026-genai-code-security-report-ai-risk/}},
-  note         = {Informe de la empresa de seguridad Veracode sobre mas de cien modelos evaluados; fuente del hallazgo del 45\% de codigo generado con una vulnerabilidad del OWASP Top 10, citado en el capitulo 5.}
+  author = {{Veracode}},
+  title  = {{2026} {GenAI} Code Security Report: {AI} Is Writing More of Your Code but Security Hasn't Caught Up},
+  year   = {2026},
+  url    = {https://www.veracode.com/blog/2026-genai-code-security-report-ai-risk/}
 }
 
 @article{arsha-sreeji-2026,
@@ -216,6 +185,5 @@
   title   = {Generative {AI} in Software Engineering},
   journal = {International Journal for Research in Applied Science \& Engineering Technology (IJRASET)},
   year    = {2026},
-  howpublished = {\url{https://doi.org/10.22214/IJRASET.2026.77834}},
-  note    = {Revision academica de 87 publicaciones sobre aportes de IA generativa en seis etapas del ciclo de vida del software; citada en el capitulo 5.}
+  doi     = {10.22214/IJRASET.2026.77834}
 }

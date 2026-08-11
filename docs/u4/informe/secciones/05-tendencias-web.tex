@@ -26,12 +26,12 @@ bibliogr\'aficas verificables.
 Jamstack --- acr\'onimo de \emph{JavaScript, APIs y Markup} --- no es un
 \emph{framework} sino un \textbf{patr\'on arquitect\'onico}: un conjunto de
 decisiones de dise\~no orientadas a desacoplar el frontend del
-backend~\cite{jamstack-org}. En una aplicaci\'on Jamstack, el contenido se
+backend~\parencite{jamstack-org}. En una aplicaci\'on Jamstack, el contenido se
 pre-construye durante el proceso de \emph{build} en p\'aginas y
 \emph{assets} est\'aticos que se distribuyen directamente desde una CDN,
 mientras que toda funcionalidad din\'amica --- autenticaci\'on, formularios,
 b\'usqueda, pagos --- se delega a APIs externas o propias consumidas desde
-el cliente~\cite{cloudflare-jamstack}. Esta separaci\'on reduce la
+el cliente~\parencite{cloudflare-jamstack}. Esta separaci\'on reduce la
 superficie de ataque, porque no hay un servidor de aplicaci\'on expuesto en
 cada petici\'on, y facilita el escalado horizontal, porque servir archivos
 est\'aticos desde una CDN es una operaci\'on mucho m\'as barata que ejecutar
@@ -69,12 +69,12 @@ aplicaci\'on construida con tecnolog\'ias est\'andar de la plataforma web que
 ofrece una experiencia cercana a la de una aplicaci\'on nativa, mediante un
 \emph{manifiesto web} (\texttt{manifest.json}) que declara \'icono, pantalla
 de bienvenida, color de tema y modo de visualizaci\'on, y que permite al
-navegador instalarla en el dispositivo del usuario~\cite{mdn-pwa-guide}. El
+navegador instalarla en el dispositivo del usuario~\parencite{mdn-pwa-guide}. El
 componente central que habilita ese comportamiento tipo app es el
 \emph{service worker}: un script que se ejecuta en un hilo separado del
 JavaScript principal de la p\'agina y act\'ua como proxy entre el navegador y
 la red, capaz de interceptar peticiones y cachear \emph{assets} para
-ponerlos disponibles cuando la conectividad falla~\cite{mdn-pwa-serviceworkers}.
+ponerlos disponibles cuando la conectividad falla~\parencite{mdn-pwa-serviceworkers}.
 
 Conviene precisar que una PWA \textbf{no funciona completamente sin conexi\'on
 por definici\'on}: el alcance real del trabajo offline depende de qu\'e
@@ -88,8 +88,8 @@ completen sin conexi\'on real.
 \textbf{BIOPET actualmente no implementa PWA.} La revisi\'on del frontend
 confirma que no existe un \texttt{manifest} de tipo PWA, ni configuraci\'on
 \texttt{ngsw} (Angular service worker), ni las dependencias
-\texttt{@angular/pwa} o \texttt{@angular/service-worker} en
-\texttt{frontend/package.json}. Es, sin embargo, la tendencia con mayor valor
+\url{@angular/pwa} o \url{@angular/service-worker} en
+\url{frontend/package.json}. Es, sin embargo, la tendencia con mayor valor
 concreto como evoluci\'on futura: el frontend ya es una SPA en Angular~17.3,
 punto de partida t\'ecnico m\'as simple para agregar manifest y service
 worker sin rehacer la arquitectura. Funciones razonables que podr\'ian
@@ -112,14 +112,14 @@ revisi\'on acad\'emica reciente, que analiz\'o 87 publicaciones sobre el
 tema, identifica aportes de estos modelos en seis etapas del ciclo de vida
 del software: ingenier\'ia de requisitos, dise\~no arquitect\'onico,
 implementaci\'on, aseguramiento de calidad, mantenimiento y automatizaci\'on
-de DevOps~\cite{arsha-sreeji-2026}.
+de DevOps~\parencite{arsha-sreeji-2026}.
 
 Esa misma adopci\'on trae riesgos documentados que no deben minimizarse. El
 informe 2026 de Veracode sobre seguridad del c\'odigo generado por IA, tras
 evaluar m\'as de cien modelos en tareas de Java, JavaScript, Python y C\#,
 encontr\'o que el 45\,\% del c\'odigo generado introdujo al menos una
 vulnerabilidad del OWASP Top~10, con Java como el lenguaje de mayor
-riesgo~\cite{veracode-genai-2026}. Un modelo generativo puede sugerir
+riesgo~\parencite{veracode-genai-2026}. Un modelo generativo puede sugerir
 patrones plausibles sin que eso equivalga a un criterio de ingenier\'ia: no
 sopesa una hoja de ruta a mediano plazo contra el stack de habilidades del
 equipo, los requisitos de cumplimiento normativo, ni los modos de falla
@@ -160,7 +160,7 @@ de autenticaci\'on y autorizaci\'on.
 
 BIOPET es, de forma verificable, una \emph{single-page application} en
 Angular~17.3 que consume una API REST documentada con OpenAPI/Swagger, sobre
-un backend Spring~Boot~3.2.12/Java~21 con persistencia en PostgreSQL~16 y
+un backend Spring~Boot 3.2.12/Java~21 con persistencia en PostgreSQL~16 y
 cach\'e en Redis~7. La autenticaci\'on se resuelve mediante JWT entregado en
 cookies \texttt{HttpOnly}/\texttt{Secure}, con cuatro roles reales
 (\texttt{ADMIN}, \texttt{VETERINARIO}, \texttt{AUXILIAR}, \texttt{DUENO}) y

@@ -17,7 +17,7 @@ propiedad del registro.
 \label{sec:proposito-alcance}
 
 El sistema define cuatro roles reales, verificados en el c\'odigo
-(\texttt{Rol}, columna \texttt{usuarios.rol}): \texttt{ROLE\_ADMIN},
+(\texttt{Rol}, columna \url{usuarios.rol}): \texttt{ROLE\_ADMIN},
 \texttt{ROLE\_VETERINARIO}, \texttt{ROLE\_AUXILIAR} y \texttt{ROLE\_DUENO}.
 Los tres primeros tienen alcance global sobre los recursos gestionados por
 la cl\'inica; \texttt{ROLE\_DUENO} est\'a limitado, en la mayor\'ia de los
@@ -63,27 +63,27 @@ orquestado con Docker Compose.
   \centering
   \caption{Stack tecnol\'ogico de BIOPET, verificado contra el c\'odigo actual.}
   \label{tab:stack-tecnologico}
-  \begin{tabular}{@{}ll@{}}
+  \begin{tabular}{@{}lp{8cm}@{}}
     \toprule
     Componente & Versi\'on / detalle \\
     \midrule
-    Backend & Java 21, Spring Boot 3.2.12~\cite{spring-boot-docs} \\
-    Seguridad & Spring Security 6, JWT (\texttt{jjwt} 0.12.6, HMAC-SHA256)~\cite{rfc7519} \\
+    Backend & Java 21, Spring Boot 3.2.12~\parencite{spring-boot-docs} \\
+    Seguridad & Spring Security 6, JWT (\texttt{jjwt} 0.12.6, HMAC-SHA256)~\parencite{rfc7519} \\
     Persistencia & Spring Data JPA + Hibernate, PostgreSQL 16, Flyway \\
     Cach\'e / revocaci\'on & Redis 7 (Spring Data Redis + Spring Cache) \\
-    Documentaci\'on de API & springdoc-openapi 2.5.0 (Swagger UI)~\cite{openapi-spec} \\
+    Documentaci\'on de API & springdoc-openapi 2.5.0 (Swagger UI)~\parencite{openapi-spec} \\
     Cobertura & JaCoCo 0.8.12 \\
-    Frontend & Angular 17.3, TypeScript 5.4, componentes standalone~\cite{angular-docs} \\
-    Manejo uniforme de errores & \texttt{ProblemDetail} (RFC 7807)~\cite{rfc7807} \\
+    Frontend & Angular 17.3, TypeScript 5.4, componentes standalone~\parencite{angular-docs} \\
+    Manejo uniforme de errores & \texttt{ProblemDetail} (RFC 7807)~\parencite{rfc7807} \\
     Orquestaci\'on & Docker Compose, \texttt{Makefile} \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\evidencia{../../diagrams/c4-contenedores/c4-contenedores.png}{Diagrama C4 Nivel 2 (contenedores) de BIOPET.}{fig:c4-contenedores}
+\evidencia[0.62\textwidth]{../../diagrams/c4-contenedores/c4-contenedores.png}{Diagrama C4 Nivel 2 (contenedores) de BIOPET.}{fig:c4-contenedores}
 
 El detalle completo de la arquitectura, con relaciones verificadas contra
-el c\'odigo, sigue el modelo C4~\cite{c4-model} y est\'a documentado en
+el c\'odigo, sigue el modelo C4~\parencite{c4-model} y est\'a documentado en
 \texttt{docs/diagrams/c4-contenedores/} (Nivel 2, contenedores) y
 \texttt{docs/diagrams/c4-componentes-backend/} (Nivel 3, componentes del
 backend), ambos parte del repositorio heredado del PFC.

@@ -25,20 +25,20 @@ secci\'on~\ref{sec:soap-rest-ejemplo}).
 
 SOAP (\emph{Simple Object Access Protocol}) es un protocolo de intercambio
 de mensajes estructurados, con especificaci\'on formal publicada por el
-W3C~\cite{w3c-soap12}. Su unidad de comunicaci\'on es el \textbf{sobre}
+\textcite{w3c-soap12}. Su unidad de comunicaci\'on es el \textbf{sobre}
 (\emph{Envelope}): un documento XML compuesto por una cabecera opcional
 (\emph{Header}), que transporta metadatos de procesamiento como seguridad o
 enrutamiento, y un cuerpo obligatorio (\emph{Body}), que contiene la
 operaci\'on invocada y sus par\'ametros.
 
 El contrato entre cliente y servidor se declara mediante \textbf{WSDL}
-(\emph{Web Services Description Language}~\cite{w3c-wsdl11}): un documento
+(\emph{Web Services Description Language}~\parencite{w3c-wsdl11}): un documento
 XML que especifica de forma \emph{prescriptiva} qu\'e operaciones existen,
 qu\'e tipos de datos aceptan y devuelven, y d\'onde est\'an disponibles en
 la red. Al ser procesable por m\'aquinas, herramientas de generaci\'on de
 c\'odigo pueden construir autom\'aticamente el cliente completo a partir del
 WSDL. Alrededor de SOAP existe adem\'as la familia de especificaciones
-\textbf{WS-*}, entre ellas WS-Security~\cite{oasis-ws-security} para firma y
+\textbf{WS-*}, entre ellas WS-Security~\parencite{oasis-ws-security} para firma y
 cifrado a nivel de mensaje, lo que explica su vigencia en entornos
 corporativos con requisitos formales de seguridad y auditor\'ia.
 
@@ -54,13 +54,13 @@ REST (\emph{Representational State Transfer}) no es un protocolo sino un
 \textbf{estilo arquitect\'onico}: un conjunto de restricciones de dise\~no
 --- cliente-servidor, ausencia de estado, cacheabilidad, sistema en capas,
 interfaz uniforme y c\'odigo bajo demanda (opcional) --- formuladas por
-Fielding~\cite{fielding2000} al describir los principios que hicieron
+\textcite{fielding2000} al describir los principios que hicieron
 escalable a la propia World Wide Web.
 
 En la pr\'actica, una API REST modela el dominio como \textbf{recursos}
 identificados por URI, sobre los que se opera mediante los m\'etodos y
 c\'odigos de estado definidos por la sem\'antica de
-HTTP~\cite{rfc9110}. El formato de representaci\'on \textbf{no est\'a
+HTTP~\parencite{rfc9110}. El formato de representaci\'on \textbf{no est\'a
 prescrito por REST}: aunque JSON se ha impuesto en la pr\'actica por su
 ligereza y su soporte nativo en los navegadores, una API REST puede
 representar sus recursos en XML, texto plano o un formato binario sin dejar
@@ -151,7 +151,8 @@ SOAPAction: "http://biopet.ec/ws/ObtenerMascota"
 
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Header>
-    <wsse:Security xmlns:wsse="...oasis-200401-wss-wssecurity-secext-1.0.xsd">
+    <wsse:Security
+        xmlns:wsse="...oasis-200401-wss-wssecurity-secext-1.0.xsd">
       <wsse:UsernameToken>
         <wsse:Username>vet@biopet.ec</wsse:Username>
         <wsse:Password>...</wsse:Password>
@@ -177,7 +178,8 @@ Content-Type: text/xml; charset=utf-8
     <ObtenerMascotaResponse xmlns="http://biopet.ec/ws">
       <mascota>
         <id>15</id><nombre>Luna</nombre><especie>Canino</especie>
-        <raza>Labrador</raza><fechaNacimiento>2021-03-14</fechaNacimiento>
+        <raza>Labrador</raza>
+        <fechaNacimiento>2021-03-14</fechaNacimiento>
       </mascota>
     </ObtenerMascotaResponse>
   </soap:Body>
@@ -232,8 +234,8 @@ Content-Type: application/problem+json
 \end{verbatim}
 
 Este cuerpo de error usa el formato \texttt{ProblemDetail} real de BIOPET
-(RFC~7807~\cite{rfc7807}, citado as\'i en el propio \texttt{ADR-006} del
-proyecto; la IETF public\'o en 2023 el RFC~9457~\cite{rfc9457} como sucesor,
+(RFC~7807~\parencite{rfc7807}, citado as\'i en el propio \texttt{ADR-006} del
+proyecto; la IETF public\'o en 2023 el RFC~9457~\parencite{rfc9457} como sucesor,
 que BIOPET todav\'ia no adopta).
 
 Tres diferencias resaltan de este ejemplo. Primera, el \textbf{volumen}: el
@@ -251,10 +253,10 @@ intermedia puede cachearlo.
 \subsection*{Precisi\'on aplicada a este ejemplo}
 
 El aporte original de Carvajal representaba el error \texttt{404} con
-\texttt{"type": "https://biopet.ec/problems/not-found"}. Al adaptarlo a
+\url{"type": "https://biopet.ec/problems/not-found"}. Al adaptarlo a
 este informe se corrigi\'o ese valor por el real de BIOPET,
-\texttt{urn:biopet:error:not-found}, verificado directamente en
-\texttt{Backend/src/main/java/com/biopet/exception/ProblemType.java} y en
+\url{urn:biopet:error:not-found}, verificado directamente en
+\url{Backend/src/main/java/com/biopet/exception/ProblemType.java} y en
 \texttt{GlobalExceptionHandler}. El resto del cuerpo (\texttt{title},
 \texttt{detail}, formato general) ya coincid\'ia con el c\'odigo real.
 
@@ -264,7 +266,7 @@ este informe se corrigi\'o ese valor por el real de BIOPET,
 \textbf{Facturaci\'on electr\'onica del SRI --- SOAP (caso sustentado).} El
 esquema de comprobantes electr\'onicos del Servicio de Rentas Internas del
 Ecuador opera mediante servicios web SOAP descritos por
-WSDL~\cite{sri-facturacion-electronica}: el contribuyente env\'ia el
+WSDL~\parencite{sri-facturacion-electronica}: el contribuyente env\'ia el
 comprobante en XML al servicio de recepci\'on y luego consulta su
 autorizaci\'on. La elecci\'on es coherente con el requisito: el comprobante
 debe llevar firma digital con valor tributario \emph{por s\'i mismo},

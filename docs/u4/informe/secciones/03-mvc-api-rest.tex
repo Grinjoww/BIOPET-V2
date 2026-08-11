@@ -69,7 +69,7 @@ actuales del backend (\texttt{Backend/src/main/java/com/biopet/controller/}):
 \end{table}
 
 Todas las respuestas de error de la API usan el formato uniforme
-\texttt{ProblemDetail} (RFC 7807)~\cite{rfc7807}, y todos los recursos
+\texttt{ProblemDetail} (RFC 7807)~\parencite{rfc7807}, y todos los recursos
 protegidos requieren la cookie de sesi\'on emitida por
 \texttt{/api/auth/login}, con autorizaci\'on adicional por rol
 (\texttt{@PreAuthorize}) y, en varios recursos, por propiedad del registro.
@@ -78,8 +78,8 @@ protegidos requieren la cookie de sesi\'on emitida por
 \label{sec:openapi-swagger}
 
 BIOPET documenta su API mediante \texttt{springdoc-openapi}, siguiendo la
-especificaci\'on OpenAPI~\cite{openapi-spec}. La configuraci\'on real
-(\texttt{Backend/src/main/resources/application.yml}) expone:
+especificaci\'on OpenAPI~\parencite{openapi-spec}. La configuraci\'on real
+(\url{Backend/src/main/resources/application.yml}) expone:
 
 \begin{itemize}[nosep]
   \item \textbf{Swagger UI:} \texttt{/api/docs}.
@@ -88,9 +88,9 @@ especificaci\'on OpenAPI~\cite{openapi-spec}. La configuraci\'on real
 
 Ambas rutas son p\'ublicas (no requieren autenticaci\'on), verificado en
 \texttt{SecurityConfig} y probado autom\'aticamente por
-\texttt{SwaggerUiTest}: la primera prueba confirma que \texttt{/api/docs}
+\texttt{SwaggerUiTest}: la primera prueba confirma que \url{/api/docs}
 redirige a la interfaz real de Swagger UI (cuyo cuerpo contiene el
-marcador \texttt{swagger-ui}); la segunda confirma que \texttt{/api/openapi}
+marcador \texttt{swagger-ui}); la segunda confirma que \url{/api/openapi}
 responde \texttt{200} con un documento OpenAPI v\'alido cuyo t\'itulo es
 \texttt{BIOPET API}.
 
