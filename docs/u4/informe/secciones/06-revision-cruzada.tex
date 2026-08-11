@@ -1,34 +1,223 @@
 \chapter{Revisi\'on cruzada del PFC}
 \label{cap:revision-cruzada}
 
-% TODO: integrar y consolidar las revisiones criticas independientes de:
-%   - Carvajal Loor Johan Stalin  -> docs/u4/revisiones/REVISION-CARVAJAL.md
-%   - Fajardo Montes Michael Xavier -> docs/u4/revisiones/REVISION-FAJARDO.md
-%
-% Este capitulo NO debe redactar una revision critica propia de Jaime: su
-% rol aqui es integrar (resumir coincidencias, diferencias y
-% recomendaciones de ambas revisiones ya redactadas por Carvajal y
-% Fajardo), no sustituirlas ni reescribirlas.
+\section{Metodolog\'ia de revisi\'on cruzada}
+\label{sec:revision-metodologia}
 
-\pendienteIntegracion{Consolidaci\'on de las revisiones cr\'iticas independientes de Carvajal Loor Johan Stalin y Fajardo Montes Michael Xavier sobre el PFC BIOPET (fortalezas, debilidades, problemas o limitaciones detectadas, y recomendaciones de mejora).}
+Como parte de la actividad de Unidad IV, dos integrantes del \equipoga\ que
+no participaron en el desarrollo original de BIOPET realizaron revisiones
+cr\'iticas independientes del proyecto: Carvajal Loor Johan Stalin, con
+enfoque en arquitectura MVC, backend, contrato OpenAPI, seguridad, base de
+datos, cach\'e y mantenibilidad
+(\texttt{docs/u4/revisiones/REVISION-CARVAJAL.md}), y Fajardo Montes Michael
+Xavier, con enfoque en usabilidad, escalabilidad, pruebas, rendimiento,
+documentaci\'on y despliegue
+(\texttt{docs/u4/revisiones/REVISION-FAJARDO.md}). Ambas revisiones se
+redactaron por separado, sobre el mismo estado del repositorio, antes de
+consolidarse en este cap\'itulo. El PFC BIOPET fue desarrollado por su
+equipo original --- Mariscal Cabrera Jaime Josu\'e, Beltr\'an Montiel Fred
+Adri\'an y Taipe Mora Zaida Melissa ---; Carvajal y Fajardo no participaron
+en su implementaci\'on: su aporte a esta actividad es de revisi\'on cr\'itica
+e investigaci\'on documental sobre un sistema ya construido (ver
+secci\'on~\ref{sec:distincion-equipos}). Este cap\'itulo no redacta una
+tercera revisi\'on independiente ni sustituye a las dos originales: las
+sintetiza, contrasta sus coincidencias y complementos, y las contrasta con
+el estado actual del repositorio.
 
-\section{Alcance previsto}
-\label{sec:revision-cruzada-alcance}
+\section{Fortalezas identificadas}
+\label{sec:revision-fortalezas}
 
-Este cap\'itulo consolidar\'a, sin redactar una tercera revisi\'on
-independiente, las dos revisiones cr\'iticas ya elaboradas por separado:
+Ambas revisiones coinciden en que BIOPET sostiene una disciplina de
+ingenier\'ia poco habitual en un proyecto de curso. \textbf{La separaci\'on
+en capas} (\emph{controller~$\to$~service~$\to$~repository~$\to$~entity}) no
+se rompe en ning\'un controlador, y las entidades JPA nunca se exponen
+directamente: se serializan como DTOs \texttt{record} de Java~21. \textbf{El
+control de acceso opera en dos niveles complementarios}: el rol se valida de
+forma declarativa con \texttt{@PreAuthorize}, y la propiedad del recurso se
+verifica adem\'as en el servicio, de modo que un \texttt{DUENO} no puede, en
+la mayor\'ia de los endpoints, leer el registro de otro (secci\'on
+\ref{sec:revision-consultas-riesgo} matiza una excepci\'on real a esta
+regla). \textbf{La autenticaci\'on JWT} se entrega en cookies
+\texttt{HttpOnly}/\texttt{Secure}/\texttt{SameSite=Strict}, sin uso de
+\texttt{localStorage} en el frontend Angular, con revocaci\'on efectiva en
+Redis. \textbf{Los errores se estandarizan con \texttt{ProblemDetail}} (RFC
+7807) de forma consistente en los seis controladores. \textbf{La cobertura
+de pruebas es alta y verificada autom\'aticamente}: 166 pruebas ejecutadas,
+0 fallos y 0 errores, sobre 45 clases analizadas por JaCoCo, con un umbral
+de \texttt{jacoco:check} que falla el build por debajo del 60\,\% en LINE,
+BRANCH y COMPLEXITY (\texttt{docs/mediciones/sec/jacoco-summary.md}), y con
+pruebas orientadas a riesgo (inyecci\'on SQL, cabeceras de seguridad,
+disponibilidad de Swagger) y no solo a llenar cifras. \textbf{Redis se usa
+con criterio} tanto para cach\'e de lecturas frecuentes como para la lista
+negra de tokens revocados. Finalmente, \textbf{la reproducibilidad del
+entorno} --- im\'agenes fijadas por digest \texttt{sha256}, \emph{healthcheck}
+encadenado entre servicios, ADRs numerados (ADR-002 a ADR-007) --- permiti\'o
+que ambas revisiones levantaran el sistema desde cero sin intervenci\'on
+manual, condici\'on necesaria para que la revisi\'on cruzada fuera posible.
 
-\begin{itemize}[nosep]
-  \item Revisi\'on cr\'itica independiente de Carvajal Loor Johan Stalin.
-  \item Segunda revisi\'on cr\'itica independiente de Fajardo Montes
-    Michael Xavier.
-\end{itemize}
+\section{Debilidades y riesgos}
+\label{sec:revision-debilidades}
 
-La consolidaci\'on identificar\'a coincidencias entre ambas revisiones
-(fortalezas y debilidades se\~naladas por los dos), diferencias de \'enfasis
-o enfoque, y un listado priorizado de recomendaciones de mejora, sin
-alterar el contenido ni la autor\'ia original de cada revisi\'on.
+Las debilidades detectadas no comprometen el funcionamiento actual del
+sistema, pero se\~nalan brechas entre lo implementado y lo documentado, o
+entre el dise\~no y el comportamiento bajo condiciones que la evaluaci\'on
+acad\'emica no ejerci\'o. \textbf{El esquema de base de datos tiene tres
+fuentes y una ya diverg\'io}: junto a las migraciones de Flyway (\'unica
+fuente que realmente ejecuta el sistema) coexisten \texttt{db/schema.sql}
+--- desactualizado, sin reflejar las migraciones V2 a V4 --- y
+\texttt{database/migrations/}, una copia hu\'erfana sin referencias en el
+proyecto. \textbf{El contrato OpenAPI es estructural pero no descriptivo}: no
+existe una sola anotaci\'on \texttt{@Operation} ni \texttt{@ApiResponse} en
+todo el backend, la versi\'on declarada (\texttt{v0.1.0}) no coincide con la
+del repositorio (\texttt{v0.9.0-rc}), y el esquema de seguridad publicado
+solo declara \texttt{bearerAuth}, sin describir la cookie \texttt{HttpOnly}
+que realmente usa el frontend. \textbf{Hay secretos con valores por defecto
+versionados en el c\'odigo fuente}: si la variable \texttt{JWT\_SECRET} no
+se define, la aplicaci\'on arranca igual firmando tokens con una clave
+publicada en el repositorio, y la contrase\~na de la cuenta administradora
+sembrada (\texttt{admin@biopet.ec}) est\'a escrita directamente en
+\texttt{DataInitializer.java} y en \texttt{db/seed.sql}, aunque el propio
+README advierte que debe externalizarse antes de cualquier despliegue fuera
+del entorno acad\'emico. \textbf{La integraci\'on con la API externa carece
+de prueba automatizada dedicada}: no existe \texttt{ExternalApiServiceTest}
+ni \texttt{ExternalApiControllerTest}, pese a ser la pieza con m\'as caminos
+de fallo del sistema (cach\'e vac\'ia, JSON corrupto, tercero ca\'ido,
+\emph{timeout}). \textbf{El limitador de intentos de login es en memoria y
+no distribuido} (\texttt{ConcurrentHashMap} por instancia del backend), por
+lo que dejar\'ia de funcionar correctamente si el sistema se desplegara con
+m\'as de una instancia detr\'as de un balanceador. \textbf{Los registros de
+auditor\'ia (\texttt{AUTH\_AUDIT}) quedan locales al proceso/contenedor}, sin
+integraci\'on con un SIEM centralizado. \textbf{La cobertura de ramas
+condicionales sigue siendo notablemente menor que la de l\'ineas}: 67.98\,\%
+en BRANCH frente a 87.45\,\% en LINE (71.81\,\% en COMPLEXITY), lo que
+sugiere casos de error y combinaciones de rol todav\'ia no ejercitados por
+las pruebas, aunque ambas cifras superan holgadamente el umbral m\'inimo del
+60\,\%. \textbf{La evidencia Lighthouse disponible no cubre a\'un la vista
+autenticada de Mascotas}: existen 6 corridas oficiales versionadas
+(\texttt{docs/mediciones/lighthouse/README.md}), con Performance,
+Accessibility y Best Practices dentro de umbral, pero SEO obtuvo 82 frente
+al umbral configurado de 90, y la corrida sobre \texttt{/mascotas} termina
+auditando \texttt{/login} porque el \texttt{authGuard} redirige sin sesi\'on
+activa. Por \'ultimo, el frontend no cuenta a\'un con pruebas \emph{end-to-end}
+propias ni con las mejoras de accesibilidad m\'ovil discutidas en el
+cap\'itulo~\ref{cap:tendencias-web} (PWA sigue siendo, all\'i, una
+evoluci\'on propuesta y no implementada).
 
-No se redacta contenido definitivo en esta versi\'on del informe porque
-depende de que ambas revisiones hayan sido recibidas y validadas antes de
-consolidarse.
+\subsection{Inconsistencia de autorizaci\'on en el listado de consultas}
+\label{sec:revision-consultas-riesgo}
+
+Al contrastar ambas revisiones con el estado actual del c\'odigo surgi\'o un
+hallazgo adicional, no se\~nalado por ninguna de las dos revisiones
+originales, que conviene documentar con prudencia antes de integrar el
+cap\'itulo de conclusiones. \texttt{GET~/api/consultas} admite el rol
+\texttt{ROLE\_DUENO} (\texttt{ConsultaController.java:25-26}), pero el
+listado que expone \texttt{ConsultaService.listar()}
+(\texttt{ConsultaService.java:35-45}) no aplica ning\'un filtrado por
+propietario para ese rol: la rama espec\'ifica para \texttt{ROLE\_DUENO}
+ejecuta la misma consulta sin restricciones que la rama de personal
+cl\'inico, pese a que el propio comentario del c\'odigo indica que el
+``filtrado real de propiedad se aplica en \texttt{buscar()}''. En efecto,
+\texttt{GET~/api/consultas/\{id\}} s\'i ejecuta control de acceso individual
+mediante \texttt{verificarAcceso()} (\texttt{ConsultaService.java:124-132}),
+que compara el due\~no de la mascota asociada con el usuario autenticado.
+Esta diferencia entre el endpoint de listado y el de detalle constituye una
+\textbf{inconsistencia actual de autorizaci\'on}: un usuario con rol
+\texttt{DUENO} que consulte \texttt{GET~/api/consultas} puede recibir, en el
+listado paginado, consultas cl\'inicas --- diagn\'ostico, tratamiento,
+observaciones --- de mascotas que no le pertenecen, aunque el acceso
+individual a cada una de ellas por \texttt{id} s\'i est\'e correctamente
+restringido. El riesgo es de \textbf{exposici\'on de informaci\'on cl\'inica
+entre propietarios distintos}, un dato sensible en un sistema veterinario, y
+se clasifica como \textbf{mejora prioritaria} en la
+secci\'on~\ref{sec:revision-priorizacion}. Este informe no modifica el
+c\'odigo del PFC: el hallazgo se deja documentado para que el equipo
+original decida c\'omo corregirlo (por ejemplo, replicando en
+\texttt{listar()} el mismo filtro por \texttt{due\~no} que ya usa
+\texttt{MascotaService} para el recurso an\'alogo de mascotas).
+
+\section{Comparaci\'on de las dos revisiones}
+\label{sec:revision-comparacion}
+
+Las dos revisiones no compiten entre s\'i: cubren capas distintas del mismo
+sistema y, juntas, dan una imagen m\'as completa que cualquiera de las dos
+por separado. La primera revisi\'on aport\'o mayor profundidad de bajo nivel
+sobre el backend y su configuraci\'on --- lectura l\'inea a l\'inea de
+controladores, servicios y archivos de configuraci\'on --- y por eso
+concentra los hallazgos m\'as t\'ecnicos: el desajuste del contrato OpenAPI,
+la estrategia de claves de cach\'e, el detalle de las expresiones de
+autorizaci\'on repetidas, y la divergencia de fuentes del esquema de base de
+datos. La segunda revisi\'on aport\'o una mirada m\'as transversal, centrada
+en qu\'e tan verificable es cada afirmaci\'on del proyecto frente a
+evidencia externa medible: usabilidad (SUS), cobertura de pruebas y su
+umbral automatizado, escalabilidad del rate limiting, superficie de
+seguridad expuesta en el README, y estado real de las mediciones de
+rendimiento (k6, Lighthouse). El contraste entre ambas evidenci\'o que
+coinciden en dos ejes de fondo --- la fortaleza del modelo de autenticaci\'on
+por cookies y la existencia de deuda t\'ecnica en secretos versionados por
+defecto --- y que se complementan sin superponerse en casi todo lo dem\'as:
+donde una revisi\'on profundiza en c\'omo est\'a construido un mecanismo, la
+otra verifica si existe evidencia de que ese mecanismo realmente funciona
+bajo medici\'on.
+
+\section{Priorizaci\'on de mejoras}
+\label{sec:revision-priorizacion}
+
+La tabla~\ref{tab:revision-priorizacion} consolida las mejoras identificadas
+por ambas revisiones y por el contraste con el estado actual del
+repositorio, priorizadas por impacto real y no por facilidad de
+implementaci\'on.
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Priorizaci\'on de mejoras identificadas en la revisi\'on
+    cruzada.}
+  \label{tab:revision-priorizacion}
+  \begin{tabular}{@{}p{1.6cm}p{5.6cm}p{7.4cm}@{}}
+    \toprule
+    Prioridad & Mejora & Justificaci\'on \\
+    \midrule
+    Alta & Filtrar \texttt{GET~/api/consultas} por propiedad para
+      \texttt{ROLE\_DUENO} & Cierra la exposici\'on de informaci\'on
+      cl\'inica de mascotas ajenas descrita en la
+      secci\'on~\ref{sec:revision-consultas-riesgo} \\
+    Alta & Eliminar los valores por defecto de \texttt{JWT\_SECRET} y de la
+      contrase\~na del admin sembrado & Evita falsificaci\'on de tokens y
+      acceso administrativo no autorizado ante un fallo de configuraci\'on \\
+    Alta & A\~nadir prueba automatizada dedicada a la integraci\'on con la
+      API externa & Es la \'unica pieza funcional sin cobertura, con varios
+      caminos de fallo no verificados \\
+    Media & Migrar el limitador de intentos de login a Redis & Sostiene el
+      l\'imite de intentos fallidos si el sistema llega a escalar a m\'as
+      de una instancia \\
+    Media & Anotar la API con \texttt{@Operation}/\texttt{@ApiResponses} y
+      declarar el esquema de autenticaci\'on por cookie en OpenAPI & Hace
+      que el contrato publicado describa el comportamiento real del sistema \\
+    Media & Reforzar la cobertura BRANCH en rutas de error y autorizaci\'on
+      por rol/propiedad & Reduce el riesgo de casos borde no verificados
+      pese a superar ya el umbral m\'inimo \\
+    Baja & Unificar el esquema en Flyway y enlazar desde el README las
+      mediciones SUS y Lighthouse ya versionadas & Mejora la navegabilidad
+      y la visibilidad de evidencia que ya existe pero es dif\'icil de
+      ubicar \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{S\'intesis de la revisi\'on cruzada}
+\label{sec:revision-sintesis}
+
+Las dos revisiones independientes, junto con el contraste realizado en este
+cap\'itulo contra el estado actual del repositorio, describen un mismo
+diagn\'ostico desde \'angulos distintos: BIOPET es un PFC con una base de
+ingenier\'ia s\'olida --- arquitectura en capas disciplinada, control de
+acceso en dos niveles, autenticaci\'on por cookies bien dise\~nada, pruebas
+automatizadas con umbral y evidencia de medici\'on real (JaCoCo, SUS, k6,
+Lighthouse) --- sobre la que persisten brechas concretas y acotadas entre lo
+implementado, lo documentado y lo verificado bajo condiciones que la
+evaluaci\'on acad\'emica no someti\'o al sistema. Ninguna de esas brechas
+--- incluida la inconsistencia de autorizaci\'on en el listado de consultas
+--- compromete hoy el funcionamiento del sistema para el alcance
+acad\'emico definido; todas quedan documentadas y priorizadas en este
+cap\'itulo como insumo para el trabajo de mejora que corresponde a la
+propuesta de evoluci\'on futura del proyecto.
