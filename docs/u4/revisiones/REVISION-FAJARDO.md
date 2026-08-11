@@ -11,9 +11,9 @@
 
 **Fortaleza:** el sistema separa claramente cuatro roles con permisos distintos (`ADMIN`, `VETERINARIO`, `AUXILIAR`, `DUENO`), y el rol `DUENO` está limitado por propiedad: solo ve y gestiona sus propias mascotas, mientras que el personal de la clínica tiene alcance global. Esto refleja un modelo mental correcto para un sistema veterinario real, donde el dueño no debería ver información de otras mascotas.
 
-**Problema:** el README no menciona ninguna evaluación de usabilidad ejecutada con usuarios reales. De hecho, el propio repositorio reconoce en su sección de limitaciones que las mediciones de usabilidad (SUS) "todavía no se han ejecutado y no tienen resultados versionados". Es decir, la usabilidad del sistema hasta ahora es una suposición del equipo, no un dato verificado.
+**Problema (actualizado):** el sistema sí cuenta con una medición SUS real y versionada en `docs/mediciones/sus/REPORT.md`: cuestionario System Usability Scale aplicado a n = 10 participantes externos al equipo, con un puntaje medio de 74.75/100, clasificado como "Bueno" según la escala de adjetivos de Bangor, Kortum & Miller (2009). Esta evidencia, sin embargo, no está enlazada desde la sección de evidencia/limitaciones del README (a diferencia de Lighthouse, Redis o PostgreSQL, que sí tienen fila propia en esa tabla), lo que dificulta que un evaluador externo la ubique sin revisar directamente `docs/mediciones/`.
 
-**Mejora sugerida:** aplicar el cuestionario System Usability Scale (SUS) con al menos 5-8 usuarios representativos de cada rol (especialmente `DUENO`, que es el usuario menos técnico) antes de la entrega final, y documentar el puntaje obtenido junto con los hallazgos cualitativos.
+**Mejora sugerida:** enlazar el resultado SUS (`docs/mediciones/sus/REPORT.md`) desde la tabla de evidencia del README, y considerar ampliar la muestra en una futura iteración, tal como recomienda el propio reporte.
 
 ## 2. Organización del proyecto
 
@@ -49,9 +49,9 @@
 
 ## 6. Pruebas
 
-**Fortaleza:** la cobertura de pruebas es alta y verificable: 109 pruebas ejecutadas, 0 fallos, 95.87% de cobertura LINE y 76.87% de cobertura BRANCH según JaCoCo, con un umbral automático (`jacoco:check`) que falla el build si la cobertura baja del 60%. Esto es evidencia real, no una afirmación sin respaldo.
+**Fortaleza:** la cobertura de pruebas es alta y verificable: 166 pruebas ejecutadas, 0 fallos, 0 errores, 45 clases analizadas, 87.45% de cobertura LINE y 67.98% de cobertura BRANCH según JaCoCo (`docs/mediciones/sec/jacoco-summary.md`), con un umbral automático (`jacoco:check`) que falla el build si la cobertura baja del 60% en LINE, BRANCH y COMPLEXITY. Esto es evidencia real, no una afirmación sin respaldo.
 
-**Problema:** la cobertura de BRANCH (76.87%) es notablemente más baja que la de LINE (95.87%), lo que suele indicar que muchas ramas condicionales (casos de error, validaciones, combinaciones de rol) no están cubiertas aunque las líneas sí se ejecuten. Por otro lado, no hay evidencia en el README de pruebas end-to-end del frontend Angular, solo de pruebas backend con JUnit.
+**Problema:** la cobertura de BRANCH (67.98%) sigue siendo notablemente más baja que la de LINE (87.45%), lo que suele indicar que muchas ramas condicionales (casos de error, validaciones, combinaciones de rol) no están cubiertas aunque las líneas sí se ejecuten. Por otro lado, no hay evidencia en el README de pruebas end-to-end del frontend Angular, solo de pruebas backend con JUnit.
 
 **Mejora sugerida:** revisar el reporte de JaCoCo por clase para identificar qué ramas específicas quedan sin cubrir (probablemente en `MascotaService.verificarPropiedad` y en el manejo de códigos 401/403/429), y agregar al menos pruebas E2E básicas del frontend con Cypress o Playwright que cubran el flujo de login y el control de acceso por rol desde la interfaz.
 
@@ -59,9 +59,9 @@
 
 **Fortaleza:** existe un objetivo `make bench` que corre benchmarks con k6 contra el endpoint de listado de mascotas, y el README documenta que las 6 corridas oficiales (frío/caliente) están reportadas en `docs/mediciones/perf/REPORT.md`, lo cual demuestra una cultura de medición real en lugar de asumir que el sistema "es rápido".
 
-**Problema:** el objetivo `make lighthouse` está implementado pero, según el propio README, "a la fecha de este README no hay resultados versionados" de Lighthouse. Es decir, la herramienta para medir rendimiento y accesibilidad del frontend existe, pero nunca se ejecutó y documentó su resultado.
+**Problema (actualizado):** el objetivo `make lighthouse` ya se ejecutó y sus resultados están versionados en `docs/mediciones/lighthouse/`: 6 corridas oficiales del 2026-08-01 (3 por solicitud) sobre `/login` y `/mascotas`. Performance, Accessibility y Best Practices cumplieron los umbrales configurados (≥80, ≥90 y ≥90 respectivamente), pero SEO obtuvo 82 frente al umbral configurado de 90, por lo que ese criterio no se cumple. Además, la corrida sobre `/mascotas` no audita la vista autenticada de Mascotas: el `authGuard` redirige de inmediato a `/login` sin una cookie de sesión válida, por lo que Lighthouse termina auditando el contenido de `/login` en ambos casos. La evidencia cubre por tanto la pantalla de login, no la experiencia real de la vista de Mascotas ya autenticada.
 
-**Mejora sugerida:** ejecutar `make lighthouse` antes de la entrega final y versionar el reporte en `docs/mediciones/lighthouse/`, igual que ya se hace con las mediciones de Redis y PostgreSQL, para tener evidencia también del lado del frontend y no solo del backend.
+**Mejora sugerida:** cerrar la brecha de SEO (82 vs. umbral 90) documentada en la propia medición, y ejecutar una corrida adicional de Lighthouse con una sesión autenticada activa (por ejemplo, inyectando la cookie `access_token` antes de la auditoría) para obtener evidencia real de la vista de Mascotas, no solo de la redirección a `/login`.
 
 ## 8. Documentación
 
@@ -83,8 +83,8 @@
 
 **Fortalezas principales:** modelo de autenticación por cookies bien diseñado (sin `localStorage`, con revocación en Redis), cobertura de pruebas alta y verificable con umbral automático, documentación técnica extensa con trazabilidad real (ADRs, C4, matriz de requisitos), y honestidad del propio equipo al declarar explícitamente sus limitaciones en el README en lugar de ocultarlas.
 
-**Debilidades identificadas:** varias mediciones clave (usabilidad SUS, Lighthouse) están instrumentadas pero nunca ejecutadas; el rate limiting de login no escala a múltiples instancias; hay un secreto (contraseña del admin sembrado) hardcodeado en el código fuente; y la cobertura de ramas condicionales es notablemente menor que la de líneas, lo que sugiere casos borde sin probar.
+**Debilidades identificadas:** las mediciones SUS y Lighthouse ya están ejecutadas y versionadas, pero no están enlazadas de forma visible desde la tabla de evidencia del README, y la corrida de Lighthouse sobre `/mascotas` no audita realmente la vista autenticada (redirige a `/login`); el rate limiting de login no escala a múltiples instancias; hay un secreto (contraseña del admin sembrado) hardcodeado en el código fuente; y la cobertura de ramas condicionales sigue siendo notablemente menor que la de líneas, lo que sugiere casos borde sin probar.
 
-**Mejoras recomendadas:** ejecutar y versionar las mediciones de usabilidad y Lighthouse ya instrumentadas antes de la entrega final; migrar el rate limiter a Redis; externalizar la contraseña del admin sembrado a variable de entorno; y reforzar la cobertura de pruebas específicamente en las ramas de autorización por rol y propiedad.
+**Mejoras recomendadas:** enlazar desde el README las mediciones de usabilidad (SUS) y de SEO (Lighthouse, 82 vs. umbral 90) que ya están versionadas pero poco visibles, y obtener evidencia Lighthouse real de la vista autenticada de Mascotas; migrar el rate limiter a Redis; externalizar la contraseña del admin sembrado a variable de entorno; y reforzar la cobertura de pruebas específicamente en las ramas de autorización por rol y propiedad.
 
 **Valoración general:** BIOPET es un PFC técnicamente sólido, con una madurez de ingeniería (ADRs, pruebas automatizadas con umbral, digest-pinning de imágenes, manejo de errores estandarizado) que va más allá de lo típico en un proyecto de curso. Su mayor fortaleza no es la ausencia de problemas, sino que el propio equipo los documenta con honestidad en vez de esconderlos — lo cual facilita exactamente el tipo de revisión cruzada que pide esta actividad. Las mejoras señaladas aquí son en su mayoría de cierre de brechas ya identificadas por el propio equipo, no descubrimientos de fallas ocultas, lo que habla bien de la calidad general del proyecto.
