@@ -1,31 +1,156 @@
 \chapter{Trabajo futuro}
 \label{cap:trabajo-futuro}
 
-% TODO: redactar trabajo futuro a partir de las conclusiones finales
-% (capitulo 8) y de las recomendaciones consolidadas en la revision
-% cruzada (capitulo 6). No anticipar aqui recomendaciones que todavia no
-% fueron validadas en esos capitulos.
+Este cap\'itulo traduce en propuestas concretas las limitaciones reales
+identificadas en la revisi\'on cruzada (cap\'itulo~\ref{cap:revision-cruzada})
+y en la evidencia emp\'irica del cap\'itulo~\ref{cap:resultados}. No se trata
+de una lista de tecnolog\'ias de moda: cada propuesta responde a un hallazgo
+espec\'ifico ya documentado sobre el estado actual de BIOPET, y ninguna de
+ellas est\'a implementada todav\'ia.
 
-\pendienteIntegracion{Trabajo futuro, derivado de las conclusiones (cap\'itulo~\ref{cap:conclusiones}) y de las recomendaciones consolidadas de la revisi\'on cruzada (cap\'itulo~\ref{cap:revision-cruzada}).}
+\section{Prioridades inmediatas}
+\label{sec:futuro-prioridades-inmediatas}
 
-\section{Alcance previsto}
-\label{sec:trabajo-futuro-alcance}
+\subsection{Control de acceso en Consultas}
+\label{sec:futuro-consultas}
 
-Esta secci\'on listar\'a las recomendaciones de mejora priorizadas que
-surjan de la revisi\'on cruzada y de las conclusiones finales, diferenciando
-expl\'icitamente entre:
+La revisi\'on cruzada confirm\'o que \texttt{GET~/api/consultas} admite el
+rol \texttt{DUENO} pero no filtra el listado por propietario, mientras que
+la consulta individual por \texttt{id} s\'i aplica correctamente ese control
+(secci\'on~\ref{sec:revision-consultas-riesgo}). Esta inconsistencia sigue
+\textbf{pendiente}: no fue corregida en el marco de esta GA, que no modifica
+c\'odigo del PFC. El trabajo futuro consiste en aplicar al listado el mismo
+filtrado por propiedad que ya usa el endpoint individual, y agregar pruebas
+espec\'ificas que impidan expl\'icitamente el acceso cruzado entre due\~nos
+distintos, de modo que una regresi\'on futura sea detectada por la suite
+autom\'atica y no por una revisi\'on manual.
 
-\begin{itemize}[nosep]
-  \item Mejoras t\'ecnicas concretas sobre BIOPET (por ejemplo, las
-    limitaciones ya documentadas en el propio \texttt{README.md}: cach\'e
-    de rendimiento, SEO en Lighthouse, cobertura de rama).
-  \item Recomendaciones de proceso o documentaci\'on derivadas de la
-    revisi\'on cruzada.
-  \item L\'ineas de investigaci\'on adicional sugeridas por la comparaci\'on
-    SOAP vs REST o por el an\'alisis de tendencias web, si aplican al
-    contexto real de BIOPET.
-\end{itemize}
+\subsection{Gesti\'on de secretos}
+\label{sec:futuro-secretos}
 
-No se redacta contenido definitivo en esta versi\'on del informe porque
-depende de los cap\'itulos de conclusiones y revisi\'on cruzada, todav\'ia
-pendientes de integraci\'on.
+Actualmente \texttt{JWT\_SECRET} y la contrase\~na de la cuenta
+administradora sembrada tienen valores por defecto versionados en el
+c\'odigo fuente (secci\'on~\ref{sec:revision-debilidades}). La mejora futura
+razonable no es dise\~nar un gestor de secretos empresarial, sino eliminar
+esos valores por defecto para que la aplicaci\'on falle expl\'icitamente al
+arrancar si la variable de entorno correspondiente no est\'a definida, y
+documentar qu\'e mecanismo (variables de entorno por ambiente, o un
+gestor de secretos ligero si el proyecto llegara a desplegarse fuera del
+entorno acad\'emico) reemplazar\'ia al valor hardcodeado, junto con una
+pol\'itica m\'inima de rotaci\'on peri\'odica de esos valores.
+
+\subsection{API externa}
+\label{sec:futuro-api-externa}
+
+La integraci\'on con la API externa de especies funciona, pero carece de
+prueba automatizada dedicada (\texttt{ExternalApiServiceTest} o
+\texttt{ExternalApiControllerTest} no existen). El trabajo futuro incluye
+cubrir con pruebas los caminos de fallo ya identificados --- \emph{timeout},
+respuesta vac\'ia, error del tercero, y fallo de escritura en Redis ---, y
+evaluar una degradaci\'on controlada que sirva la \'ultima respuesta v\'alida
+cacheada cuando el servicio externo no responda, en lugar de propagar
+siempre un error al usuario final.
+
+\section{Mejoras de calidad y escalabilidad}
+\label{sec:futuro-calidad-escalabilidad}
+
+\subsection{Rate limiting distribuido}
+\label{sec:futuro-rate-limiting}
+
+El limitador de intentos de login actual mantiene su estado en memoria por
+instancia del backend. Esto no es un problema mientras el sistema corra como
+una sola instancia, tal como fue evaluado, pero cobra relevancia si BIOPET
+llegara a escalar horizontalmente: mover ese estado a Redis, que el proyecto
+ya usa para otros fines, permitir\'ia que el l\'imite de intentos se
+comparta entre instancias en lugar de reiniciarse en cada una.
+
+\subsection{Cobertura de ramas}
+\label{sec:futuro-cobertura-ramas}
+
+La cobertura actual (LINE 87.45\,\%, BRANCH 67.98\,\%, COMPLEXITY 71.81\,\%,
+todas por encima del umbral m\'inimo del 60\,\%) es s\'olida pero desigual
+entre m\'etricas. La meta razonable no es alcanzar el 100\,\% de cobertura,
+sino priorizar deliberadamente las ramas que hoy quedan menos ejercitadas:
+combinaciones de rol y propiedad en la capa de autorizaci\'on, manejo de
+c\'odigos de error (401/403/429), casos negativos de validaci\'on, y los
+caminos de fallo de la integraci\'on externa descritos en la
+secci\'on~\ref{sec:futuro-api-externa}.
+
+\subsection{OpenAPI}
+\label{sec:futuro-openapi}
+
+Swagger UI funciona correctamente hoy y est\'a respaldado por una prueba
+propia (secci\'on~\ref{sec:openapi-swagger}); lo que falta es que el
+contrato publicado describa el comportamiento real del sistema. El trabajo
+futuro incluye anotar las operaciones con \texttt{@Operation} y documentar
+las respuestas de error efectivamente implementadas, declarar el esquema de
+autenticaci\'on por cookie que realmente usa el frontend --- hoy solo se
+declara \texttt{bearerAuth} ---, y sincronizar la versi\'on publicada en el
+contrato con la del proyecto.
+
+\section{Frontend y experiencia}
+\label{sec:futuro-frontend}
+
+\subsection{Lighthouse}
+\label{sec:futuro-lighthouse}
+
+Las seis corridas oficiales de Lighthouse disponibles auditan efectivamente
+\texttt{/login}: la solicitud a \texttt{/mascotas} sin sesi\'on activa
+redirige a esa misma pantalla, por lo que la vista autenticada de Mascotas
+todav\'ia no tiene evidencia propia
+(secci\'on~\ref{sec:resultados-lighthouse}). El trabajo futuro incluye
+ejecutar una auditor\'ia con una sesi\'on autenticada v\'alida --- por
+ejemplo inyectando la cookie de acceso antes de la medici\'on --- para
+obtener evidencia real de esa pantalla, y revisar la brecha de SEO (82
+frente al umbral de 90) si las p\'aginas p\'ublicas del sistema siguen
+siendo relevantes para ese criterio.
+
+\subsection{PWA}
+\label{sec:futuro-pwa}
+
+Como se analiz\'o en el cap\'itulo~\ref{cap:tendencias-web}, convertir el
+frontend en una PWA es una evoluci\'on razonable --- no una funcionalidad
+existente --- que podr\'ia aportar instalaci\'on, cach\'e selectiva de
+recursos no sensibles, acceso a informaci\'on de mascotas ya consultada, y
+resiliencia parcial ante conectividad inestable. Cualquier implementaci\'on
+futura deber\'ia evitar el almacenamiento offline indiscriminado de
+informaci\'on cl\'inica sensible, y no deber\'ia tratarse como prioridad
+mayor que las mejoras de seguridad y autorizaci\'on descritas en las
+secciones anteriores.
+
+\section{Mantenibilidad documental}
+\label{sec:futuro-mantenibilidad}
+
+De forma breve, tambi\'en queda pendiente: consolidar el esquema de base de
+datos en Flyway como \'unica fuente de verdad y retirar los archivos
+divergentes o hu\'erfanos (\texttt{db/schema.sql},
+\texttt{database/migrations/}); enlazar desde el README las mediciones SUS y
+Lighthouse ya versionadas pero poco visibles; y mantener sincronizadas la
+versi\'on del proyecto y la del contrato OpenAPI.
+
+\section{Priorizaci\'on}
+\label{sec:futuro-priorizacion}
+
+\begin{description}[nosep]
+  \item[Corto plazo] control de acceso en Consultas
+    (secci\'on~\ref{sec:futuro-consultas}), gesti\'on de secretos
+    (secci\'on~\ref{sec:futuro-secretos}), pruebas de la API externa
+    (secci\'on~\ref{sec:futuro-api-externa}).
+  \item[Mediano plazo] rate limiting distribuido
+    (secci\'on~\ref{sec:futuro-rate-limiting}), cobertura de ramas cr\'iticas
+    (secci\'on~\ref{sec:futuro-cobertura-ramas}), OpenAPI descriptivo
+    (secci\'on~\ref{sec:futuro-openapi}).
+  \item[Evoluci\'on posterior] auditor\'ias Lighthouse autenticadas
+    (secci\'on~\ref{sec:futuro-lighthouse}), PWA
+    (secci\'on~\ref{sec:futuro-pwa}), y la mantenibilidad documental
+    (secci\'on~\ref{sec:futuro-mantenibilidad}).
+\end{description}
+
+Si en alg\'un momento se explora IA generativa como apoyo al desarrollo de
+BIOPET, su uso razonable se limita a generaci\'on de pruebas adicionales,
+documentaci\'on t\'ecnica y asistencia en refactorizaci\'on, siempre bajo
+revisi\'on humana --- nunca como IA cl\'inica o diagn\'ostica, que queda
+fuera del alcance de esta actividad y del propio dominio verificado del
+sistema. Ninguna de las propuestas de este cap\'itulo tiene fecha, costo ni
+responsable asignado: son l\'ineas de mejora derivadas de hallazgos reales,
+no un cronograma de implementaci\'on.
