@@ -132,10 +132,26 @@ echo ""
 # del contenedor, no del host. Sin esta variable, "-v host:/zap/wrk/:rw"
 # termina montando un directorio equivocado y ZAP falla con
 # "the directory '/zap/wrk' is not mounted". Verificado en este entorno.
+# Inofensiva en Linux (CI): la variable simplemente no la usa ningun shell
+# que no sea MSYS/Git Bash.
+#
+# "-t" (asignar pseudo-TTY) solo se agrega si stdout es realmente una
+# terminal ([ -t 1 ]). En GitHub Actions (y en cualquier ejecucion con la
+# salida redirigida a un archivo/pipe) stdout no es una TTY; pasar "-t" en
+# ese caso hace que "docker run" falle con "the input device is not a TTY".
+# Esta misma condicion permite seguir ejecutando el script de forma
+# identica en una terminal local interactiva (con "-t", salida con color)
+# y en CI (sin "-t", misma funcionalidad).
+DOCKER_TTY_FLAG=""
+if [ -t 1 ]; then
+    DOCKER_TTY_FLAG="-t"
+fi
+
 MSYS_NO_PATHCONV=1 docker run --rm \
     --network "$NETWORK_NAME" \
     -v "$ZAP_DIR:/zap/wrk/:rw" \
-    -t "$ZAP_IMAGE" \
+    $DOCKER_TTY_FLAG \
+    "$ZAP_IMAGE" \
     zap-baseline.py \
     -t "$ZAP_TARGET" \
     -r zap-baseline-report.html \
@@ -157,9 +173,13 @@ fecha_utc=$FECHA_UTC
 imagen_zap=$ZAP_IMAGE
 target=$ZAP_TARGET
 red_docker=$NETWORK_NAME
-comando=docker run --rm --network $NETWORK_NAME -v "$ZAP_DIR:/zap/wrk/:rw" -t $ZAP_IMAGE zap-baseline.py -t $ZAP_TARGET -r zap-baseline-report.html -x zap-baseline-report.xml -J zap-baseline-report.json -I
+comando=docker run --rm --network $NETWORK_NAME -v "$ZAP_DIR:/zap/wrk/:rw" ${DOCKER_TTY_FLAG:+$DOCKER_TTY_FLAG }$ZAP_IMAGE zap-baseline.py -t $ZAP_TARGET -r zap-baseline-report.html -x zap-baseline-report.xml -J zap-baseline-report.json -I
 codigo_salida=$ZAP_EXIT
 EOF
+
+echo ""
+echo "Para decidir fallo/exito basado en severidad ALTA real (riskcode=3),"
+echo "usa: scripts/check-zap-high-severity.sh (lee $ZAP_DIR/zap-baseline-report.json)"
 
 if [ "$STACK_YA_ESTABA_ARRIBA" -eq 0 ] && [ "$KEEP_STACK" -eq 0 ]; then
     echo ""
