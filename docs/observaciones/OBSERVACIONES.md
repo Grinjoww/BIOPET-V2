@@ -67,10 +67,10 @@ recalculan ni se reinterpreta la rúbrica del docente.
 | OBS-09 | Entrega 3 | Tag `v0.9.0-rc` no creado (última etiqueta citada, `v0.7.1`, tampoco existía en el checkout original) | C7. Repositorio Git | Jaime Mariscal (gestión del repositorio) | CERRADA | Tag anotado `v0.9.0-rc` (publicado en `origin`) → commit `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3` |
 | OBS-10 | Entrega 3 | Software no archivado en Zenodo, DOI pendiente | E.2. Archivado/citabilidad | Equipo (por definir) | ABIERTA | PENDIENTE |
 | OBS-11 | Entrega 3 | Evidencia/reporte Lighthouse faltante | Calidad web automatizada | Jaime Mariscal (mediciones) | CERRADA | `9ea0ccb0b3f2a86996d2aa047f385dff7e5c1675` (verificado con `git show`, 34 archivos añadidos) |
-| OBS-12 | Entrega 3 | Calidad del sistema no enmarcada en ISO/IEC 25010 | Marco de calidad del informe | Equipo (redacción del informe) | ABIERTA | PENDIENTE |
+| OBS-12 | Entrega 3 | Calidad del sistema no enmarcada en ISO/IEC 25010 | Marco de calidad del informe | Jaime Mariscal | CERRADA | `docs/arquitectura/ISO-25010.md` (nuevo); commit de esta corrección: PENDIENTE |
 | OBS-13 | Entrega 3 | `CONTRIBUTORS.md` sin roles CRediT individuales | E. Reconocimiento de autoría | Equipo completo | ABIERTA | PENDIENTE |
-| OBS-14 | Entrega 3 | Documentación afirma ausencia de historial Git pese a 260 commits | C7. Repositorio Git | Jaime Mariscal (verificación) / Equipo (corrección) | ABIERTA | PENDIENTE |
-| OBS-15 | Entrega 3 | Correo institucional de Jaime en commits | C7. Repositorio Git | Jaime Mariscal | ABIERTA | PENDIENTE |
+| OBS-14 | Entrega 3 | Documentación afirma ausencia de historial Git pese a 270 commits | C7. Repositorio Git | Jaime Mariscal (verificación) / Equipo (corrección) | ABIERTA | PENDIENTE — bloqueada: la afirmación falsa vive en `CONTRIBUTORS.md`, prohibido editar en esta fase |
+| OBS-15 | Entrega 3 | Correo institucional de Jaime en commits | C7. Repositorio Git | Jaime Mariscal | CERRADA | `479961e`, `6658892`, `53d4146`, entre otros (verificados con `git log`, autor `jmariscalc@uteq.edu.ec`) |
 
 Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentación oficial de la Entrega 3, calificación individual de Jaime 7.80/10).
 
@@ -553,21 +553,56 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
 - **Título:** La calidad del sistema no estaba enmarcada correctamente en ISO/IEC 25010
 - **Entrega:** Entrega 3
 - **Fuente:** Retroalimentación oficial de la Entrega 3 (ver 5.1)
-- **Texto de la observación:** "La calidad del sistema no estaba enmarcada correctamente en ISO/IEC 25010."
+- **Texto de la observación original:** "La calidad del sistema no estaba enmarcada correctamente en ISO/IEC 25010."
 - **Criterio relacionado:** Marco de calidad del software del informe técnico / Unidad IV.
-- **Verificación en este repositorio:**
+- **Verificación previa a la corrección (Fase 1):**
   ```
   grep -rln "25010" . --include="*.md"
   (sin resultados)
   ```
-  Ningún documento del repositorio (informe, ADRs, requisitos, mediciones) menciona explícitamente ISO/IEC 25010 ni mapea las características de calidad (adecuación funcional, eficiencia de desempeño, compatibilidad, usabilidad, fiabilidad, seguridad, mantenibilidad, portabilidad) contra la evidencia empírica ya recolectada (JaCoCo, k6, SUS, OWASP, Lighthouse).
-- **Decisión del equipo para esta fase:** Documentar el hallazgo como pendiente. Redactar el marco ISO/IEC 25010 completo (mapeo característica→evidencia) es una tarea de redacción del informe técnico que excede el alcance de esta Fase 1 (centrada en Git/JaCoCo); no se redacta aquí para no producir un mapeo apresurado sin la revisión conjunta del equipo.
-- **Corrección realizada:** Ninguna todavía.
-- **Archivos involucrados:** Ninguno modificado en esta fase; pendiente de definir ubicación (`docs/informe/` o `docs/u4/informe/`) cuando se aborde.
-- **Commit o commits:** PENDIENTE.
-- **Responsable:** Por definir en el equipo (redacción del informe / marco de calidad).
-- **Estado:** ABIERTA
-- **Justificación del estado:** Se confirmó con `grep` que el término y el marco ISO/IEC 25010 no aparecen en la documentación actual; no se redactó el mapeo en esta tarea por estar fuera de su alcance declarado.
+  Ningún documento del repositorio mencionaba explícitamente ISO/IEC 25010 ni mapeaba las características de calidad contra la evidencia empírica ya recolectada (JaCoCo, k6, SUS, OWASP, Lighthouse).
+- **Corrección realizada (esta fase):** Se creó
+  [`docs/arquitectura/ISO-25010.md`](../arquitectura/ISO-25010.md), un
+  documento nuevo que **estructura y clasifica** (no certifica) la
+  evidencia empírica ya existente en el repositorio usando las ocho
+  características de ISO/IEC 25010:2011 (adecuación funcional, eficiencia
+  de desempeño, compatibilidad, usabilidad, fiabilidad, seguridad,
+  mantenibilidad, portabilidad) como marco de referencia. El documento:
+  - Enlaza evidencia real ya existente por subcaracterística (JaCoCo,
+    k6, SUS, Lighthouse Accessibility, OWASP/ZAP/SpotBugs, ADRs, healthchecks
+    de Docker Compose, `.env.example`), sin calcular ni inventar ninguna
+    métrica nueva.
+  - Declara explícitamente **`No evaluada directamente`** para las
+    subcaracterísticas sin evidencia dedicada en el repositorio
+    (Compatibilidad completa; capacidad/*stress test* de Eficiencia de
+    desempeño; reusabilidad de Mantenibilidad; capacidad de ser
+    reemplazado de Portabilidad), en vez de forzar un resultado.
+  - Aclara explícitamente, en su propia cabecera, que **BIOPET no está
+    certificado** por ISO/IEC 25010 y que la norma se usa únicamente como
+    marco de clasificación.
+  - Fija la edición utilizada (**ISO/IEC 25010:2011**) por coherencia con
+    que ninguna otra parte del repositorio cita una edición distinta de
+    esta norma en particular (no confundir con ISO/IEC/IEEE 29148:2018,
+    usada para el SRS, que es una norma distinta).
+- **Verificación posterior (esta fase):**
+  ```
+  git grep -i "25010" -- '*.md'
+  docs/arquitectura/ISO-25010.md   (múltiples líneas, el documento nuevo)
+  docs/observaciones/OBSERVACIONES.md   (referencias a esta observación)
+  ```
+  Cada ruta de evidencia citada en `docs/arquitectura/ISO-25010.md` fue
+  verificada con `[ -e "<ruta>" ]` contra el árbol de trabajo real antes de
+  cerrar esta observación: todas las rutas citadas existen.
+- **Archivos involucrados:** `docs/arquitectura/ISO-25010.md` (nuevo).
+- **Commit o commits:** PENDIENTE (el commit de esta corrección lo realizará Jaime manualmente).
+- **Responsable:** Jaime Mariscal.
+- **Estado:** CERRADA
+- **Justificación del estado:** Existe ahora una sección documental clara
+  (`docs/arquitectura/ISO-25010.md`) que relaciona las propiedades y
+  mediciones reales de BIOPET con las características de calidad de
+  ISO/IEC 25010, sin afirmar certificación y sin inventar métricas — toda
+  cifra citada corresponde a un archivo real ya existente en el
+  repositorio, verificado antes de este cierre.
 
 ---
 
@@ -596,24 +631,64 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
 - **Título:** La documentación afirmaba que no existía historial Git pese a existir más de 200 commits
 - **Entrega:** Entrega 3
 - **Fuente:** Retroalimentación oficial de la Entrega 3 (ver 5.1)
-- **Texto de la observación:** "La documentación afirmaba que no existía historial Git pese a existir más de 200 commits."
+- **Texto de la observación original:** "La documentación afirmaba que no existía historial Git pese a existir más de 200 commits."
 - **Criterio relacionado:** C7 — Repositorio Git; consistencia interna de la documentación.
-- **Verificación en este repositorio:**
+- **Búsqueda global realizada en esta fase** (`git grep`, sobre todo el árbol versionado, no solo el archivo ya señalado por la Fase 1):
   ```
-  git log --oneline | wc -l
-  260
+  git grep -niE "no incluye historial|no existe historial|sin historial de (git|commits)|no hay historial|no posee historial|carece de historial"
+  CONTRIBUTORS.md:18:repositorio provisto no incluye historial de Git (`.git/`) ni metadatos de
 
-  grep -n "no incluye historial de Git" CONTRIBUTORS.md
-  18:repositorio provisto no incluye historial de Git (`.git/`) ni metadatos de
+  git grep -niE "historial de git|historial de commits"
+  CONTRIBUTORS.md:18:repositorio provisto no incluye historial de Git (`.git/`) ni metadatos de
+  README.md:115:Este repositorio fue creado tomando como base la rama `main` del repositorio final de BIOPET y **conservando intencionalmente su historial de Git**.
+
+  git rev-list --count HEAD
+  270
   ```
-  Se confirma la contradicción exacta señalada por el docente: `CONTRIBUTORS.md` (línea 18) afirma la ausencia de historial de Git como justificación para no asignar roles CRediT individuales, mientras que este mismo repositorio, en esta misma rama, tiene 260 commits verificables con `git log`.
-- **Decisión del equipo para esta fase:** Documentar la contradicción con evidencia exacta (comando y línea). La corrección de fondo (reescribir la justificación de `CONTRIBUTORS.md` y, en consecuencia, revisar la asignación de roles) queda ligada a OBS-13 y no se ejecuta en esta fase porque esta tarea prohíbe explícitamente modificar `CONTRIBUTORS.md` todavía.
-- **Corrección realizada:** Ninguna todavía sobre `CONTRIBUTORS.md` (por la misma restricción de OBS-13). Esta misma entrada, sin embargo, ya dota a la bitácora de observaciones de la cifra real y verificable (`git log --oneline | wc -l` → 260) para que la corrección futura de `CONTRIBUTORS.md` no tenga que volver a investigarla.
-- **Archivos involucrados:** `CONTRIBUTORS.md` (no modificado en esta fase; ver OBS-13).
+  La búsqueda global confirma que la **única** afirmación contradictoria
+  real en todo el repositorio sigue siendo `CONTRIBUTORS.md:18`. La mención
+  de `README.md:115` no es un error: afirma correctamente que el historial
+  de Git se conserva, en sentido opuesto al error señalado por la
+  observación — no requiere corrección. El historial real, verificado
+  ahora mismo, es de **270 commits** (`git rev-list --count HEAD`), con
+  **62 merges** (`git log --merges --oneline | wc -l`) y 4 tags anotados
+  publicados (`v0.1.0-entrega-1b`, `v0.7.0`, `v0.7.1`, `v0.9.0-rc`).
+- **Bloqueo real para el cierre de esta fase:** la única afirmación falsa
+  que corregir vive en `CONTRIBUTORS.md`, línea 18. Esta misma tarea
+  (Fase 4) incluye explícitamente `CONTRIBUTORS.md` en su lista "NO
+  TOCAR" (sección 6), en el mismo nivel que `.github/workflows/`, el
+  `Makefile` o el SRS. Existe por tanto un conflicto directo entre la
+  instrucción de "corregir únicamente los documentos donde exista
+  realmente esa afirmación" y la prohibición explícita de tocar
+  `CONTRIBUTORS.md` en esta fase. Se resuelve a favor de la prohibición
+  explícita (más específica y más reciente en el propio enunciado de esta
+  tarea): **no se edita `CONTRIBUTORS.md` en esta fase**, por lo que la
+  afirmación falsa sigue presente en el repositorio y OBS-14 no puede
+  cerrarse todavía sin faltar a la instrucción "no marques nada como
+  cerrado antes de demostrarlo" (aquí, demostrar exigiría que ya no quede
+  ninguna afirmación contradictoria relevante, y sigue quedando una).
+- **Decisión del equipo para esta fase:** Documentar la contradicción con
+  evidencia global y actualizada (búsqueda `git grep` en todo el árbol, no
+  solo el archivo ya conocido; cifra de commits reverificada: 270). La
+  corrección de fondo (reescribir la justificación de `CONTRIBUTORS.md` y,
+  en consecuencia, revisar la asignación de roles) sigue ligada a OBS-13 y
+  requiere una fase con permiso explícito para editar ese archivo.
+- **Corrección realizada:** Ninguna sobre `CONTRIBUTORS.md` (bloqueada por
+  la restricción explícita de esta fase, ver arriba). Se actualiza esta
+  entrada con la búsqueda global y la cifra de commits reverificada.
+- **Archivos involucrados:** `CONTRIBUTORS.md` (no modificado en esta
+  fase; identificado, no corregido — ver bloqueo arriba).
 - **Commit o commits:** PENDIENTE.
-- **Responsable:** Jaime Mariscal (verificación de esta fase); corrección de `CONTRIBUTORS.md` a cargo del equipo completo junto con OBS-13.
+- **Responsable:** Jaime Mariscal (verificación); corrección de
+  `CONTRIBUTORS.md` a cargo del equipo completo junto con OBS-13, en una
+  fase futura que autorice explícitamente editar ese archivo.
 - **Estado:** ABIERTA
-- **Justificación del estado:** La contradicción fue verificada línea por línea contra el archivo real y el historial real de Git; permanece abierta porque la corrección de `CONTRIBUTORS.md` está explícitamente fuera del alcance permitido en esta fase, y queda unida a la resolución conjunta de OBS-13.
+- **Justificación del estado:** La búsqueda global confirma que la
+  afirmación falsa sigue existiendo en `CONTRIBUTORS.md:18`, el único
+  archivo del repositorio con esa contradicción, y esta fase tiene
+  explícitamente prohibido modificarlo. No se cierra la observación sin
+  evidencia real de la corrección — permanece abierta hasta que una fase
+  futura autorice editar `CONTRIBUTORS.md` (junto con OBS-13).
 
 ---
 
@@ -623,28 +698,71 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
 - **Título:** Se pidió a Jaime utilizar su correo institucional en los commits para trazabilidad
 - **Entrega:** Entrega 3
 - **Fuente:** Retroalimentación oficial de la Entrega 3 (ver 5.1)
-- **Texto de la observación:** "Se pidió a Jaime utilizar su correo institucional en los commits para trazabilidad."
+- **Texto de la observación original:** "Se pidió a Jaime utilizar su correo institucional en los commits para trazabilidad."
 - **Criterio relacionado:** C7 — Repositorio Git / trazabilidad de autoría.
-- **Verificación en este repositorio:**
+- **Verificación histórica (Fase 1, previa a la corrección):** en ese
+  momento, `user.email` ya estaba configurado como
+  `jmariscalc@uteq.edu.ec`, pero ningún commit del historial usaba
+  todavía esa dirección; los commits recientes de Jaime seguían firmados
+  con `mariscaljaime34@gmail.com`.
+- **Verificación actual (esta fase, evidencia real):**
   ```
-  git config user.email
-  jmariscalc@uteq.edu.ec
+  git log --author="Jaime Mariscal" --format="%h %ae %ad %s" --date=short -10
+  479961e jmariscalc@uteq.edu.ec 2026-08-16 ci: evitar ejecuciones duplicadas en ramas de trabajo
+  6658892 jmariscalc@uteq.edu.ec 2026-08-16 Merge pull request #2 from Grinjoww/jaime-final
+  53d4146 jmariscalc@uteq.edu.ec 2026-08-16 docs: cerrar OBS-09 con tag historico v0.9.0-rc
+  c5f7c7c jmariscalc@uteq.edu.ec 2026-08-16 Merge pull request #1 from Grinjoww/jaime-final
+  deaf381 jmariscalc@uteq.edu.ec 2026-08-16 ci: habilitar validacion en ramas del equipo
+  6e8f366 jmariscalc@uteq.edu.ec 2026-08-16 ci: integrar gates de seguridad y calidad
+  bb43baa jmariscalc@uteq.edu.ec 2026-08-16 docs: archivar evidencias OWASP ZAP y analisis estatico
+  e2a4935 jmariscalc@uteq.edu.ec 2026-08-16 security: agregar auditoria estatica y validacion SQL
+  9a1afce jmariscalc@uteq.edu.ec 2026-08-16 test: elevar cobertura JaCoCo de branches al 79.39%
+  5a23cec jmariscalc@uteq.edu.ec 2026-08-16 docs: registrar observaciones de Entrega 3 OBS-09 a OBS-15
 
-  git log --author="Jaime" --format="%h %ae" -5
-  c97d146 mariscaljaime34@gmail.com
-  f6a5d1c mariscaljaime34@gmail.com
-  349c994 mariscaljaime34@gmail.com
-  e2b4da2 mariscaljaime34@gmail.com
-  2581549 mariscaljaime34@gmail.com
+  git log -1 --format="%H%n%an <%ae>%n%ad" --date=iso 479961e
+  479961e59507f9bb88bd40c62c3a2b10f246709b
+  Jaime Mariscal <jmariscalc@uteq.edu.ec>
+  2026-08-16 23:37:16 -0500
   ```
-  El correo institucional `jmariscalc@uteq.edu.ec` ya está configurado como `user.email` en este entorno de trabajo (configurado externamente, no por esta tarea), pero **todavía no existe ningún commit en el historial actual que use esa dirección**: los cinco commits más recientes de Jaime siguen usando `mariscaljaime34@gmail.com`. No se afirma que exista ya trazabilidad institucional en el historial; solo que la configuración local necesaria para que los *próximos* commits la tengan ya está en su lugar.
-- **Decisión del equipo para esta fase:** Documentar el estado exacto sin fabricar commits que no existen. Esta tarea no crea commits (regla Git de solo lectura), por lo que no puede, por sí misma, generar evidencia de commits con el correo institucional.
-- **Corrección realizada:** Ninguna en el historial (no se creó ningún commit en esta tarea). La única "corrección" verificable es la configuración de `user.email`, que ya estaba en su lugar antes de esta tarea y se documenta aquí por primera vez.
-- **Archivos involucrados:** Ninguno (configuración de Git local, no un archivo del repositorio).
-- **Commit o commits:** PENDIENTE (ningún commit con `jmariscalc@uteq.edu.ec` existe todavía; los commits futuros de Jaime, una vez el equipo revise y haga los commits manualmente, deberían mostrarlo).
+  Existen ahora, de forma real y verificable, **al menos diez commits
+  reales de la Entrega Final** firmados con `Jaime Mariscal
+  <jmariscalc@uteq.edu.ec>`, incluidos dos merges de pull request
+  (`6658892`, `c5f7c7c`), confirmando que el correo institucional no solo
+  está configurado localmente sino que ya se usa en autoría real de
+  commits. Hashes citados arriba: `479961e`, `6658892`, `53d4146`,
+  `c5f7c7c`, `deaf381`, `6e8f366`, `bb43baa`, `e2a4935`, `9a1afce`,
+  `5a23cec`.
+- **Aclaración sobre el historial previo (no se reescribió nada):** los
+  commits anteriores a esta corrección, firmados con
+  `mariscaljaime34@gmail.com`, **conservan su autor original sin
+  modificación**. No se ejecutó ningún `git commit --amend`, `git rebase`
+  ni reescritura de historial, ni se usó `.mailmap` para enmascarar u
+  ocultar esa autoría histórica: ambos correos (`mariscaljaime34@gmail.com`
+  en commits antiguos, `jmariscalc@uteq.edu.ec` en commits recientes de
+  esta Entrega Final) coexisten visibles en `git log`, tal como Git los
+  registró en su momento.
+- **Decisión del equipo para esta fase:** Verificar con `git log` (lectura
+  únicamente, sin escritura) que ya existen commits reales con el correo
+  institucional, y cerrar la observación con esa evidencia.
+- **Corrección realizada:** Ninguna en esta tarea puntual (no se creó
+  ningún commit en esta fase); la corrección ya existía en el historial
+  antes de iniciar esta tarea, generada por commits reales previos de la
+  Entrega Final.
+- **Archivos involucrados:** Ninguno (evidencia de historial Git, no de
+  archivos del árbol de trabajo).
+- **Commit o commits:** Evidencia de cierre: `479961e`, `6658892`,
+  `53d4146`, `c5f7c7c`, `deaf381`, `6e8f366`, `bb43baa`, `e2a4935`,
+  `9a1afce`, `5a23cec` (ya existentes, autoría real verificada con
+  `git log`). Commit de esta actualización documental: PENDIENTE.
 - **Responsable:** Jaime Mariscal.
-- **Estado:** ABIERTA
-- **Justificación del estado:** La configuración local del correo institucional está verificada, pero la observación pide trazabilidad **en los commits**, y ningún commit existente la demuestra todavía; no se cierra hasta que existan commits reales con esa dirección.
+- **Estado:** CERRADA
+- **Justificación del estado:** `git log` confirma, con hashes reales y
+  verificables, que existen múltiples commits de la Entrega Final
+  firmados con `Jaime Mariscal <jmariscalc@uteq.edu.ec>`, incluidos merges
+  de pull request. Los commits históricos anteriores conservan su autor
+  original sin alteración; no se reescribió el historial ni se usó
+  `.mailmap` para ocultar la evidencia previa. La observación pedía
+  trazabilidad real en los commits, y esa trazabilidad ya existe.
 
 ---
 
@@ -655,13 +773,13 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
 | OBS-09 | Tag `v0.9.0-rc` no creado (ni `v0.7.1` existía en el checkout original) | CERRADA | Reconstruido y publicado en `origin` → commit `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3` |
 | OBS-10 | Software no archivado en Zenodo, DOI pendiente | ABIERTA | Publicación manual en Zenodo (fuera de alcance de esta tarea) |
 | OBS-11 | Evidencia Lighthouse faltante | CERRADA | Verificada con `git show` sobre `9ea0ccb`; ver nota independiente sobre corridas mobile/desktop y umbral SEO pendientes |
-| OBS-12 | Calidad no enmarcada en ISO/IEC 25010 | ABIERTA | Redacción del marco de calidad en el informe técnico |
+| OBS-12 | Calidad no enmarcada en ISO/IEC 25010 | CERRADA | `docs/arquitectura/ISO-25010.md` (nuevo), rutas de evidencia verificadas |
 | OBS-13 | `CONTRIBUTORS.md` sin roles CRediT individuales | ABIERTA | Acuerdo de equipo + edición de `CONTRIBUTORS.md` (prohibida en esta fase) |
-| OBS-14 | Documentación afirma ausencia de historial Git pese a 260 commits | ABIERTA | Misma edición de `CONTRIBUTORS.md` que OBS-13 |
-| OBS-15 | Correo institucional de Jaime en commits | ABIERTA | Commits futuros reales con `jmariscalc@uteq.edu.ec` |
+| OBS-14 | Documentación afirma ausencia de historial Git pese a 270 commits | ABIERTA | Edición de `CONTRIBUTORS.md` (misma prohibición que OBS-13; único archivo con la afirmación falsa) |
+| OBS-15 | Correo institucional de Jaime en commits | CERRADA | Commits reales verificados con `git log` (`jmariscalc@uteq.edu.ec`) |
 
-De estas siete observaciones, **OBS-09** y **OBS-11** se marcan
-**CERRADA**. OBS-09: el tag anotado `v0.9.0-rc` fue reconstruido
+De estas siete observaciones, **OBS-09, OBS-11, OBS-12 y OBS-15** se
+marcan **CERRADA**. OBS-09: el tag anotado `v0.9.0-rc` fue reconstruido
 retrospectivamente sobre el commit histórico real de cierre de la Entrega 3
 (`ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`, verificado con
 `git rev-parse v0.9.0-rc^{}`), sin reescribir ningún commit, y está
@@ -670,14 +788,22 @@ afirma que el tag existiera en la fecha original de la Entrega 3 — la
 observación señalaba precisamente esa ausencia, y la corrección es
 retroactiva, creada en esta fase. OBS-11: `git show` confirma que el commit
 `9ea0ccb` añadió (no modificó) los 34 archivos de evidencia Lighthouse,
-subsanando la ausencia señalada por Entrega 3. No se usa el estado ambiguo
-"CERRADA PARCIALMENTE" en ninguno de los dos casos; el pendiente sobre
-corridas mobile/desktop y el umbral SEO de OBS-11 se registra como nota
+subsanando la ausencia señalada por Entrega 3. OBS-12: se creó
+`docs/arquitectura/ISO-25010.md`, que estructura la evidencia real ya
+existente (JaCoCo, k6, SUS, Lighthouse, OWASP/ZAP/SpotBugs, ADRs) contra
+las ocho características de ISO/IEC 25010:2011, sin afirmar certificación
+y sin inventar métricas; todas las rutas citadas fueron verificadas contra
+el árbol de trabajo real. OBS-15: `git log` confirma múltiples commits
+reales de la Entrega Final firmados `Jaime Mariscal
+<jmariscalc@uteq.edu.ec>`, incluidos dos merges de pull request, sin
+reescribir el historial previo. No se usa el estado ambiguo "CERRADA
+PARCIALMENTE" en ninguno de los cuatro casos; el pendiente sobre corridas
+mobile/desktop y el umbral SEO de OBS-11 se registra como nota
 independiente dentro de su propio bloque, sin condicionar su cierre. Las
-cinco restantes permanecen ABIERTAS porque su cierre requiere acciones
-expresamente excluidas del alcance de esta fase (publicar en Zenodo,
-redactar el marco ISO/IEC 25010, editar `CONTRIBUTORS.md`, o generar
-commits reales).
+tres restantes (OBS-10, OBS-13, OBS-14) permanecen ABIERTAS: OBS-10
+requiere publicar en Zenodo (fuera de alcance); OBS-13 y OBS-14 requieren
+editar `CONTRIBUTORS.md`, explícitamente prohibido en esta fase — ver el
+bloqueo detallado documentado en el propio bloque de OBS-14.
 
 ---
 
@@ -787,23 +913,23 @@ porcentaje de cierre = observaciones CERRADAS / 8 × 100
 ## Estado global — Entrega 3 (OBS-09 a OBS-15)
 
 - **Total de observaciones de Entrega 3:** 7
-- **CERRADAS:** 2 (OBS-09 — tag `v0.9.0-rc` reconstruido y publicado en `origin` sobre el commit histórico real `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`; OBS-11 — evidencia Lighthouse verificada con `git show` sobre `9ea0ccb`; ver nota independiente sobre corridas mobile/desktop y umbral SEO pendientes)
+- **CERRADAS:** 4 (OBS-09 — tag `v0.9.0-rc` reconstruido y publicado en `origin` sobre el commit histórico real `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`; OBS-11 — evidencia Lighthouse verificada con `git show` sobre `9ea0ccb`, ver nota independiente sobre corridas mobile/desktop y umbral SEO pendientes; OBS-12 — marco ISO/IEC 25010 documentado en `docs/arquitectura/ISO-25010.md`, evidencia real verificada; OBS-15 — commits reales con `jmariscalc@uteq.edu.ec` verificados con `git log`)
 - **CERRADAS PARCIALMENTE:** 0 (estado no utilizado en esta actualización)
-- **ABIERTAS:** 5 (OBS-10, OBS-12, OBS-13, OBS-14, OBS-15)
+- **ABIERTAS:** 3 (OBS-10, OBS-13, OBS-14)
 - **NO VERIFICABLES:** 0
 
-Las cinco restantes quedan sin cerrar por diseño de esta tarea: su cierre
-depende de acciones expresamente fuera del alcance de la Fase 1 (publicar
-en Zenodo, redactar el marco ISO/IEC 25010, editar `CONTRIBUTORS.md`, o
-generar commits reales con el correo institucional). Ver Parte 5.2 para el
-detalle por observación.
+Las tres restantes quedan sin cerrar por diseño de esta tarea: OBS-10
+depende de publicar en Zenodo (fuera de alcance); OBS-13 y OBS-14 dependen
+de editar `CONTRIBUTORS.md`, explícitamente prohibido en esta fase — ver
+el bloqueo documentado en el propio bloque de OBS-14. Ver Parte 5.2 para
+el detalle por observación.
 
 ## Estado global combinado (OBS-01 a OBS-15)
 
 - **Total de observaciones registradas en este documento:** 15
-- **CERRADAS:** 10 (OBS-01 a OBS-08, Entregas 1A/1B; más OBS-09 y OBS-11, Entrega 3)
+- **CERRADAS:** 12 (OBS-01 a OBS-08, Entregas 1A/1B; más OBS-09, OBS-11, OBS-12 y OBS-15, Entrega 3)
 - **CERRADAS PARCIALMENTE:** 0
-- **ABIERTAS:** 5 (OBS-10, OBS-12, OBS-13, OBS-14, OBS-15)
+- **ABIERTAS:** 3 (OBS-10, OBS-13, OBS-14)
 
 ## Observaciones que aún bloquean `v0.7.1`
 
@@ -819,19 +945,20 @@ Ninguna acción pendiente derivada de las observaciones de las Entregas 1A y
 1B. El Bloque 0 de la Guía de la Tercera Entrega queda con evidencia
 completa (100 % de cierre).
 
-Pendientes derivados de la Entrega 3 (OBS-09 a OBS-15). OBS-09 ya no
-aparece en esta lista: el tag `v0.9.0-rc` fue reconstruido y publicado en
-`origin` (ver bloque OBS-09, Parte 5), quedando **CERRADA**. Decidir si se
-reconstruye también `v0.7.1` sigue siendo una decisión de alcance del
+Pendientes derivados de la Entrega 3 (OBS-09 a OBS-15). OBS-09, OBS-12 y
+OBS-15 ya no aparecen en esta lista: el tag `v0.9.0-rc` fue reconstruido y
+publicado en `origin` (OBS-09, ver Parte 5); el marco ISO/IEC 25010 quedó
+documentado en `docs/arquitectura/ISO-25010.md` (OBS-12, ver Parte 5); y
+existen commits reales con el correo institucional, verificados con
+`git log` (OBS-15, ver Parte 5) — las tres quedan **CERRADA**. Decidir si
+se reconstruye también `v0.7.1` sigue siendo una decisión de alcance del
 equipo, no una limitación de evidencia (ver Parte 8). Los siguientes
 pendientes de Entrega 3 continúan explícitamente fuera del alcance de esta
 tarea:
 
 - Archivar el software en Zenodo y obtener el DOI — OBS-10.
 - Ejecutar las corridas Lighthouse definitivas en perfil mobile y desktop, y corregir el umbral SEO (82/100 frente a ≥ 90) — nota independiente de OBS-11 (OBS-11 en sí ya está CERRADA; esto es trabajo de calidad pendiente, no una condición de cierre de la observación histórica).
-- Redactar el marco de calidad ISO/IEC 25010 en el informe técnico — OBS-12.
-- Editar `CONTRIBUTORS.md` para asignar roles CRediT de forma individual, en conjunto con la corrección de su justificación sobre el historial de Git — OBS-13, OBS-14.
-- Realizar commits reales con el correo institucional `jmariscalc@uteq.edu.ec` — OBS-15.
+- Editar `CONTRIBUTORS.md` para asignar roles CRediT de forma individual, y corregir en el mismo archivo la afirmación falsa sobre ausencia de historial Git — OBS-13, OBS-14. Ambas quedan bloqueadas en esta fase porque `CONTRIBUTORS.md` está explícitamente prohibido de editar (ver sección "NO TOCAR" de esta tarea); requieren una fase futura que autorice explícitamente su edición.
 
 ## Evidencia JaCoCo de esta fase (Entrega Final)
 
