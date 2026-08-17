@@ -1,36 +1,38 @@
 package com.biopet.repository;
 
 import com.biopet.entity.Mascota;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Repositorio dedicado a la invocacion formal (JPA StoredProcedure) de los
- * procedimientos/funciones almacenados de BIOPET definidos en db/procs/.
- * No expone metodos CRUD: solo las 6 invocaciones (F02).
+ * Repositorio dedicado a la invocacion formal (JPA) de las rutinas
+ * almacenadas de BIOPET definidas en db/procs/ y replicadas en la migracion
+ * V5. No expone metodos CRUD: solo las 6 invocaciones (F02).
+ *
+ * <p>PostgreSQL distingue entre funciones y procedimientos: las funciones
+ * (RETURNS TABLE / OUT escalar) se invocan con SELECT y los procedimientos
+ * con CALL. Por eso las 4 rutinas fn_* se invocan con @Query nativa y las
+ * 2 rutinas sp_* con @Procedure (Spring Data genera {call ...}).
  */
 public interface ProcedimientoBiopetRepository extends Repository<Mascota, Long> {
 
-    @Procedure(procedureName = "fn_resumen_mascotas_por_especie")
-    @Transactional(readOnly = true)
+    @Query(value = "SELECT * FROM fn_resumen_mascotas_por_especie(:p_duenio_id)", nativeQuery = true)
     List<ResumenEspecie> resumenPorEspecie(@Param("p_duenio_id") Long duenioId);
 
-    @Procedure(procedureName = "fn_historial_clinico_mascota")
-    @Transactional(readOnly = true)
+    @Query(value = "SELECT * FROM fn_historial_clinico_mascota(:p_mascota_id)", nativeQuery = true)
     List<HistorialClinico> historialClinicoMascota(@Param("p_mascota_id") Long mascotaId);
 
-    @Procedure(procedureName = "fn_reporte_dashboard")
-    @Transactional(readOnly = true)
+    @Query(value = "SELECT * FROM fn_reporte_dashboard(:p_desde, :p_hasta)", nativeQuery = true)
     List<ReporteDashboard> reporteDashboard(@Param("p_desde") LocalDate desde,
                                             @Param("p_hasta") LocalDate hasta);
 
-    @Procedure(procedureName = "fn_siguiente_numero_ficha", outputParameterName = "p_codigo")
+    @Query(value = "SELECT p_codigo FROM fn_siguiente_numero_ficha(:p_prefijo)", nativeQuery = true)
     String siguienteNumeroFicha(@Param("p_prefijo") String prefijo);
 
     @Procedure(procedureName = "sp_actualizar_estado_citas_masivas", outputParameterName = "p_afectadas")
