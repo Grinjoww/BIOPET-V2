@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Cita.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.entity</a> &gt; <span class="el_source">Cita.java</span></div><h1>Cita.java</h1><pre class="source lang-java linenums">package com.biopet.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.Instant;
+
+/**
+ * Agendamiento previo de una atención veterinaria (mascota + veterinario + fecha/hora).
+ * No confundir con &quot;Consulta&quot; (registro clínico posterior a la atención, módulo
+ * separado a cargo de otro integrante del equipo).
+ */
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = &quot;citas&quot;)
+public class Cita {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = &quot;mascota_id&quot;, nullable = false)
+    private Mascota mascota;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = &quot;veterinario_id&quot;, nullable = false)
+    private Usuario veterinario;
+
+    @Column(name = &quot;fecha_hora&quot;, nullable = false)
+    private Instant fechaHora;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private EstadoCita estado;
+
+    @Column(length = 255)
+    private String motivo;
+
+    @Column(nullable = false)
+    private boolean activo;
+
+    @Column(name = &quot;creado_en&quot;, nullable = false, updatable = false)
+    private Instant creadoEn;
+
+    @Column(name = &quot;actualizado_en&quot;, nullable = false)
+    private Instant actualizadoEn;
+
+    @PrePersist
+    void prePersist() {
+<span class="fc" id="L54">        Instant now = Instant.now();</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (creadoEn == null) creadoEn = now;</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (actualizadoEn == null) actualizadoEn = now;</span>
+<span class="fc" id="L57">        activo = true;</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (estado == null) estado = EstadoCita.PROGRAMADA;</span>
+<span class="fc" id="L59">    }</span>
+
+    @PreUpdate
+    void preUpdate() {
+<span class="fc" id="L63">        actualizadoEn = Instant.now();</span>
+<span class="fc" id="L64">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

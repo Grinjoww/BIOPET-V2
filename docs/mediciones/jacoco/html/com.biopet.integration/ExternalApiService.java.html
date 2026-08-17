@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExternalApiService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.integration</a> &gt; <span class="el_source">ExternalApiService.java</span></div><h1>ExternalApiService.java</h1><pre class="source lang-java linenums">package com.biopet.integration;
+
+import com.biopet.dto.ExternalApiResponse;
+import com.biopet.exception.ExternalApiException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+
+@Service
+public class ExternalApiService {
+
+    private static final String CACHE_PREFIX = &quot;external-api:animal:&quot;;
+
+    private final ExternalApiClient externalApiClient;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
+
+    @Value(&quot;${app.external-api.cache-ttl-seconds:600}&quot;) // 10 min por defecto, igual al criterio de datos &quot;en vivo&quot; de la guía
+    private long ttlSegundos;
+
+    public ExternalApiService(ExternalApiClient externalApiClient,
+                               StringRedisTemplate redisTemplate,
+<span class="fc" id="L28">                               ObjectMapper objectMapper) {</span>
+<span class="fc" id="L29">        this.externalApiClient = externalApiClient;</span>
+<span class="fc" id="L30">        this.redisTemplate = redisTemplate;</span>
+<span class="fc" id="L31">        this.objectMapper = objectMapper;</span>
+<span class="fc" id="L32">    }</span>
+
+    public ExternalApiResponse obtenerInfoEspecie(String especie) {
+<span class="fc" id="L35">        String claveNormalizada = especie.trim().toLowerCase();</span>
+<span class="fc" id="L36">        String cacheKey = CACHE_PREFIX + claveNormalizada;</span>
+
+<span class="fc" id="L38">        String cacheado = redisTemplate.opsForValue().get(cacheKey);</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (cacheado != null) {</span>
+<span class="fc" id="L40">            return deserializar(cacheado, especie, &quot;cache&quot;);</span>
+        }
+
+<span class="fc" id="L43">        List&lt;ExternalApiClient.AnimalApiNinjasDto&gt; resultados = externalApiClient.buscarPorEspecie(claveNormalizada);</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (resultados.isEmpty()) {</span>
+<span class="fc" id="L45">            throw new ExternalApiException(&quot;No se encontró información para la especie: &quot; + especie);</span>
+        }
+
+<span class="fc" id="L48">        ExternalApiClient.AnimalApiNinjasDto animal = resultados.get(0);</span>
+<span class="fc" id="L49">        ExternalApiResponse response = new ExternalApiResponse(</span>
+                especie,
+<span class="fc bfc" id="L51" title="All 2 branches covered.">                animal.taxonomy() != null ? animal.taxonomy().scientific_name() : null,</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">                animal.characteristics() != null ? animal.characteristics().habitat() : null,</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">                animal.characteristics() != null ? animal.characteristics().diet() : null,</span>
+                &quot;api-ninjas&quot;,
+<span class="fc" id="L55">                Instant.now()</span>
+        );
+
+<span class="fc" id="L58">        guardarEnCache(cacheKey, response);</span>
+<span class="fc" id="L59">        return response;</span>
+    }
+
+    private void guardarEnCache(String cacheKey, ExternalApiResponse response) {
+        try {
+<span class="fc" id="L64">            String json = objectMapper.writeValueAsString(response);</span>
+<span class="fc" id="L65">            redisTemplate.opsForValue().set(cacheKey, json, Duration.ofSeconds(ttlSegundos));</span>
+<span class="fc" id="L66">        } catch (Exception ex) {</span>
+            // Si Redis falla al escribir, no rompemos la respuesta al usuario; solo no se cachea.
+<span class="fc" id="L68">        }</span>
+<span class="fc" id="L69">    }</span>
+
+    private ExternalApiResponse deserializar(String json, String especieOriginal, String origen) {
+        try {
+<span class="fc" id="L73">            ExternalApiResponse cacheado = objectMapper.readValue(json, ExternalApiResponse.class);</span>
+<span class="fc" id="L74">            return new ExternalApiResponse(</span>
+                    especieOriginal,
+<span class="fc" id="L76">                    cacheado.nombreCientifico(),</span>
+<span class="fc" id="L77">                    cacheado.habitat(),</span>
+<span class="fc" id="L78">                    cacheado.dieta(),</span>
+                    origen,
+<span class="fc" id="L80">                    cacheado.consultadoEn()</span>
+            );
+<span class="fc" id="L82">        } catch (Exception ex) {</span>
+<span class="fc" id="L83">            throw new ExternalApiException(&quot;Error leyendo caché de la API externa.&quot;, ex);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

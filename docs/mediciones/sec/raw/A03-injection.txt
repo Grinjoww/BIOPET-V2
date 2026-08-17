@@ -1,5 +1,5 @@
 # A03 - Injection - evidencia real
-# Generado: 2026-08-01T00:02:01Z
+# Generado: 2026-08-17T03:19:11Z
 # Endpoint y campo elegidos: POST /api/auth/login, campo 'email'.
 # Interpretacion literal de 'un campo de busqueda' de la guia: el campo
 # email es el campo por el que AuthService localiza/identifica al usuario

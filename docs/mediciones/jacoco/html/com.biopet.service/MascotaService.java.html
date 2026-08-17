@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MascotaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.service</a> &gt; <span class="el_source">MascotaService.java</span></div><h1>MascotaService.java</h1><pre class="source lang-java linenums">package com.biopet.service;
+
+import com.biopet.dto.MascotaRequest;
+import com.biopet.dto.MascotaResponse;
+import com.biopet.dto.ResumenEspecieResponse;
+import com.biopet.entity.Mascota;
+import com.biopet.entity.Rol;
+import com.biopet.entity.Usuario;
+import com.biopet.exception.RecursoNoEncontradoException;
+import com.biopet.repository.MascotaRepository;
+import com.biopet.repository.UsuarioRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+public class MascotaService {
+    private final MascotaRepository mascotaRepository;
+    private final UsuarioRepository usuarioRepository;
+
+<span class="fc" id="L27">    public MascotaService(MascotaRepository mascotaRepository, UsuarioRepository usuarioRepository) {</span>
+<span class="fc" id="L28">        this.mascotaRepository = mascotaRepository;</span>
+<span class="fc" id="L29">        this.usuarioRepository = usuarioRepository;</span>
+<span class="fc" id="L30">    }</span>
+
+    @Cacheable(value = &quot;mascotas&quot;, key = &quot;#email + '-' + #pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()&quot;)
+    @Transactional(readOnly = true)
+    public Page&lt;MascotaResponse&gt; listar(Pageable pageable, String email) {
+<span class="fc" id="L35">        Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(email)</span>
+<span class="pc" id="L36">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Usuario no encontrado&quot;));</span>
+
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (usuario.getRol() == Rol.ROLE_DUENO) {</span>
+<span class="fc" id="L39">            return mascotaRepository.findAllByDuenioIdAndActivoTrue(usuario.getId(), pageable).map(this::toResponse);</span>
+        }
+<span class="fc" id="L41">        return mascotaRepository.findAllByActivoTrue(pageable).map(this::toResponse);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public MascotaResponse buscar(Long id, String email) {
+<span class="fc" id="L46">        Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(email)</span>
+<span class="pc" id="L47">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Usuario no encontrado&quot;));</span>
+<span class="fc" id="L48">        Mascota mascota = mascotaRepository.findByIdAndActivoTrue(id)</span>
+<span class="fc" id="L49">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Mascota no encontrada: &quot; + id));</span>
+<span class="fc" id="L50">        verificarPropiedad(usuario, mascota);</span>
+<span class="fc" id="L51">        return toResponse(mascota);</span>
+    }
+
+    @CacheEvict(value = &quot;mascotas&quot;, allEntries = true)
+    @Transactional
+    public MascotaResponse crear(MascotaRequest request) {
+<span class="fc" id="L57">        Usuario duenio = resolverDuenio(request.duenioId());</span>
+<span class="fc" id="L58">        Mascota mascota = Mascota.builder()</span>
+<span class="fc" id="L59">                .duenio(duenio)</span>
+<span class="fc" id="L60">                .nombre(request.nombre())</span>
+<span class="fc" id="L61">                .especie(request.especie())</span>
+<span class="fc" id="L62">                .raza(request.raza())</span>
+<span class="fc" id="L63">                .fechaNacimiento(request.fechaNacimiento())</span>
+<span class="fc" id="L64">                .activo(true)</span>
+<span class="fc" id="L65">                .build();</span>
+<span class="fc" id="L66">        return toResponse(mascotaRepository.save(mascota));</span>
+    }
+
+    @CacheEvict(value = &quot;mascotas&quot;, allEntries = true)
+    @Transactional
+    public MascotaResponse actualizar(Long id, MascotaRequest request, String email) {
+<span class="fc" id="L72">        Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(email)</span>
+<span class="pc" id="L73">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Usuario no encontrado&quot;));</span>
+<span class="fc" id="L74">        Mascota mascota = mascotaRepository.findByIdAndActivoTrue(id)</span>
+<span class="pc" id="L75">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Mascota no encontrada: &quot; + id));</span>
+<span class="fc" id="L76">        verificarPropiedad(usuario, mascota);</span>
+<span class="fc" id="L77">        Usuario duenio = resolverDuenio(request.duenioId());</span>
+<span class="fc" id="L78">        mascota.setDuenio(duenio);</span>
+<span class="fc" id="L79">        mascota.setNombre(request.nombre());</span>
+<span class="fc" id="L80">        mascota.setEspecie(request.especie());</span>
+<span class="fc" id="L81">        mascota.setRaza(request.raza());</span>
+<span class="fc" id="L82">        mascota.setFechaNacimiento(request.fechaNacimiento());</span>
+<span class="fc" id="L83">        return toResponse(mascotaRepository.save(mascota));</span>
+    }
+
+    @CacheEvict(value = &quot;mascotas&quot;, allEntries = true)
+    @Transactional
+    public void eliminar(Long id, String email) {
+<span class="fc" id="L89">        Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(email)</span>
+<span class="pc" id="L90">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Usuario no encontrado&quot;));</span>
+<span class="fc" id="L91">        Mascota mascota = mascotaRepository.findByIdAndActivoTrue(id)</span>
+<span class="pc" id="L92">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Mascota no encontrada: &quot; + id));</span>
+<span class="fc" id="L93">        verificarPropiedad(usuario, mascota);</span>
+<span class="fc" id="L94">        mascota.setActivo(false);</span>
+<span class="fc" id="L95">        mascotaRepository.save(mascota);</span>
+<span class="fc" id="L96">    }</span>
+
+    @Transactional(readOnly = true)
+    public List&lt;ResumenEspecieResponse&gt; resumenPorEspecie(Long duenioIdSolicitado, String emailAutenticado) {
+<span class="nc" id="L100">        Usuario usuarioAutenticado = usuarioRepository.findByEmailAndActivoTrue(emailAutenticado)</span>
+<span class="nc" id="L101">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Usuario no encontrado: &quot; + emailAutenticado));</span>
+
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        Long duenioIdEfectivo = (usuarioAutenticado.getRol() == Rol.ROLE_ADMIN)</span>
+<span class="nc" id="L104">                ? duenioIdSolicitado</span>
+<span class="nc" id="L105">                : usuarioAutenticado.getId();</span>
+
+<span class="nc" id="L107">        return mascotaRepository.resumenPorEspecie(duenioIdEfectivo).stream()</span>
+<span class="nc" id="L108">                .map(r -&gt; new ResumenEspecieResponse(r.getEspecie(), r.getTotal()))</span>
+<span class="nc" id="L109">                .toList();</span>
+    }
+
+    private boolean tieneAccesoGlobal(Rol rol) {
+<span class="pc bpc" id="L113" title="1 of 6 branches missed.">        return rol == Rol.ROLE_ADMIN || rol == Rol.ROLE_VETERINARIO || rol == Rol.ROLE_AUXILIAR;</span>
+    }
+
+    private void verificarPropiedad(Usuario usuario, Mascota mascota) {
+<span class="fc bfc" id="L117" title="All 4 branches covered.">        if (!tieneAccesoGlobal(usuario.getRol()) &amp;&amp; !mascota.getDuenio().getId().equals(usuario.getId())) {</span>
+<span class="fc" id="L118">            throw new AccessDeniedException(&quot;No tiene permisos para acceder a esta mascota.&quot;);</span>
+        }
+<span class="fc" id="L120">    }</span>
+
+    private Usuario resolverDuenio(Long duenioId) {
+<span class="fc" id="L123">        Usuario duenio = usuarioRepository.findById(duenioId)</span>
+<span class="fc" id="L124">                .filter(Usuario::isActivo)</span>
+<span class="fc" id="L125">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Dueño no encontrado: &quot; + duenioId));</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (duenio.getRol() != Rol.ROLE_DUENO) {</span>
+<span class="fc" id="L127">            throw new IllegalArgumentException(&quot;El usuario asignado como dueño debe tener rol ROLE_DUENO: &quot; + duenioId);</span>
+        }
+<span class="fc" id="L129">        return duenio;</span>
+    }
+
+    private MascotaResponse toResponse(Mascota mascota) {
+<span class="fc" id="L133">        return new MascotaResponse(</span>
+<span class="fc" id="L134">                mascota.getId(),</span>
+<span class="fc" id="L135">                mascota.getDuenio().getId(),</span>
+<span class="fc" id="L136">                mascota.getDuenio().getNombre(),</span>
+<span class="fc" id="L137">                mascota.getNombre(),</span>
+<span class="fc" id="L138">                mascota.getEspecie(),</span>
+<span class="fc" id="L139">                mascota.getRaza(),</span>
+<span class="fc" id="L140">                mascota.getFechaNacimiento(),</span>
+<span class="fc" id="L141">                mascota.isActivo(),</span>
+<span class="fc" id="L142">                mascota.getCreadoEn(),</span>
+<span class="fc" id="L143">                mascota.getActualizadoEn()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

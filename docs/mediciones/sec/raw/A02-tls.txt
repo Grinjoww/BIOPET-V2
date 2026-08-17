@@ -1,5 +1,5 @@
 # A02 - Cryptographic Failures - evidencia real
-# Generado: 2026-08-01T00:02:02Z
+# Generado: 2026-08-17T03:19:12Z
 
 ## openssl s_client -connect localhost:8443 -tls1_3
 Protocol: TLSv1.3
@@ -25,5 +25,5 @@ Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 
 Referrer-Policy: no-referrer
 Content-Type: application/vnd.spring-boot.actuator.v3+json
 Transfer-Encoding: chunked
-Date: Sat, 01 Aug 2026 00:02:05 GMT
+Date: Mon, 17 Aug 2026 03:19:15 GMT
 

@@ -1,0 +1,75 @@
+# A07 - Identification and Authentication Failures - evidencia real
+# Generado: 2026-08-01T00:02:06Z
+
+## Atributos de cookies en el login del Dueno B (valor redactado)
+HTTP/1.1 200 
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+Set-Cookie: access_token=[REDACTADO]; Path=/; Max-Age=3600; Expires=Sat, 01 Aug 2026 01:02:00 GMT; Secure; HttpOnly; SameSite=Strict
+Set-Cookie: refresh_token=[REDACTADO]; Path=/api/auth; Max-Age=604800; Expires=Sat, 08 Aug 2026 00:02:00 GMT; Secure; HttpOnly; SameSite=Strict
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+Strict-Transport-Security: max-age=31536000 ; includeSubDomains ; preload
+X-Frame-Options: DENY
+Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 'none'
+Referrer-Policy: no-referrer
+Content-Type: application/json
+Transfer-Encoding: chunked
+Date: Sat, 01 Aug 2026 00:02:00 GMT
+
+
+## Refresh con cookie valida
+status: 200
+HTTP/1.1 200 
+Vary: Origin
+Vary: Access-Control-Request-Method
+Vary: Access-Control-Request-Headers
+Set-Cookie: access_token=[REDACTADO]; Path=/; Max-Age=3600; Expires=Sat, 01 Aug 2026 01:02:06 GMT; Secure; HttpOnly; SameSite=Strict
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Pragma: no-cache
+Expires: 0
+Strict-Transport-Security: max-age=31536000 ; includeSubDomains ; preload
+X-Frame-Options: DENY
+Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 'none'
+Referrer-Policy: no-referrer
+Content-Type: application/json
+Transfer-Encoding: chunked
+Date: Sat, 01 Aug 2026 00:02:06 GMT
+
+
+## Logout
+status: 204
+
+## Reintento con la cookie de access previa al logout (prueba de blacklist Redis)
+status: 401
+
+## Intento fallido de login #1
+status: 401
+
+## Intento fallido de login #2
+status: 401
+
+## Intento fallido de login #3
+status: 401
+
+## Intento fallido de login #4
+status: 401
+
+## Intento fallido de login #5
+status: 401
+
+## Sexto intento fallido consecutivo (misma IP)
+status: 429
+Retry-After: 900
+
+## Limitacion documentada
+No se espera la ventana de bloqueo de 15 minutos (security.rate-limit.login.block-duration)
+para demostrar un login exitoso posterior desde la misma IP: excede el alcance de una
+ejecucion automatizada de este script. Esta IP queda bloqueada por ~15 minutos tras esta
+corrida para nuevos intentos de login desde este mismo entorno.

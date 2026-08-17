@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VacunaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.service</a> &gt; <span class="el_source">VacunaService.java</span></div><h1>VacunaService.java</h1><pre class="source lang-java linenums">package com.biopet.service;
+
+import com.biopet.dto.VacunaRequest;
+import com.biopet.dto.VacunaResponse;
+import com.biopet.entity.Mascota;
+import com.biopet.entity.Rol;
+import com.biopet.entity.Usuario;
+import com.biopet.entity.Vacuna;
+import com.biopet.exception.RecursoNoEncontradoException;
+import com.biopet.repository.MascotaRepository;
+import com.biopet.repository.UsuarioRepository;
+import com.biopet.repository.VacunaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class VacunaService {
+    private final VacunaRepository vacunaRepository;
+    private final MascotaRepository mascotaRepository;
+    private final UsuarioRepository usuarioRepository;
+
+    public VacunaService(VacunaRepository vacunaRepository,
+                          MascotaRepository mascotaRepository,
+<span class="fc" id="L27">                          UsuarioRepository usuarioRepository) {</span>
+<span class="fc" id="L28">        this.vacunaRepository = vacunaRepository;</span>
+<span class="fc" id="L29">        this.mascotaRepository = mascotaRepository;</span>
+<span class="fc" id="L30">        this.usuarioRepository = usuarioRepository;</span>
+<span class="fc" id="L31">    }</span>
+
+    @Transactional(readOnly = true)
+    public Page&lt;VacunaResponse&gt; listar(Pageable pageable, String email) {
+<span class="fc" id="L35">        Usuario usuario = usuarioActivo(email);</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        if (usuario.getRol() == Rol.ROLE_DUENO) {</span>
+<span class="fc" id="L37">            return vacunaRepository.findAllByMascota_Duenio_IdAndActivoTrue(usuario.getId(), pageable)</span>
+<span class="fc" id="L38">                    .map(this::toResponse);</span>
+        }
+<span class="nc" id="L40">        return vacunaRepository.findAllByActivoTrue(pageable).map(this::toResponse);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Page&lt;VacunaResponse&gt; listarPorMascota(Long mascotaId, Pageable pageable, String email) {
+<span class="nc" id="L45">        Usuario usuario = usuarioActivo(email);</span>
+<span class="nc" id="L46">        Mascota mascota = mascotaActiva(mascotaId);</span>
+<span class="nc" id="L47">        verificarAcceso(usuario, mascota);</span>
+<span class="nc" id="L48">        return vacunaRepository.findAllByMascotaIdAndActivoTrue(mascotaId, pageable).map(this::toResponse);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public VacunaResponse buscar(Long id, String email) {
+<span class="fc" id="L53">        Usuario usuario = usuarioActivo(email);</span>
+<span class="fc" id="L54">        Vacuna vacuna = vacunaActiva(id);</span>
+<span class="nc" id="L55">        verificarAcceso(usuario, vacuna.getMascota());</span>
+<span class="nc" id="L56">        return toResponse(vacuna);</span>
+    }
+
+    @Transactional
+    public VacunaResponse crear(VacunaRequest request) {
+<span class="fc" id="L61">        Mascota mascota = mascotaActiva(request.mascotaId());</span>
+<span class="fc" id="L62">        Usuario veterinario = resolverVeterinario(request.veterinarioId());</span>
+<span class="fc" id="L63">        Vacuna vacuna = Vacuna.builder()</span>
+<span class="fc" id="L64">                .mascota(mascota)</span>
+<span class="fc" id="L65">                .veterinario(veterinario)</span>
+<span class="fc" id="L66">                .tipo(request.tipo())</span>
+<span class="fc" id="L67">                .fechaAplicacion(request.fechaAplicacion())</span>
+<span class="fc" id="L68">                .proximaFecha(request.proximaFecha())</span>
+<span class="fc" id="L69">                .observaciones(request.observaciones())</span>
+<span class="fc" id="L70">                .activo(true)</span>
+<span class="fc" id="L71">                .build();</span>
+<span class="fc" id="L72">        return toResponse(vacunaRepository.save(vacuna));</span>
+    }
+
+    @Transactional
+    public VacunaResponse actualizar(Long id, VacunaRequest request, String email) {
+<span class="fc" id="L77">        Usuario usuario = usuarioActivo(email);</span>
+<span class="fc" id="L78">        Vacuna vacuna = vacunaActiva(id);</span>
+<span class="fc" id="L79">        verificarAcceso(usuario, vacuna.getMascota());</span>
+
+<span class="fc" id="L81">        Mascota mascota = mascotaActiva(request.mascotaId());</span>
+<span class="fc" id="L82">        Usuario veterinario = resolverVeterinario(request.veterinarioId());</span>
+
+<span class="fc" id="L84">        vacuna.setMascota(mascota);</span>
+<span class="fc" id="L85">        vacuna.setVeterinario(veterinario);</span>
+<span class="fc" id="L86">        vacuna.setTipo(request.tipo());</span>
+<span class="fc" id="L87">        vacuna.setFechaAplicacion(request.fechaAplicacion());</span>
+<span class="fc" id="L88">        vacuna.setProximaFecha(request.proximaFecha());</span>
+<span class="fc" id="L89">        vacuna.setObservaciones(request.observaciones());</span>
+<span class="fc" id="L90">        return toResponse(vacunaRepository.save(vacuna));</span>
+    }
+
+    @Transactional
+    public void eliminar(Long id, String email) {
+<span class="fc" id="L95">        Usuario usuario = usuarioActivo(email);</span>
+<span class="fc" id="L96">        Vacuna vacuna = vacunaActiva(id);</span>
+<span class="fc" id="L97">        verificarAcceso(usuario, vacuna.getMascota());</span>
+<span class="fc" id="L98">        vacuna.setActivo(false);</span>
+<span class="fc" id="L99">        vacunaRepository.save(vacuna);</span>
+<span class="fc" id="L100">    }</span>
+
+    // ---------- Helpers ----------
+
+    private Usuario usuarioActivo(String email) {
+<span class="fc" id="L105">        return usuarioRepository.findByEmailAndActivoTrue(email)</span>
+<span class="pc" id="L106">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Usuario no encontrado&quot;));</span>
+    }
+
+    private Mascota mascotaActiva(Long mascotaId) {
+<span class="fc" id="L110">        return mascotaRepository.findByIdAndActivoTrue(mascotaId)</span>
+<span class="fc" id="L111">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Mascota no encontrada: &quot; + mascotaId));</span>
+    }
+
+    private Vacuna vacunaActiva(Long id) {
+<span class="fc" id="L115">        return vacunaRepository.findByIdAndActivoTrue(id)</span>
+<span class="fc" id="L116">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Vacuna no encontrada: &quot; + id));</span>
+    }
+
+    private Usuario resolverVeterinario(Long veterinarioId) {
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (veterinarioId == null) return null;</span>
+<span class="nc" id="L121">        Usuario veterinario = usuarioRepository.findById(veterinarioId)</span>
+<span class="nc" id="L122">                .filter(Usuario::isActivo)</span>
+<span class="nc" id="L123">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Veterinario no encontrado: &quot; + veterinarioId));</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (veterinario.getRol() != Rol.ROLE_VETERINARIO) {</span>
+<span class="nc" id="L125">            throw new IllegalArgumentException(</span>
+                    &quot;El usuario asignado como veterinario debe tener rol ROLE_VETERINARIO: &quot; + veterinarioId);
+        }
+<span class="nc" id="L128">        return veterinario;</span>
+    }
+
+    private boolean tieneAccesoGlobal(Rol rol) {
+<span class="pc bpc" id="L132" title="2 of 6 branches missed.">        return rol == Rol.ROLE_ADMIN || rol == Rol.ROLE_VETERINARIO || rol == Rol.ROLE_AUXILIAR;</span>
+    }
+
+    private void verificarAcceso(Usuario usuario, Mascota mascota) {
+<span class="pc bpc" id="L136" title="1 of 4 branches missed.">        if (!tieneAccesoGlobal(usuario.getRol()) &amp;&amp; !mascota.getDuenio().getId().equals(usuario.getId())) {</span>
+<span class="fc" id="L137">            throw new AccessDeniedException(&quot;No tiene permisos para acceder a esta vacuna.&quot;);</span>
+        }
+<span class="fc" id="L139">    }</span>
+
+    private VacunaResponse toResponse(Vacuna vacuna) {
+<span class="fc" id="L142">        Usuario veterinario = vacuna.getVeterinario();</span>
+<span class="fc" id="L143">        return new VacunaResponse(</span>
+<span class="fc" id="L144">                vacuna.getId(),</span>
+<span class="fc" id="L145">                vacuna.getMascota().getId(),</span>
+<span class="fc" id="L146">                vacuna.getMascota().getNombre(),</span>
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">                veterinario != null ? veterinario.getId() : null,</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">                veterinario != null ? veterinario.getNombre() : null,</span>
+<span class="fc" id="L149">                vacuna.getTipo(),</span>
+<span class="fc" id="L150">                vacuna.getFechaAplicacion(),</span>
+<span class="fc" id="L151">                vacuna.getProximaFecha(),</span>
+<span class="fc" id="L152">                vacuna.getObservaciones(),</span>
+<span class="fc" id="L153">                vacuna.isActivo(),</span>
+<span class="fc" id="L154">                vacuna.getCreadoEn(),</span>
+<span class="fc" id="L155">                vacuna.getActualizadoEn()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

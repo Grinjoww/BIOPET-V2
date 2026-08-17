@@ -1,12 +1,45 @@
 name: CI BIOPET
 
+# Fase 3 (Jaime): se conservan los tres jobs ya funcionales de las fases
+# anteriores (backend-test, frontend-build, traceability) sin reescribirlos,
+# y se agregan cuatro jobs nuevos para integrar evidencia de seguridad ya
+# reproducible localmente (Fase 2): sql-audit, security-static y
+# zap-baseline. Ningun job existente cambio de comportamiento.
+#
+# Lighthouse: todavia NO se integra aqui. El frontend no tiene perfiles
+# mobile/desktop definitivos listos (trabajo en curso de Zaida sobre
+# docs/mediciones/lighthouse/) y esta fase tiene prohibido fabricar
+# evidencia o tocar esos archivos. El punto de integracion queda preparado
+# en el comentario de la seccion final de este archivo, sin crear un job
+# que no tendria evidencia real que archivar todavia.
+#
+# Documentacion/PDF (make all, README final, informe): fuera de alcance de
+# esta fase; se integrara despues de que el informe final exista.
+
 on:
   push:
-    branches: [ develop, main ]
+    branches:
+      - develop
+      - main
+      - jaime-final
+      - fred-final
+      - zaida-final
+
   pull_request:
-    branches: [ develop, main ]
+    branches:
+      - develop
+      - main
 
 jobs:
+  # ---------------------------------------------------------------------
+  # Ya existia y funciona: compilacion + 189 pruebas + JaCoCo (gate real
+  # LINE >= 0.70 / BRANCH >= 0.70 / COMPLEXITY >= 0.60, configurado en
+  # Backend/pom.xml -> jacoco-maven-plugin -> execution "check"). No se
+  # reduce ninguna prueba para acelerar CI: "mvn clean verify" ejecuta la
+  # suite completa, incluidos los dos tests de Testcontainers (requieren
+  # Docker, disponible por defecto en los runners ubuntu-latest de
+  # GitHub-hosted).
+  # ---------------------------------------------------------------------
   backend-test:
     runs-on: ubuntu-latest
     steps:
@@ -18,10 +51,44 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Verificar backend (tests + JaCoCo check)
+      - name: Verificar backend (tests + JaCoCo check >= 70% LINE/BRANCH)
         working-directory: Backend
         run: mvn -B clean verify
 
+      # Se archiva siempre (incluso si el job falla) para poder inspeccionar
+      # el motivo exacto de un gate JaCoCo incumplido sin tener que
+      # reproducir localmente.
+      - name: Archivar reporte JaCoCo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: |
+            Backend/target/site/jacoco/
+            Backend/target/site/jacoco/jacoco.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Archivar reportes de pruebas (surefire)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: Backend/target/surefire-reports/
+          if-no-files-found: warn
+          retention-days: 14
+
+  # ---------------------------------------------------------------------
+  # Ya existia y funciona: instalacion reproducible (npm ci, con
+  # package-lock.json) + build de produccion de Angular. El proyecto no
+  # tiene todavia un script "test" ni dependencias de Karma/Jasmine en
+  # package.json (verificado: no existen), por lo que no hay una suite de
+  # tests de frontend ejecutable en CI que agregar sin fabricarla — no se
+  # crea una aqui, conforme a "no rehagas piezas que no existen sin
+  # pedirlo". Si el equipo agrega tests de Angular mas adelante, este job
+  # es el lugar natural para un paso "npm test -- --watch=false --browsers=ChromeHeadless".
+  # No se actualiza Angular ni ninguna dependencia en esta fase.
+  # ---------------------------------------------------------------------
   frontend-build:
     runs-on: ubuntu-latest
     steps:
@@ -41,9 +108,152 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+  # ---------------------------------------------------------------------
+  # Ya existia y funciona: valida que todo REQ-F-/REQ-NF- del SRS tenga
+  # fila en la matriz de trazabilidad y respaldo (historia/caso de
+  # uso/prueba). Gate obligatorio: una matriz inconsistente hace fallar el
+  # job (exit != 0 de validate-traceability.sh detiene el step). No se
+  # modifica la matriz de requisitos aqui (area de Zaida).
+  # ---------------------------------------------------------------------
   traceability:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Validar matriz de trazabilidad (bloque A.3.3 de la Guia)
         run: bash scripts/validate-traceability.sh
+
+  # ---------------------------------------------------------------------
+  # NUEVO (Fase 3): auditoria automatica de SQL dinamico inseguro en
+  # db/procs/*.sql. Gate obligatorio: scripts/audit-sql-dynamic.sh escanea
+  # TODOS los .sql que existan en ese directorio en el momento de la
+  # ejecucion -- no hay una lista de archivos fija en este workflow, asi
+  # que cuando Fred agregue nuevos SP, este job los audita automaticamente
+  # sin que este archivo YAML necesite tocarse. Solo requiere python3
+  # (ya preinstalado en los runners ubuntu-latest de GitHub).
+  # ---------------------------------------------------------------------
+  sql-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auditar SQL dinamico inseguro en db/procs/*.sql
+        run: bash scripts/audit-sql-dynamic.sh
+
+  # ---------------------------------------------------------------------
+  # NUEVO (Fase 3): analisis estatico (SAST) del backend con SpotBugs +
+  # Find Security Bugs, ya configurado en Backend/pom.xml (sin enlazar a
+  # ninguna fase del ciclo de vida, para no alterar "mvn clean verify").
+  #
+  # Gate: falla el job SOLO si el reporte contiene algun hallazgo
+  # relacionado con SQL inseguro (tipo SQL_*, incluye
+  # SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE y variantes de inyeccion),
+  # via scripts/check-spotbugs-sql-findings.sh. El hallazgo ya conocido y
+  # documentado SPRING_CSRF_PROTECTION_DISABLED (mitigado por la
+  # arquitectura de cookies HttpOnly+Secure+SameSite=Strict, ver
+  # docs/mediciones/sec/static-analysis/README.md) NO hace fallar este
+  # gate por si solo -- de lo contrario ninguna corrida podria estar en
+  # verde mientras esa decision arquitectonica siga vigente, sin que eso
+  # signifique ocultar el hallazgo: el reporte XML COMPLETO (con los 66+
+  # hallazgos que produzca la herramienta, sin filtros globales, sin
+  # categorias suprimidas, sin @SuppressFBWarnings) se archiva siempre
+  # como artifact, se ejecute lo que se ejecute despues.
+  # ---------------------------------------------------------------------
+  security-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Compilar backend (sin tests, solo para analizar bytecode)
+        working-directory: Backend
+        run: mvn -B -q compile
+
+      - name: Ejecutar SpotBugs + Find Security Bugs
+        working-directory: Backend
+        run: mvn -B com.github.spotbugs:spotbugs-maven-plugin:4.10.3.0:spotbugs
+
+      - name: Archivar reporte completo SpotBugs/Find Security Bugs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotbugs-report
+          path: Backend/target/spotbugsXml.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Gate -- fallar SOLO ante hallazgos SQL (ver decision arriba)
+        run: bash scripts/check-spotbugs-sql-findings.sh Backend/target/spotbugsXml.xml
+
+  # ---------------------------------------------------------------------
+  # NUEVO (Fase 3): OWASP ZAP Baseline Scan real contra el backend,
+  # reutilizando scripts/run-zap-baseline.sh (Fase 2) sin duplicar su
+  # logica aqui. El script ya:
+  #   1. levanta postgres+redis+backend con "docker compose up -d";
+  #   2. espera el healthcheck real de biopet-backend (reintentos, sin
+  #      timeout arbitrario silencioso);
+  #   3. ejecuta zap-baseline.py contra "http://backend:8080" dentro de la
+  #      red Docker Compose real (no una URL inventada);
+  #   4. archiva HTML/XML/JSON en docs/mediciones/sec/zap/.
+  # Se le agrego en esta fase un flag "-t" condicional a que stdout sea una
+  # TTY real (ausente en CI), para que funcione igual en ambos entornos sin
+  # perder la posibilidad de ejecutarlo localmente en una terminal.
+  #
+  # Gate: falla el job SOLO ante alertas de riesgo ALTO reales (riskcode=3
+  # en el JSON de ZAP), via scripts/check-zap-high-severity.sh -- no ante
+  # cualquier WARN/INFO de la herramienta, que puede incluir hallazgos de
+  # bajo impacto (ver ejemplo real ya documentado, "Non-Storable Content",
+  # riesgo Informational) sin volver el pipeline fragil por ruido.
+  #
+  # Depende de "backend-test": si la suite de pruebas del backend ya esta
+  # rota, no tiene sentido gastar minutos de CI construyendo la imagen
+  # Docker y corriendo un escaneo completo de ZAP sobre ella.
+  # ---------------------------------------------------------------------
+  zap-baseline:
+    runs-on: ubuntu-latest
+    needs: backend-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ejecutar OWASP ZAP Baseline Scan
+        run: bash scripts/run-zap-baseline.sh --keep-stack
+
+      - name: Archivar reportes ZAP (HTML/XML/JSON) y metadatos de la corrida
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: |
+            docs/mediciones/sec/zap/zap-baseline-report.html
+            docs/mediciones/sec/zap/zap-baseline-report.xml
+            docs/mediciones/sec/zap/zap-baseline-report.json
+            docs/mediciones/sec/zap/RUN-METADATA.txt
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Gate -- fallar SOLO ante alertas de severidad ALTA reales
+        run: bash scripts/check-zap-high-severity.sh
+
+      - name: Logs del backend (solo si algo fallo, para diagnostico)
+        if: failure()
+        run: docker logs biopet-backend --tail 200 || true
+
+# ---------------------------------------------------------------------
+# Punto de integracion futuro (NO implementado en esta fase):
+#
+# lighthouse-ci:
+#   Pendiente de que Zaida defina los perfiles mobile/desktop definitivos
+#   en docs/mediciones/lighthouse/ y lighthouserc.js. Cuando ese trabajo
+#   este listo, el job equivalente reutilizaria scripts/run-lighthouse.sh
+#   de la misma forma en que zap-baseline reutiliza run-zap-baseline.sh
+#   aqui arriba: levantar el stack, esperar healthcheck del frontend, y
+#   archivar el reporte real como artifact. No se crea ese job todavia
+#   para no fabricar evidencia de una medicion que no se ejecuto.
+#
+# docs / make all (Fase posterior, fuera de alcance de Jaime en esta fase):
+#   La compilacion del informe final y "make all" se integraran cuando el
+#   informe exista, conforme a lo indicado para esta tarea.
+# ---------------------------------------------------------------------

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MascotaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.controller</a> &gt; <span class="el_source">MascotaController.java</span></div><h1>MascotaController.java</h1><pre class="source lang-java linenums">package com.biopet.controller;
+
+import com.biopet.dto.MascotaRequest;
+import com.biopet.dto.MascotaResponse;
+import com.biopet.dto.ResumenEspecieResponse;
+import com.biopet.service.MascotaService;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/api/mascotas&quot;)
+public class MascotaController {
+    private final MascotaService mascotaService;
+
+<span class="fc" id="L25">    public MascotaController(MascotaService mascotaService) {</span>
+<span class="fc" id="L26">        this.mascotaService = mascotaService;</span>
+<span class="fc" id="L27">    }</span>
+
+    @GetMapping
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')&quot;)
+    public Page&lt;MascotaResponse&gt; listar(Pageable pageable, @AuthenticationPrincipal UserDetails userDetails) {
+<span class="fc" id="L32">        return mascotaService.listar(pageable, userDetails.getUsername());</span>
+    }
+
+    @GetMapping(&quot;/{id:\\d+}&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')&quot;)
+    public MascotaResponse buscar(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+<span class="fc" id="L38">        return mascotaService.buscar(id, userDetails.getUsername());</span>
+    }
+
+    @PostMapping
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR')&quot;)
+    public ResponseEntity&lt;MascotaResponse&gt; crear(@Valid @RequestBody MascotaRequest request) {
+<span class="fc" id="L44">        return ResponseEntity.status(HttpStatus.CREATED).body(mascotaService.crear(request));</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR')&quot;)
+    public MascotaResponse actualizar(@PathVariable Long id, @Valid @RequestBody MascotaRequest request,
+                                       @AuthenticationPrincipal UserDetails userDetails) {
+<span class="fc" id="L51">        return mascotaService.actualizar(id, request, userDetails.getUsername());</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR')&quot;)
+    public ResponseEntity&lt;Void&gt; eliminar(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+<span class="fc" id="L57">        mascotaService.eliminar(id, userDetails.getUsername());</span>
+<span class="fc" id="L58">        return ResponseEntity.noContent().build();</span>
+    }
+
+    @GetMapping(&quot;/resumen-especies&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')&quot;)
+    public List&lt;ResumenEspecieResponse&gt; resumenPorEspecies(
+            @RequestParam(required = false) Long duenioId,
+            Authentication authentication) {
+<span class="nc" id="L66">        return mascotaService.resumenPorEspecie(duenioId, authentication.getName());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

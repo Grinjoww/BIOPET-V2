@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.service</a> &gt; <span class="el_source">AuthService.java</span></div><h1>AuthService.java</h1><pre class="source lang-java linenums">package com.biopet.service;
+
+import com.biopet.entity.Rol;
+import com.biopet.dto.*;
+import com.biopet.entity.Usuario;
+import com.biopet.exception.EmailDuplicadoException;
+import com.biopet.exception.RateLimitExcedidoException;
+import com.biopet.exception.RecursoNoEncontradoException;
+import com.biopet.repository.UsuarioRepository;
+import com.biopet.security.AuthenticationAuditService;
+import com.biopet.security.JwtService;
+import com.biopet.security.LoginRateLimiterService;
+import com.biopet.security.TokenBlacklistService;
+import io.jsonwebtoken.JwtException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+
+@Service
+public class AuthService {
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    private final TokenBlacklistService blacklistService;
+    private final LoginRateLimiterService loginRateLimiterService;
+    private final AuthenticationAuditService authenticationAuditService;
+
+    public AuthService(UsuarioRepository usuarioRepository,
+                       PasswordEncoder passwordEncoder,
+                       AuthenticationManager authenticationManager,
+                       JwtService jwtService,
+                       TokenBlacklistService blacklistService,
+                       LoginRateLimiterService loginRateLimiterService,
+<span class="fc" id="L41">                       AuthenticationAuditService authenticationAuditService) {</span>
+<span class="fc" id="L42">        this.usuarioRepository = usuarioRepository;</span>
+<span class="fc" id="L43">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L44">        this.authenticationManager = authenticationManager;</span>
+<span class="fc" id="L45">        this.jwtService = jwtService;</span>
+<span class="fc" id="L46">        this.blacklistService = blacklistService;</span>
+<span class="fc" id="L47">        this.loginRateLimiterService = loginRateLimiterService;</span>
+<span class="fc" id="L48">        this.authenticationAuditService = authenticationAuditService;</span>
+<span class="fc" id="L49">    }</span>
+
+    @Transactional
+    public UsuarioResponse registrar(RegistroRequest request) {
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (usuarioRepository.existsByEmail(request.email())) {</span>
+<span class="fc" id="L54">            throw new EmailDuplicadoException(request.email());</span>
+        }
+<span class="fc" id="L56">        Usuario usuario = Usuario.builder()</span>
+<span class="fc" id="L57">                .nombre(request.nombre())</span>
+<span class="fc" id="L58">                .email(request.email().toLowerCase())</span>
+<span class="fc" id="L59">                .passwordHash(passwordEncoder.encode(request.password()))</span>
+<span class="fc" id="L60">                .rol(Rol.ROLE_DUENO)</span>
+<span class="fc" id="L61">                .activo(true)</span>
+<span class="fc" id="L62">                .build();</span>
+<span class="fc" id="L63">        Usuario guardado = usuarioRepository.save(usuario);</span>
+<span class="fc" id="L64">        return toResponse(guardado);</span>
+    }
+
+    public AuthResponse login(LoginRequest request, String ip) {
+<span class="fc" id="L68">        String emailSolicitado = request.email().toLowerCase();</span>
+
+        try {
+<span class="fc" id="L71">            loginRateLimiterService.verificarPermitido(ip);</span>
+<span class="fc" id="L72">        } catch (RateLimitExcedidoException ex) {</span>
+<span class="fc" id="L73">            authenticationAuditService.loginBloqueado(ip, emailSolicitado);</span>
+<span class="fc" id="L74">            throw ex;</span>
+<span class="fc" id="L75">        }</span>
+
+        Authentication authentication;
+        try {
+<span class="fc" id="L79">            authentication = authenticationManager.authenticate(</span>
+<span class="fc" id="L80">                    new UsernamePasswordAuthenticationToken(emailSolicitado, request.password())</span>
+            );
+<span class="fc" id="L82">        } catch (BadCredentialsException ex) {</span>
+            try {
+<span class="fc" id="L84">                loginRateLimiterService.registrarFallo(ip);</span>
+<span class="fc" id="L85">            } catch (RateLimitExcedidoException limiteExcedido) {</span>
+<span class="fc" id="L86">                authenticationAuditService.loginBloqueado(ip, emailSolicitado);</span>
+<span class="fc" id="L87">                throw limiteExcedido;</span>
+<span class="fc" id="L88">            }</span>
+<span class="fc" id="L89">            authenticationAuditService.loginFallido(ip, emailSolicitado);</span>
+<span class="fc" id="L90">            throw ex;</span>
+<span class="fc" id="L91">        }</span>
+
+<span class="fc" id="L93">        loginRateLimiterService.reiniciar(ip);</span>
+<span class="fc" id="L94">        authenticationAuditService.loginExitoso(ip, authentication.getName());</span>
+
+<span class="fc" id="L96">        Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(authentication.getName())</span>
+<span class="pc" id="L97">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Usuario autenticado no existe&quot;));</span>
+<span class="fc" id="L98">        return new AuthResponse(</span>
+<span class="fc" id="L99">                jwtService.generateAccessToken(usuario),</span>
+<span class="fc" id="L100">                jwtService.generateRefreshToken(usuario),</span>
+<span class="fc" id="L101">                jwtService.getExpirationMs() / 1000</span>
+        );
+    }
+
+    public AuthResponse refresh(RefreshRequest request, String ip) {
+<span class="fc" id="L106">        String refreshToken = request.refreshToken();</span>
+<span class="fc" id="L107">        String emailVerificado = null;</span>
+        try {
+<span class="pc bpc" id="L109" title="1 of 4 branches missed.">            if (refreshToken == null || refreshToken.isBlank()) {</span>
+<span class="fc" id="L110">                throw new IllegalArgumentException(&quot;Refresh token ausente&quot;);</span>
+            }
+<span class="fc bfc" id="L112" title="All 2 branches covered.">            if (!jwtService.isRefreshToken(refreshToken)) {</span>
+<span class="fc" id="L113">                throw new IllegalArgumentException(&quot;El token enviado no es un refresh token&quot;);</span>
+            }
+<span class="fc" id="L115">            emailVerificado = jwtService.extractEmail(refreshToken);</span>
+<span class="fc" id="L116">            String jti = jwtService.extractJti(refreshToken);</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">            if (blacklistService.isRevoked(jti)) {</span>
+<span class="fc" id="L118">                throw new IllegalArgumentException(&quot;Refresh token revocado&quot;);</span>
+            }
+<span class="fc" id="L120">            Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(emailVerificado)</span>
+<span class="pc" id="L121">                    .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Usuario no encontrado&quot;));</span>
+
+<span class="fc" id="L123">            authenticationAuditService.refreshExitoso(ip, emailVerificado);</span>
+<span class="fc" id="L124">            return new AuthResponse(jwtService.generateAccessToken(usuario), refreshToken, jwtService.getExpirationMs() / 1000);</span>
+<span class="fc" id="L125">        } catch (RuntimeException ex) {</span>
+<span class="fc" id="L126">            authenticationAuditService.refreshFallido(ip, emailVerificado);</span>
+<span class="fc" id="L127">            throw ex;</span>
+        }
+    }
+
+    public void logout(String accessToken, String refreshToken, String ip) {
+<span class="fc" id="L132">        String subjectAccess = revocarYObtenerSubject(accessToken);</span>
+<span class="fc" id="L133">        String subjectRefresh = revocarYObtenerSubject(refreshToken);</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        String subject = (subjectAccess != null) ? subjectAccess : subjectRefresh;</span>
+<span class="fc" id="L135">        authenticationAuditService.logoutExitoso(ip, subject);</span>
+<span class="fc" id="L136">    }</span>
+
+    private String revocarYObtenerSubject(String token) {
+<span class="pc bpc" id="L139" title="1 of 4 branches missed.">        if (token == null || token.isEmpty()) {</span>
+<span class="fc" id="L140">            return null;</span>
+        }
+        try {
+<span class="fc" id="L143">            String jti = jwtService.extractJti(token);</span>
+<span class="fc" id="L144">            Instant expiresAt = jwtService.extractExpiration(token);</span>
+<span class="fc" id="L145">            blacklistService.revoke(jti, expiresAt);</span>
+<span class="fc" id="L146">            return jwtService.extractEmail(token);</span>
+<span class="fc" id="L147">        } catch (JwtException | IllegalArgumentException ex) {</span>
+            // Token inválido, expirado o no procesable: no se revoca, no se propaga el error.
+<span class="fc" id="L149">            return null;</span>
+        }
+    }
+
+    public UsuarioResponse perfil(String email) {
+<span class="fc" id="L154">        Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(email)</span>
+<span class="pc" id="L155">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Usuario no encontrado&quot;));</span>
+<span class="fc" id="L156">        return toResponse(usuario);</span>
+    }
+
+    private UsuarioResponse toResponse(Usuario usuario) {
+<span class="fc" id="L160">        return new UsuarioResponse(usuario.getId(), usuario.getNombre(), usuario.getEmail(), usuario.getRol(), usuario.isActivo());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

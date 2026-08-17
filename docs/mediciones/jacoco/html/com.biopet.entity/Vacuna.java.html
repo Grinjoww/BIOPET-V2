@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Vacuna.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.entity</a> &gt; <span class="el_source">Vacuna.java</span></div><h1>Vacuna.java</h1><pre class="source lang-java linenums">package com.biopet.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.Instant;
+import java.time.LocalDate;
+
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = &quot;vacunas&quot;)
+public class Vacuna {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = &quot;mascota_id&quot;, nullable = false)
+    private Mascota mascota;
+
+    /** Quién aplicó la vacuna. Opcional: no siempre se registra al momento. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = &quot;veterinario_id&quot;)
+    private Usuario veterinario;
+
+    @Column(nullable = false, length = 60)
+    private String tipo;
+
+    @Column(name = &quot;fecha_aplicacion&quot;, nullable = false)
+    private LocalDate fechaAplicacion;
+
+    @Column(name = &quot;proxima_fecha&quot;)
+    private LocalDate proximaFecha;
+
+    @Column(length = 255)
+    private String observaciones;
+
+    @Column(nullable = false)
+    private boolean activo;
+
+    @Column(name = &quot;creado_en&quot;, nullable = false, updatable = false)
+    private Instant creadoEn;
+
+    @Column(name = &quot;actualizado_en&quot;, nullable = false)
+    private Instant actualizadoEn;
+
+    @PrePersist
+    void prePersist() {
+<span class="fc" id="L53">        Instant now = Instant.now();</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (creadoEn == null) creadoEn = now;</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (actualizadoEn == null) actualizadoEn = now;</span>
+<span class="fc" id="L56">        activo = true;</span>
+<span class="fc" id="L57">    }</span>
+
+    @PreUpdate
+    void preUpdate() {
+<span class="fc" id="L61">        actualizadoEn = Instant.now();</span>
+<span class="fc" id="L62">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

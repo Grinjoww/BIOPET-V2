@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginRateLimiterService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.security</a> &gt; <span class="el_source">LoginRateLimiterService.java</span></div><h1>LoginRateLimiterService.java</h1><pre class="source lang-java linenums">package com.biopet.security;
+
+import com.biopet.exception.RateLimitExcedidoException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Component
+public class LoginRateLimiterService {
+
+    private static final String CLAVE_DESCONOCIDA = &quot;desconocida&quot;;
+
+    private final int maxAttempts;
+    private final Duration window;
+    private final Duration blockDuration;
+    private final Clock clock;
+
+<span class="fc" id="L23">    private final ConcurrentHashMap&lt;String, Estado&gt; estados = new ConcurrentHashMap&lt;&gt;();</span>
+
+    @Autowired
+    public LoginRateLimiterService(
+            @Value(&quot;${security.rate-limit.login.max-attempts:6}&quot;) int maxAttempts,
+            @Value(&quot;${security.rate-limit.login.window:PT15M}&quot;) Duration window,
+            @Value(&quot;${security.rate-limit.login.block-duration:PT15M}&quot;) Duration blockDuration
+    ) {
+<span class="fc" id="L31">        this(maxAttempts, window, blockDuration, Clock.systemUTC());</span>
+<span class="fc" id="L32">    }</span>
+
+<span class="fc" id="L34">    LoginRateLimiterService(int maxAttempts, Duration window, Duration blockDuration, Clock clock) {</span>
+<span class="fc" id="L35">        this.maxAttempts = maxAttempts;</span>
+<span class="fc" id="L36">        this.window = window;</span>
+<span class="fc" id="L37">        this.blockDuration = blockDuration;</span>
+<span class="fc" id="L38">        this.clock = clock;</span>
+<span class="fc" id="L39">    }</span>
+
+    public void verificarPermitido(String ip) {
+<span class="fc" id="L42">        String clave = normalizar(ip);</span>
+<span class="fc" id="L43">        Estado actual = estados.compute(clave, (key, estado) -&gt; limpiarSiExpiro(estado));</span>
+<span class="fc bfc" id="L44" title="All 4 branches covered.">        if (actual != null &amp;&amp; actual.bloqueadaHasta() != null) {</span>
+<span class="fc" id="L45">            throw new RateLimitExcedidoException(segundosRestantes(actual.bloqueadaHasta()));</span>
+        }
+<span class="fc" id="L47">    }</span>
+
+    public void registrarFallo(String ip) {
+<span class="fc" id="L50">        String clave = normalizar(ip);</span>
+<span class="fc" id="L51">        Estado[] resultado = new Estado[1];</span>
+
+<span class="fc" id="L53">        estados.compute(clave, (key, estadoPrevio) -&gt; {</span>
+<span class="fc" id="L54">            Estado vigente = limpiarSiExpiro(estadoPrevio);</span>
+<span class="fc" id="L55">            Instant ahora = clock.instant();</span>
+
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            int nuevosFallos = (vigente == null) ? 1 : vigente.fallos() + 1;</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            Instant inicioVentana = (vigente == null) ? ahora : vigente.inicioVentana();</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            Instant bloqueadaHasta = (nuevosFallos &gt;= maxAttempts) ? ahora.plus(blockDuration) : null;</span>
+
+<span class="fc" id="L61">            Estado nuevo = new Estado(nuevosFallos, inicioVentana, bloqueadaHasta);</span>
+<span class="fc" id="L62">            resultado[0] = nuevo;</span>
+<span class="fc" id="L63">            return nuevo;</span>
+        });
+
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (resultado[0].bloqueadaHasta() != null) {</span>
+<span class="fc" id="L67">            throw new RateLimitExcedidoException(segundosRestantes(resultado[0].bloqueadaHasta()));</span>
+        }
+<span class="fc" id="L69">    }</span>
+
+    public void reiniciar(String ip) {
+<span class="fc" id="L72">        estados.remove(normalizar(ip));</span>
+<span class="fc" id="L73">    }</span>
+
+    private Estado limpiarSiExpiro(Estado estado) {
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if (estado == null) {</span>
+<span class="fc" id="L77">            return null;</span>
+        }
+<span class="fc" id="L79">        Instant ahora = clock.instant();</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (estado.bloqueadaHasta() != null) {</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            return ahora.isBefore(estado.bloqueadaHasta()) ? estado : null;</span>
+        }
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (!ahora.isBefore(estado.inicioVentana().plus(window))) {</span>
+<span class="fc" id="L84">            return null;</span>
+        }
+<span class="fc" id="L86">        return estado;</span>
+    }
+
+    private long segundosRestantes(Instant bloqueadaHasta) {
+<span class="fc" id="L90">        Duration restante = Duration.between(clock.instant(), bloqueadaHasta);</span>
+<span class="pc bpc" id="L91" title="2 of 4 branches missed.">        if (restante.isNegative() || restante.isZero()) {</span>
+<span class="nc" id="L92">            return 1;</span>
+        }
+<span class="fc" id="L94">        long segundos = (restante.toMillis() + 999) / 1000;</span>
+<span class="fc" id="L95">        return Math.max(segundos, 1);</span>
+    }
+
+    private String normalizar(String ip) {
+<span class="pc bpc" id="L99" title="2 of 4 branches missed.">        if (ip == null || ip.isBlank()) {</span>
+<span class="nc" id="L100">            return CLAVE_DESCONOCIDA;</span>
+        }
+<span class="fc" id="L102">        return ip.trim();</span>
+    }
+
+<span class="fc" id="L105">    private record Estado(int fallos, Instant inicioVentana, Instant bloqueadaHasta) {</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
