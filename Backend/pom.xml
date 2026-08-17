@@ -199,6 +199,35 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <!--
+                    Analisis estatico (SAST) del backend: SpotBugs + Find Security
+                    Bugs, con foco en construccion insegura de SQL (equivalente a
+                    SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE y variantes de
+                    inyeccion). No se enlaza a ninguna fase del ciclo de vida
+                    (sin <executions>) para no alterar el comportamiento de
+                    "mvn clean verify" ya validado en fases anteriores: se ejecuta
+                    solo cuando se invoca explicitamente, por ejemplo:
+                        mvn com.github.spotbugs:spotbugs-maven-plugin:check
+                    Ver docs/mediciones/sec/static-analysis/ para el reporte y el
+                    resumen de la ultima ejecucion real.
+                -->
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.10.3.0</version>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Low</threshold>
+                    <failOnError>true</failOnError>
+                    <plugins>
+                        <plugin>
+                            <groupId>com.h3xstream.findsecbugs</groupId>
+                            <artifactId>findsecbugs-plugin</artifactId>
+                            <version>1.14.0</version>
+                        </plugin>
+                    </plugins>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
