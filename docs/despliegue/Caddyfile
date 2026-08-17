@@ -1,0 +1,21 @@
+# Caddyfile — Proxy inverso HTTPS valido (Let's Encrypt) para BIOPET en VPS.
+# Referenciado por docker-compose.prod.yml (F08). DOMAIN se inyecta como
+# variable de entorno del contenedor caddy.
+
+https://{$DOMAIN} {
+	encode gzip
+
+	# Backend: healthcheck publico y API
+	handle /actuator/health {
+		reverse_proxy backend:8080
+	}
+
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	# Frontend Angular (SPA + assets)
+	handle {
+		reverse_proxy frontend:80
+	}
+}
