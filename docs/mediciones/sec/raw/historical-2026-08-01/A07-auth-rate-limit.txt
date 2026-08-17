@@ -1,13 +1,13 @@
 # A07 - Identification and Authentication Failures - evidencia real
-# Generado: 2026-08-17T03:19:16Z
+# Generado: 2026-08-01T00:02:06Z
 
 ## Atributos de cookies en el login del Dueno B (valor redactado)
 HTTP/1.1 200 
 Vary: Origin
 Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
-Set-Cookie: access_token=[REDACTADO]; Path=/; Max-Age=3600; Expires=Mon, 17 Aug 2026 04:19:11 GMT; Secure; HttpOnly; SameSite=Strict
-Set-Cookie: refresh_token=[REDACTADO]; Path=/api/auth; Max-Age=604800; Expires=Mon, 24 Aug 2026 03:19:11 GMT; Secure; HttpOnly; SameSite=Strict
+Set-Cookie: access_token=[REDACTADO]; Path=/; Max-Age=3600; Expires=Sat, 01 Aug 2026 01:02:00 GMT; Secure; HttpOnly; SameSite=Strict
+Set-Cookie: refresh_token=[REDACTADO]; Path=/api/auth; Max-Age=604800; Expires=Sat, 08 Aug 2026 00:02:00 GMT; Secure; HttpOnly; SameSite=Strict
 X-Content-Type-Options: nosniff
 X-XSS-Protection: 0
 Cache-Control: no-cache, no-store, max-age=0, must-revalidate
@@ -19,7 +19,7 @@ Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 
 Referrer-Policy: no-referrer
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Mon, 17 Aug 2026 03:19:11 GMT
+Date: Sat, 01 Aug 2026 00:02:00 GMT
 
 
 ## Refresh con cookie valida
@@ -28,7 +28,7 @@ HTTP/1.1 200
 Vary: Origin
 Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
-Set-Cookie: access_token=[REDACTADO]; Path=/; Max-Age=3600; Expires=Mon, 17 Aug 2026 04:19:16 GMT; Secure; HttpOnly; SameSite=Strict
+Set-Cookie: access_token=[REDACTADO]; Path=/; Max-Age=3600; Expires=Sat, 01 Aug 2026 01:02:06 GMT; Secure; HttpOnly; SameSite=Strict
 X-Content-Type-Options: nosniff
 X-XSS-Protection: 0
 Cache-Control: no-cache, no-store, max-age=0, must-revalidate
@@ -40,7 +40,7 @@ Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 
 Referrer-Policy: no-referrer
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Mon, 17 Aug 2026 03:19:16 GMT
+Date: Sat, 01 Aug 2026 00:02:06 GMT
 
 
 ## Logout

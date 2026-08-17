@@ -1,5 +1,5 @@
 # A05 - Security Misconfiguration - evidencia real
-# Generado: 2026-08-17T03:19:15Z
+# Generado: 2026-08-01T00:02:05Z
 
 ## curl -D headers.txt -X POST https://localhost:8443/api/auth/login (endpoint publico)
 HTTP/1.1 422 
@@ -17,7 +17,7 @@ Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 
 Referrer-Policy: no-referrer
 Content-Type: application/problem+json
 Transfer-Encoding: chunked
-Date: Mon, 17 Aug 2026 03:19:16 GMT
+Date: Sat, 01 Aug 2026 00:02:05 GMT
 
 
 ## curl -I http://localhost:8080/actuator/health (sin TLS, para contrastar HSTS)
@@ -34,5 +34,5 @@ X-Frame-Options: DENY
 Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 'none'
 Referrer-Policy: no-referrer
 Content-Type: application/vnd.spring-boot.actuator.v3+json
-Date: Mon, 17 Aug 2026 03:19:16 GMT
+Date: Sat, 01 Aug 2026 00:02:05 GMT
 
