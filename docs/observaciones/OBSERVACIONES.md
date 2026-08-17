@@ -64,7 +64,7 @@ recalculan ni se reinterpreta la rúbrica del docente.
 | OBS-06 | 1B, Semana 6 | Colección Postman no versionada (.json) | C5. Pruebas JUnit, Postman y métricas | Zaida Taipe / Jaime Mariscal (Postman) | CERRADA | `39a40a9`, `dcf8e16` |
 | OBS-07 | 1B, Semana 6 | Workflow CI ubicado en `./workflows/ci.yml` en vez de `.github/workflows/` | C6. Docker Compose e integración | Jaime Mariscal (CI/CD) | CERRADA | `eef268c` (PR #37) |
 | OBS-08 | 1B, Semana 6 | Tag `v0.1.0-entrega-1b` exigido no fue creado | C7. Repositorio Git | Jaime Mariscal (gestión del repositorio) | CERRADA | Tag anotado `v0.1.0-entrega-1b` → commit `058b1fe` |
-| OBS-09 | Entrega 3 | Tag `v0.9.0-rc` no creado (última etiqueta citada, `v0.7.1`, tampoco existe en este checkout) | C7. Repositorio Git | Jaime Mariscal (gestión del repositorio) | ABIERTA | PENDIENTE |
+| OBS-09 | Entrega 3 | Tag `v0.9.0-rc` no creado (última etiqueta citada, `v0.7.1`, tampoco existía en el checkout original) | C7. Repositorio Git | Jaime Mariscal (gestión del repositorio) | CERRADA | Tag anotado `v0.9.0-rc` (publicado en `origin`) → commit `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3` |
 | OBS-10 | Entrega 3 | Software no archivado en Zenodo, DOI pendiente | E.2. Archivado/citabilidad | Equipo (por definir) | ABIERTA | PENDIENTE |
 | OBS-11 | Entrega 3 | Evidencia/reporte Lighthouse faltante | Calidad web automatizada | Jaime Mariscal (mediciones) | CERRADA | `9ea0ccb0b3f2a86996d2aa047f385dff7e5c1675` (verificado con `git show`, 34 archivos añadidos) |
 | OBS-12 | Entrega 3 | Calidad del sistema no enmarcada en ISO/IEC 25010 | Marco de calidad del informe | Equipo (redacción del informe) | ABIERTA | PENDIENTE |
@@ -432,21 +432,46 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
 - **Título:** No existía el tag `v0.9.0-rc`; la última etiqueta encontrada era `v0.7.1`
 - **Entrega:** Entrega 3
 - **Fuente:** Retroalimentación oficial de la Entrega 3 (transmitida en el enunciado de la tarea de la Entrega Final, sin captura PNG adjunta en este ciclo; ver 5.1)
-- **Texto de la observación:** "No existía el tag `v0.9.0-rc`; la última etiqueta era `v0.7.1`."
+- **Texto de la observación original:** "No existía el tag `v0.9.0-rc`; la última etiqueta era `v0.7.1`." La observación señalaba explícitamente una **ausencia**: en el momento de esa retroalimentación, el tag `v0.9.0-rc` no existía en el repositorio. Este bloque documenta la corrección de esa ausencia, no afirma en ningún momento que el tag haya existido ya en la fecha original de la Entrega 3 — precisamente lo contrario es lo que la observación señalaba.
 - **Criterio relacionado:** C7 — Repositorio Git / gestión de versiones (mismo criterio de OBS-08).
-- **Verificación en este repositorio (`jaime-final`, 2026-08-16):**
+- **Verificación histórica (previa a la corrección, `jaime-final`, 2026-08-16):**
   ```
   git tag --list
-  (sin salida — no existe ningún tag en este repositorio)
+  (sin salida — no existía ningún tag en este repositorio)
   ```
-  Es decir, en el estado actual de este checkout no existe **ningún** tag, ni siquiera `v0.1.0-entrega-1b` (documentado como creado en OBS-08) ni `v0.7.1` (que la propia observación de Entrega 3 da por existente como "última etiqueta"). Se deja constancia explícita de esta discrepancia entre lo que describe la retroalimentación de Entrega 3 y lo verificable en este checkout local, sin intentar reconciliarla adivinando una causa no verificada (podría deberse, por ejemplo, a que los tags no se transportaron al crear/clonar esta rama de trabajo, o a que se crearon y luego se eliminaron en otro punto del historial; no se afirma ninguna de las dos sin evidencia).
-- **Decisión del equipo para esta fase:** Documentar el estado real y dejar la observación **ABIERTA**. Por instrucción explícita de esta tarea, **no se ejecuta `git tag`** en esta fase: la creación del tag `v0.9.0-rc` (y, en su caso, la reconstrucción de `v0.7.1`) es una decisión de gestión del repositorio que Jaime realizará manualmente, no una acción automatizada de este cierre.
-- **Corrección realizada:** Ninguna todavía (documentación únicamente). No se creó ningún tag.
-- **Archivos involucrados:** Ninguno (es un objeto de Git, no un archivo); este bloque documenta el estado en `docs/observaciones/OBSERVACIONES.md`.
-- **Commit o commits:** PENDIENTE.
+  En ese momento no existía **ningún** tag en este checkout, confirmando la observación original.
+- **Corrección realizada (posterior, evidencia real verificada en esta misma tarea):** Se reconstruyó y publicó el tag anotado `v0.9.0-rc` **como corrección de trazabilidad histórica**, apuntando exactamente al commit real que cierra la Entrega 3, sin reescribir ni alterar ningún commit existente — el tag es un objeto Git nuevo (una referencia), no una modificación del historial. El tag fue creado *después* de la fecha original de la Entrega 3, en esta fase de cierre de observaciones; no se afirma que haya existido antes.
+  ```
+  git show --no-patch --decorate v0.9.0-rc
+  tag v0.9.0-rc
+  Tagger: Jaime Mariscal <jmariscalc@uteq.edu.ec>
+  Date:   Sun Aug 16 23:22:06 2026 -0500
+
+  Tercera Entrega del PFC BIOPET
+
+  commit ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3 (tag: v0.9.0-rc)
+  Author: Jaime Josué Mariscal Cabrera <mariscaljaime34@gmail.com>
+  Date:   Fri Jul 31 23:59:50 2026 -0500
+
+      Add files via upload
+
+  git rev-parse v0.9.0-rc^{}
+  ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3
+
+  git show --stat ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3
+  docs/informe/informe-entrega-3.pdf | Bin 0 -> 559898 bytes
+  1 file changed, 0 insertions(+), 0 deletions(-)
+
+  git ls-remote --tags origin
+  6512e8cbf78de4930c91f5c4e30a031742875994	refs/tags/v0.9.0-rc
+  ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3	refs/tags/v0.9.0-rc^{}
+  ```
+  El commit objetivo (`ffd3c07`, hash completo `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`) corresponde al cierre histórico real de la Entrega 3: incorpora `docs/informe/informe-entrega-3.pdf` (fechado `Fri Jul 31 23:59:50 2026`, autor Jaime Josué Mariscal Cabrera), el mismo commit que ya existía en el historial del repositorio antes de esta corrección — el tag solo lo señala retroactivamente, no crea contenido nuevo ni reescribe ese commit. `git ls-remote --tags origin` confirma que el tag ya está **publicado en `origin`**, no solo local.
+- **Archivos involucrados:** Ninguno de contenido (es un objeto de Git — un tag anotado —, no un archivo del árbol de trabajo); este bloque actualiza únicamente `docs/observaciones/OBSERVACIONES.md`.
+- **Commit o commits:** Commit objetivo del tag: `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3` (preexistente, no modificado; el tag apunta a él, no lo crea ni lo altera). Tag: `v0.9.0-rc`, publicado en `origin`.
 - **Responsable:** Jaime Mariscal (gestión del repositorio).
-- **Estado:** ABIERTA
-- **Justificación del estado:** No existe evidencia verificable de ningún tag en este repositorio; no se creó el tag `v0.9.0-rc` en esta tarea por instrucción explícita, por lo que la observación permanece abierta hasta que el equipo decida y ejecute manualmente el etiquetado correspondiente.
+- **Estado:** CERRADA
+- **Justificación del estado:** El tag anotado `v0.9.0-rc` existe, apunta exactamente al commit histórico real de cierre de la Entrega 3 (`ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`, verificado con `git rev-parse v0.9.0-rc^{}`), fue publicado en `origin` (verificado con `git ls-remote --tags origin`), y no implicó reescribir ningún commit — es una reconstrucción retrospectiva de trazabilidad histórica, creada en esta fase, no una afirmación de que el tag existiera en la fecha original de la Entrega 3. La ausencia señalada por la observación original queda subsanada.
 
 ---
 
@@ -627,7 +652,7 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
 
 | Código | Observación | Estado | Depende de |
 |---|---|---|---|
-| OBS-09 | Tag `v0.9.0-rc` no creado (ni `v0.7.1` existe en este checkout) | ABIERTA | Decisión y ejecución manual de `git tag` por el equipo |
+| OBS-09 | Tag `v0.9.0-rc` no creado (ni `v0.7.1` existía en el checkout original) | CERRADA | Reconstruido y publicado en `origin` → commit `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3` |
 | OBS-10 | Software no archivado en Zenodo, DOI pendiente | ABIERTA | Publicación manual en Zenodo (fuera de alcance de esta tarea) |
 | OBS-11 | Evidencia Lighthouse faltante | CERRADA | Verificada con `git show` sobre `9ea0ccb`; ver nota independiente sobre corridas mobile/desktop y umbral SEO pendientes |
 | OBS-12 | Calidad no enmarcada en ISO/IEC 25010 | ABIERTA | Redacción del marco de calidad en el informe técnico |
@@ -635,14 +660,22 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
 | OBS-14 | Documentación afirma ausencia de historial Git pese a 260 commits | ABIERTA | Misma edición de `CONTRIBUTORS.md` que OBS-13 |
 | OBS-15 | Correo institucional de Jaime en commits | ABIERTA | Commits futuros reales con `jmariscalc@uteq.edu.ec` |
 
-De estas siete observaciones, OBS-11 se marca **CERRADA**: `git show`
-confirma que el commit `9ea0ccb` añadió (no modificó) los 34 archivos de
-evidencia Lighthouse, subsanando la ausencia señalada por Entrega 3. No se
-usa el estado ambiguo "CERRADA PARCIALMENTE"; el pendiente sobre corridas
-mobile/desktop y el umbral SEO se registra como nota independiente dentro
-del propio bloque de OBS-11, sin condicionar su cierre. Las seis restantes
-permanecen ABIERTAS porque su cierre requiere acciones expresamente
-excluidas del alcance de esta Fase 1 (crear tags, publicar en Zenodo,
+De estas siete observaciones, **OBS-09** y **OBS-11** se marcan
+**CERRADA**. OBS-09: el tag anotado `v0.9.0-rc` fue reconstruido
+retrospectivamente sobre el commit histórico real de cierre de la Entrega 3
+(`ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`, verificado con
+`git rev-parse v0.9.0-rc^{}`), sin reescribir ningún commit, y está
+publicado en `origin` (verificado con `git ls-remote --tags origin`); no se
+afirma que el tag existiera en la fecha original de la Entrega 3 — la
+observación señalaba precisamente esa ausencia, y la corrección es
+retroactiva, creada en esta fase. OBS-11: `git show` confirma que el commit
+`9ea0ccb` añadió (no modificó) los 34 archivos de evidencia Lighthouse,
+subsanando la ausencia señalada por Entrega 3. No se usa el estado ambiguo
+"CERRADA PARCIALMENTE" en ninguno de los dos casos; el pendiente sobre
+corridas mobile/desktop y el umbral SEO de OBS-11 se registra como nota
+independiente dentro de su propio bloque, sin condicionar su cierre. Las
+cinco restantes permanecen ABIERTAS porque su cierre requiere acciones
+expresamente excluidas del alcance de esta fase (publicar en Zenodo,
 redactar el marco ISO/IEC 25010, editar `CONTRIBUTORS.md`, o generar
 commits reales).
 
@@ -698,7 +731,7 @@ docente, no deficiencias a resolver.
 | `v0.1.0-entrega-1b` | Retroalimentación oficial de la Entrega 1B (SGA, Semana 6) — texto literal citado en OBS-08 | **Sí** | `058b1fe` (`058b1fef728900916fc293fabd0fa7ddb723ba83`) | Creado — tag anotado (OBS-08 CERRADA) | Cerrado: verificado con `git rev-parse v0.1.0-entrega-1b^{}` = `058b1fe`, el mismo commit que este documento ya había identificado como candidato a "fotografía de la Entrega 1B". |
 | `v0.7.0` | Guía de la Tercera Entrega (v0.9.0-rc), no la retroalimentación del SGA | No | `058b1fe` (candidato, ver justificación abajo) | No creado | Medio: `058b1fe` es del repositorio sucesor (`PFC-VET-ENTR3-v0.9.0-rc`), no del repositorio original de la Entrega 1B; etiquetarlo como "v0.7.0" documenta el estado heredado en *este* árbol, no el commit exacto que el docente evaluó. Nótese que `058b1fe` ya tiene el tag `v0.1.0-entrega-1b`: un mismo commit puede llevar varios tags con propósitos distintos, pero `v0.7.0` sigue sin crearse porque responde a una fuente diferente (la Guía, no la retroalimentación del SGA). |
 | `v0.7.1` | Guía de la Tercera Entrega — cierre formal de la aplicación de observaciones de 1A/1B | No | — | No aplica todavía | Bajo: las 8 observaciones de esta bitácora (OBS-01 a OBS-08) están CERRADAS (100 %). Las observaciones de las Entregas 1A y 1B ya no bloquean el cierre formal del Bloque 0; crear `v0.7.1` es ahora una decisión de alcance del equipo, no una limitación de evidencia. |
-| `v0.9.0-rc` | Guía de la Tercera Entrega — tag final de esta entrega | No | — | No aplica todavía | Debe ser el último tag en crearse, después de `v0.7.1`, y solo cuando el resto del trabajo de la Tercera Entrega (bloques A-F de la Guía) esté cerrado, no solo el Bloque 0 de observaciones. |
+| `v0.9.0-rc` | Retroalimentación oficial de la Entrega 3 (OBS-09) y Guía de la Tercera Entrega — tag final de esta entrega | **Sí** | `ffd3c07` (`ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`) | Creado — tag anotado, publicado en `origin` (OBS-09 CERRADA) | Cerrado: verificado con `git rev-parse v0.9.0-rc^{}` = `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`, el commit histórico real que incorpora `docs/informe/informe-entrega-3.pdf` (cierre de la Entrega 3). Reconstruido retrospectivamente en esta fase, sin reescribir el commit; no existía en la fecha original de la Entrega 3, tal como señalaba la observación. |
 
 **`v0.1.0-entrega-1b`, `v0.7.0`, `v0.7.1` y `v0.9.0-rc` no son equivalentes ni intercambiables.** Cada uno responde a una fuente y a un propósito distinto: el primero es un nombre exigido explícitamente por el docente sobre el commit de cierre de la Entrega 1B; los otros tres provienen de la guía de la Tercera Entrega y marcan hitos distintos del proyecto sucesor.
 
@@ -722,13 +755,14 @@ A  PFC_Entrega1B_BMT.pdf
 - **Por qué es candidato:** es el último commit del lote inicial fechado 2026-06-20 (el mismo día en que se subió todo el contenido de la Entrega 1B), y es además el commit que agrega el propio informe técnico `PFC_Entrega1B_BMT.pdf`. Todo el trabajo posterior salta a 2026-07-29 y corresponde inequívocamente a la Tercera Entrega (Makefile, digests, ProblemDetail, claims JWT, etc.).
 - **Por qué no debe crearse automáticamente:** este repositorio (`PFC-VET-ENTR3-v0.9.0-rc`) no es el repositorio `PFC--VET-ENTR1B` que el docente efectivamente evaluó (URL distinta, citada en la propia captura de retroalimentación). Etiquetar `058b1fe` como `v0.7.0` en este árbol documenta razonablemente el estado heredado, pero no reconstruye con certeza absoluta el commit exacto calificado por el docente en el repositorio original.
 - **Por qué `v0.7.1` ya no está bloqueado por falta de cierre:** por definición, `v0.7.1` marca el cierre de la aplicación de observaciones de 1A/1B; con las 8 observaciones (OBS-01 a OBS-08) CERRADAS, el propósito del tag ya está satisfecho en cuanto a evidencia. Su creación queda como decisión de alcance del equipo (por ejemplo, coordinarla con el resto del trabajo de la Tercera Entrega), no como algo pendiente de esta bitácora.
-- **Por qué `v0.9.0-rc` debe crearse al final:** es el tag objetivo de toda la Tercera Entrega (bloques 0 y A-F de la guía), no solo del Bloque 0 de observaciones aquí auditado.
+- **Por qué `v0.9.0-rc` se reconstruyó como corrección de trazabilidad histórica (OBS-09):** la retroalimentación oficial de la Entrega 3 señaló explícitamente que este tag no existía. Se reconstruyó apuntando al commit real que ya cerraba la Entrega 3 en el historial (`ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`, que incorpora `docs/informe/informe-entrega-3.pdf`), sin reescribir ese commit ni ningún otro; el tag es un objeto nuevo, creado en esta fase, no una reconstrucción de un estado que existiera en la fecha original de la Entrega 3. Ver el bloque OBS-09 (Parte 5) para el detalle completo de la evidencia (`git show --no-patch --decorate`, `git rev-parse`, `git ls-remote --tags origin`).
 
-**No se creó ningún tag `v0.7.0`, `v0.7.1` ni `v0.9.0-rc` como parte de esta
-tarea.** El único tag existente en el repositorio, `v0.1.0-entrega-1b`, fue
-creado directamente por Jaime Mariscal (ver evidencia en el bloque OBS-08)
-antes de esta actualización de la bitácora; esta tarea únicamente verificó y
-documentó su existencia, sin ejecutar `git tag`.
+**No se creó ningún tag `v0.7.0` ni `v0.7.1` como parte de esta tarea.** El
+tag `v0.1.0-entrega-1b` fue creado directamente por Jaime Mariscal (ver
+evidencia en el bloque OBS-08); el tag `v0.9.0-rc` fue reconstruido y
+publicado como corrección de trazabilidad histórica documentada en OBS-09
+(ver arriba), también por Jaime Mariscal. Ninguno de los dos implicó
+reescribir un commit existente.
 
 ---
 
@@ -753,23 +787,23 @@ porcentaje de cierre = observaciones CERRADAS / 8 × 100
 ## Estado global — Entrega 3 (OBS-09 a OBS-15)
 
 - **Total de observaciones de Entrega 3:** 7
-- **CERRADAS:** 1 (OBS-11 — evidencia Lighthouse verificada con `git show` sobre `9ea0ccb`; ver nota independiente sobre corridas mobile/desktop y umbral SEO pendientes)
+- **CERRADAS:** 2 (OBS-09 — tag `v0.9.0-rc` reconstruido y publicado en `origin` sobre el commit histórico real `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`; OBS-11 — evidencia Lighthouse verificada con `git show` sobre `9ea0ccb`; ver nota independiente sobre corridas mobile/desktop y umbral SEO pendientes)
 - **CERRADAS PARCIALMENTE:** 0 (estado no utilizado en esta actualización)
-- **ABIERTAS:** 6 (OBS-09, OBS-10, OBS-12, OBS-13, OBS-14, OBS-15)
+- **ABIERTAS:** 5 (OBS-10, OBS-12, OBS-13, OBS-14, OBS-15)
 - **NO VERIFICABLES:** 0
 
-Las seis restantes quedan sin cerrar por diseño de esta tarea: su cierre
-depende de acciones expresamente fuera del alcance de la Fase 1 (crear
-tags, publicar en Zenodo, redactar el marco ISO/IEC 25010, editar
-`CONTRIBUTORS.md`, o generar commits reales con el correo institucional).
-Ver Parte 5.2 para el detalle por observación.
+Las cinco restantes quedan sin cerrar por diseño de esta tarea: su cierre
+depende de acciones expresamente fuera del alcance de la Fase 1 (publicar
+en Zenodo, redactar el marco ISO/IEC 25010, editar `CONTRIBUTORS.md`, o
+generar commits reales con el correo institucional). Ver Parte 5.2 para el
+detalle por observación.
 
 ## Estado global combinado (OBS-01 a OBS-15)
 
 - **Total de observaciones registradas en este documento:** 15
-- **CERRADAS:** 9 (OBS-01 a OBS-08, Entregas 1A/1B; más OBS-11, Entrega 3)
+- **CERRADAS:** 10 (OBS-01 a OBS-08, Entregas 1A/1B; más OBS-09 y OBS-11, Entrega 3)
 - **CERRADAS PARCIALMENTE:** 0
-- **ABIERTAS:** 6 (OBS-09, OBS-10, OBS-12, OBS-13, OBS-14, OBS-15)
+- **ABIERTAS:** 5 (OBS-10, OBS-12, OBS-13, OBS-14, OBS-15)
 
 ## Observaciones que aún bloquean `v0.7.1`
 
@@ -785,10 +819,14 @@ Ninguna acción pendiente derivada de las observaciones de las Entregas 1A y
 1B. El Bloque 0 de la Guía de la Tercera Entrega queda con evidencia
 completa (100 % de cierre).
 
-Pendientes derivados de la Entrega 3 (OBS-09 a OBS-15), explícitamente fuera
-del alcance de esta Fase 1 y por tanto no ejecutados en esta tarea:
+Pendientes derivados de la Entrega 3 (OBS-09 a OBS-15). OBS-09 ya no
+aparece en esta lista: el tag `v0.9.0-rc` fue reconstruido y publicado en
+`origin` (ver bloque OBS-09, Parte 5), quedando **CERRADA**. Decidir si se
+reconstruye también `v0.7.1` sigue siendo una decisión de alcance del
+equipo, no una limitación de evidencia (ver Parte 8). Los siguientes
+pendientes de Entrega 3 continúan explícitamente fuera del alcance de esta
+tarea:
 
-- Crear manualmente el tag anotado `v0.9.0-rc` (y decidir si se reconstruye `v0.7.1`) — OBS-09.
 - Archivar el software en Zenodo y obtener el DOI — OBS-10.
 - Ejecutar las corridas Lighthouse definitivas en perfil mobile y desktop, y corregir el umbral SEO (82/100 frente a ≥ 90) — nota independiente de OBS-11 (OBS-11 en sí ya está CERRADA; esto es trabajo de calidad pendiente, no una condición de cierre de la observación histórica).
 - Redactar el marco de calidad ISO/IEC 25010 en el informe técnico — OBS-12.
