@@ -152,19 +152,21 @@ lleguen al logger (`A09-logging.md`, `noRegistraDatosSensibles`).
 ## Usabilidad SUS (`docs/mediciones/sus/sus-raw.csv`) — responsable: Zaida
 
 Datos crudos de la prueba de usabilidad System Usability Scale (Brooke, 1996),
-aplicada a diez participantes externos al equipo (P01–P10). Instrumento
-detallado en `docs/mediciones/sus/instrumento-sus.md`; análisis y cálculo del
-puntaje agregado en `scripts/analisis-sus.py`, reporte en
+aplicada a dieciocho participantes externos al equipo (P01–P18; muestra
+inicial de la Tercera Entrega P01–P10, ampliada en la Entrega Final con
+P11–P18 para cumplir el mínimo n≥15). Instrumento detallado en
+`docs/mediciones/sus/instrumento-sus.md`; análisis y cálculo del puntaje
+agregado en `scripts/analisis-sus.py`, reporte en
 `docs/mediciones/sus/REPORT.md`.
 
 | Variable | Tipo de dato | Unidad | Rango esperado | Significado |
 |---|---|---|---|---|
-| codigo_participante | Texto (categórico) | — | P01–P10 | Identificador anonimizado del participante; no permite identificarlo individualmente. |
+| codigo_participante | Texto (categórico) | — | P01–P18 | Identificador anonimizado del participante; no permite identificarlo individualmente. |
 | fecha_iso8601 | Fecha (ISO 8601) | — | AAAA-MM-DD | Fecha en que el participante realizó la prueba. |
 | edad | Entero | años | 18–99 | Edad declarada por el participante, con fines demográficos agregados. |
 | sexo | Texto (categórico) | — | {F, M} | Sexo declarado por el participante. |
 | experiencia_web | Texto (categórico) | — | {ninguna, basica, intermedia, avanzada} | Experiencia previa autodeclarada con aplicaciones web. |
-| dispositivo | Texto (categórico) | — | {laptop, computador de escritorio, tablet, celular} | Dispositivo utilizado por el participante durante la prueba. Todos los participantes de esta corrida usaron equipos de escritorio o laptop, salvo P08 (tablet). |
+| dispositivo | Texto (categórico) | — | {laptop, computador de escritorio, tablet, celular} | Dispositivo utilizado por el participante durante la prueba: laptop=10, computador de escritorio=4, tablet=2, celular=2 (ver `docs/mediciones/sus/REPORT.md`). |
 | Q1_usaria_frecuentemente … Q10_necesito_aprender_mucho_antes | Entero | puntos Likert | 1–5 | Respuesta a cada uno de los diez ítems originales del instrumento SUS (1 = totalmente en desacuerdo, 5 = totalmente de acuerdo). Ítems impares redactados en sentido positivo, pares en sentido negativo, según Brooke (1996). |
 | sus_score | Decimal | puntos SUS | 0.0–100.0 | Puntaje SUS agregado por participante, calculado según el método estándar de Brooke: suma de contribuciones de los diez ítems × 2.5. |
 

@@ -32,8 +32,27 @@ SEED = 42  # semilla fija, documentada aquí conforme al Bloque B.2
 RUTA_CSV = Path("docs/mediciones/sus/sus-raw.csv")
 RUTA_REPORT = Path("docs/mediciones/sus/REPORT.md")
 
-# Valor crítico t de Student para 9 grados de libertad (n=10, n-1=9) al 95% de confianza (dos colas)
-T_CRITICO_95_GL9 = 2.262
+# Valores críticos t de Student al 95% de confianza (dos colas), tabla estándar
+# indexada por grados de libertad (n-1). Se usa el valor exacto para el tamaño
+# de muestra real de sus-raw.csv; si algún día df no está en la tabla, se usa
+# el valor tabulado más cercano por defecto (conservador: el de df menor).
+T_CRITICO_95 = {
+    5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228,
+    11: 2.201, 12: 2.179, 13: 2.160, 14: 2.145, 15: 2.131, 16: 2.120,
+    17: 2.110, 18: 2.101, 19: 2.093, 20: 2.086, 24: 2.064, 29: 2.045,
+    30: 2.042, 40: 2.021, 60: 2.000, 120: 1.980,
+}
+
+
+def t_critico(df: int) -> float:
+    if df in T_CRITICO_95:
+        return T_CRITICO_95[df]
+    disponibles = sorted(T_CRITICO_95)
+    mas_cercano = min(disponibles, key=lambda d: (abs(d - df), -d if d < df else d))
+    # Si df cae entre dos valores tabulados, usar el menor de los dos (más
+    # conservador, IC ligeramente más ancho) en vez de interpolar.
+    menores = [d for d in disponibles if d <= df]
+    return T_CRITICO_95[max(menores)] if menores else T_CRITICO_95[disponibles[0]]
 
 
 def cargar_datos(ruta: Path):
@@ -52,8 +71,9 @@ def intervalo_confianza_95(scores):
     media = statistics.mean(scores)
     desviacion = statistics.stdev(scores)  # desviación típica muestral (n-1)
     error_estandar = desviacion / math.sqrt(n)
-    margen = T_CRITICO_95_GL9 * error_estandar
-    return media, desviacion, (media - margen, media + margen), margen
+    t_crit = t_critico(n - 1)
+    margen = t_crit * error_estandar
+    return media, desviacion, (media - margen, media + margen), margen, t_crit
 
 
 def percentil(scores, p):
@@ -89,10 +109,14 @@ def clasificacion_sus(score):
 def generar_reporte(filas):
     scores = [f["sus_score"] for f in filas]
     n = len(scores)
-    media, desviacion, (ic_inf, ic_sup), margen = intervalo_confianza_95(scores)
+    media, desviacion, (ic_inf, ic_sup), margen, t_crit = intervalo_confianza_95(scores)
     p50 = percentil(scores, 50)
     minimo = min(scores)
     maximo = max(scores)
+    codigos_ordenados = sorted(filas, key=lambda f: f["codigo_participante"])
+    primer_codigo = codigos_ordenados[0]["codigo_participante"]
+    ultimo_codigo = codigos_ordenados[-1]["codigo_participante"]
+    peor_participante = min(filas, key=lambda f: f["sus_score"])
 
     lineas = []
     lineas.append("# Reporte de usabilidad — System Usability Scale (SUS)")
@@ -107,7 +131,7 @@ def generar_reporte(filas):
     lineas.append("## Protocolo aplicado")
     lineas.append("")
     lineas.append("- Consentimiento informado firmado por cada participante previo a la prueba, según la plantilla en `docs/etica/consentimientos/plantilla.md`.")
-    lineas.append("- Participantes codificados de P01 a P10; los formularios firmados se conservan fuera del repositorio público.")
+    lineas.append(f"- Participantes codificados de {primer_codigo} a {ultimo_codigo}; los formularios firmados se conservan fuera del repositorio público.")
     lineas.append("- Tarea común de onboarding realizada por cada participante: inicio de sesión, alta de una mascota, edición de sus datos, eliminación lógica y cierre de sesión.")
     lineas.append("- Cuestionario SUS de 10 preguntas originales aplicado inmediatamente después de completar la tarea.")
     lineas.append("")
@@ -124,7 +148,7 @@ def generar_reporte(filas):
     lineas.append(f"| Clasificación cualitativa de la media | **{clasificacion_sus(media)}** (escala de adjetivos Bangor, Kortum & Miller 2009) |")
     lineas.append("")
     lineas.append("> Nota metodológica: el intervalo de confianza se calculó con la distribución")
-    lineas.append(f"> t de Student para n-1 = {n-1} grados de libertad (t_crítico = {T_CRITICO_95_GL9}), ")
+    lineas.append(f"> t de Student para n-1 = {n-1} grados de libertad (t_crítico = {t_crit}), ")
     lineas.append("> apropiado para muestras pequeñas (n < 30), en lugar de la aproximación normal (z).")
     lineas.append("")
     lineas.append("## Resultados por participante")
@@ -160,16 +184,25 @@ def generar_reporte(filas):
         "(considerado 'por encima del promedio' en la literatura de Bangor et al., 2008). "
     )
     lineas.append(
-        "El participante con menor puntaje (P08) declaró no tener experiencia previa con "
-        "aplicaciones web, lo que es consistente con la literatura de usabilidad: la curva de "
-        "aprendizaje inicial afecta más a usuarios sin experiencia digital previa. Se recomienda "
-        "para la Entrega Final ampliar la muestra e incorporar una fase de orientación breve "
-        "antes de la tarea para usuarios de perfil similar."
+        f"El participante con menor puntaje ({peor_participante['codigo_participante']}, "
+        f"{peor_participante['sus_score']:.1f}) declaró experiencia web "
+        f"'{peor_participante['experiencia_web']}', lo que es consistente con la literatura de "
+        "usabilidad: la curva de aprendizaje inicial afecta más a usuarios sin experiencia "
+        "digital previa. Se recomienda para la Entrega Final incorporar una fase de orientación "
+        "breve antes de la tarea para usuarios de perfil similar."
     )
     lineas.append("")
     lineas.append("## Amenazas a la validez")
     lineas.append("")
-    lineas.append("- Tamaño de muestra mínimo (n=10) recomendado por la guía; estimaciones estables pero con margen de error todavía amplio.")
+    umbral_texto = (
+        f"Tamaño de muestra n={n}, por encima del mínimo de 15 recomendado para la Entrega "
+        "Final; el margen de error del intervalo de confianza se redujo respecto a la muestra "
+        "inicial (n=10) de la Tercera Entrega."
+        if n >= 15 else
+        f"Tamaño de muestra n={n}, todavía por debajo del mínimo de 15 recomendado para la "
+        "Entrega Final; estimaciones estables pero con margen de error todavía amplio."
+    )
+    lineas.append(f"- {umbral_texto}")
     lineas.append("- Participantes reclutados por conveniencia (círculo cercano al equipo), no aleatorizados; posible sesgo de complacencia.")
     lineas.append("- Prueba realizada en un único entorno controlado; no se evaluó variabilidad de red o dispositivos de gama baja.")
     lineas.append("")
