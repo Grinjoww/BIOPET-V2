@@ -7,6 +7,7 @@ import com.biopet.entity.Mascota;
 import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
 import com.biopet.entity.Vacuna;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -38,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 @Testcontainers
 @SpringBootTest
+@Transactional
 class ProcedimientosBiopetIntegrationTest {
 
     @SuppressWarnings("resource")
@@ -99,6 +102,8 @@ class ProcedimientosBiopetIntegrationTest {
     ConsultaRepository consultaRepository;
     @Autowired
     VacunaRepository vacunaRepository;
+    @Autowired
+    EntityManager entityManager;
 
     private Usuario guardarUsuario(String email, Rol rol) {
         return usuarioRepository.save(Usuario.builder()
@@ -239,6 +244,7 @@ class ProcedimientosBiopetIntegrationTest {
                 vet.getId(), "PROGRAMADA", "COMPLETADA", limite);
 
         assertThat(afectadas).isEqualTo(1);
+        entityManager.clear();
         assertThat(citaRepository.findByIdAndActivoTrue(pasadaProgramada.getId()).orElseThrow().getEstado())
                 .isEqualTo(EstadoCita.COMPLETADA);
         assertThat(citaRepository.findByIdAndActivoTrue(futuraProgramada.getId()).orElseThrow().getEstado())

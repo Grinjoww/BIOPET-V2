@@ -1,5 +1,6 @@
 package com.biopet.repository;
 
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -71,6 +72,11 @@ class BiopetAppRolMinimoPrivilegiosIntegrationTest {
         jdbcSuperusuario = new JdbcTemplate(new DriverManagerDataSource(
                 postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword()));
 
+        Flyway.configure()
+                .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
+                .load()
+                .migrate();
+
         StringBuilder sb = new StringBuilder();
         for (String archivo : List.of(
                 "fn_resumen_mascotas_por_especie.sql",
@@ -109,7 +115,7 @@ class BiopetAppRolMinimoPrivilegiosIntegrationTest {
         assertThat(codigo).matches("ROL-\\d{6}");
 
         try (Connection con = jdbcApp.getDataSource().getConnection();
-             CallableStatement cs = con.prepareCall("{call sp_actualizar_estado_citas_masivas(?, ?, ?, ?, ?)}")) {
+             CallableStatement cs = con.prepareCall("CALL sp_actualizar_estado_citas_masivas(?, ?, ?, ?, ?)")) {
             cs.setLong(1, 1L);
             cs.setString(2, "PROGRAMADA");
             cs.setString(3, "COMPLETADA");
@@ -136,7 +142,7 @@ class BiopetAppRolMinimoPrivilegiosIntegrationTest {
         Long mascotaId = jdbcApp.queryForObject("SELECT id FROM mascotas WHERE nombre = 'Rex'", Long.class);
 
         try (Connection con = jdbcApp.getDataSource().getConnection();
-             CallableStatement cs = con.prepareCall("{call sp_registrar_consulta_validada(?, ?, ?, ?, ?, ?, ?)}")) {
+             CallableStatement cs = con.prepareCall("CALL sp_registrar_consulta_validada(?, ?, ?, ?, ?, ?, ?)")) {
             cs.setLong(1, mascotaId);
             cs.setLong(2, vetId);
             cs.setString(3, "Chequeo");
@@ -168,7 +174,9 @@ class BiopetAppRolMinimoPrivilegiosIntegrationTest {
                 .isInstanceOf(DataAccessException.class);
         assertThatThrownBy(() -> jdbcApp.execute("CREATE SEQUENCE seq_prohibida"))
                 .isInstanceOf(DataAccessException.class);
-        assertThatThrownBy(() -> jdbcApp.execute("GRANT SELECT ON usuarios TO public"))
+        assertThatThrownBy(() -> jdbcApp.execute("COMMENT ON TABLE usuarios IS 'prohibido'"))
+                .isInstanceOf(DataAccessException.class);
+        assertThatThrownBy(() -> jdbcApp.execute("ALTER TABLE usuarios OWNER TO biopet_app"))
                 .isInstanceOf(DataAccessException.class);
     }
 
