@@ -12,7 +12,7 @@ a un archivo `.sql` real del repositorio. Categorías (rúbrica P1): 1) multi-ta
 | `fn_reporte_dashboard` | 3) Reporte | Indicadores de dashboard en una fila para un rango de fechas: mascotas activas, citas programadas, consultas y vacunas en rango, mascotas sin consulta | IN `p_desde` DATE, IN `p_hasta` DATE | No (RETURNS TABLE) | Lectura: `mascotas`, `citas`, `consultas`, `vacunas` | `db/procs/fn_reporte_dashboard.sql` |
 | `fn_siguiente_numero_ficha` | 6) Código secuencial | Genera el siguiente número de ficha `PREFIJO-NNNNNN` consumiendo la secuencia dedicada `seq_ficha_biopet` | IN `p_prefijo` VARCHAR (default `'FICHA'`), OUT `p_codigo` VARCHAR | No (OUT escalar) | Secuencia `seq_ficha_biopet` | `db/procs/fn_siguiente_numero_ficha.sql` |
 | `sp_actualizar_estado_citas_masivas` | 4) Actualización masiva | UPDATE controlado del estado de citas de un veterinario por estado anterior y fecha límite, con conteo de filas afectadas | IN `p_veterinario_id` BIGINT, IN `p_estado_anterior` VARCHAR(20), IN `p_estado_nuevo` VARCHAR(20), IN `p_fecha_limite` TIMESTAMPTZ, OUT `p_afectadas` BIGINT | No | Escritura: `citas` | `db/procs/sp_actualizar_estado_citas_masivas.sql` |
-| `sp_registrar_consulta_validada` | 5) Validación cruzada | Registra una consulta solo si la mascota existe y está activa y el veterinario es VETERINARIO/ADMIN activo; `RAISE EXCEPTION` si no | IN `p_mascota_id` BIGINT, IN `p_veterinario_id` BIGINT, IN `p_motivo` VARCHAR(200), IN `p_diagnostico` VARCHAR(500) (default `NULL`), IN `p_tratamiento` VARCHAR(500) (default `NULL`), IN `p_observaciones` VARCHAR(500) (default `NULL`), OUT `p_consulta_id` BIGINT | No | Lectura: `mascotas`, `usuarios`; escritura: `consultas` | `db/procs/sp_registrar_consulta_validada.sql` |
+| `sp_registrar_consulta_validada` | 5) Validación cruzada | Registra una consulta solo si la mascota existe y está activa y el veterinario es VETERINARIO/ADMIN activo; `RAISE EXCEPTION` si no | IN `p_mascota_id` BIGINT, IN `p_veterinario_id` BIGINT, IN `p_motivo` VARCHAR(200), IN `p_diagnostico` VARCHAR(500), IN `p_tratamiento` VARCHAR(500), IN `p_observaciones` VARCHAR(500) (opcionales: `NULL` si no aplican, sin `DEFAULT` por restricción de PostgreSQL sobre OUT tras parámetros con default), OUT `p_consulta_id` BIGINT | No | Lectura: `mascotas`, `usuarios`; escritura: `consultas` | `db/procs/sp_registrar_consulta_validada.sql` |
 
 ## Funciones complementarias fuera de db/procs/
 
@@ -22,16 +22,25 @@ a un archivo `.sql` real del repositorio. Categorías (rúbrica P1): 1) multi-ta
 
 ## Notas de invocación (F02)
 
-- Las 6 rutinas se invocan formalmente desde Java con `@Procedure` en
-  `Backend/src/main/java/com/biopet/repository/ProcedimientoBiopetRepository.java`
-  (sin `@Query(nativeQuery = true)`).
-- Las funciones con `RETURNS TABLE` devuelven `ResultSet` → se consumen con
-  `getResultList()` y proyecciones de interfaz (`ResumenEspecie`,
-  `HistorialClinico`, `ReporteDashboard`), dentro de `@Transactional(readOnly = true)`.
-- Los OUT escalares (`p_codigo`, `p_afectadas`, `p_consulta_id`) se leen con
-  `outputParameterName` en la anotación `@Procedure`.
-- `fn_siguiente_numero_ficha` declara `OUT p_codigo` (no `RETURNS VARCHAR`) para
-  que PostgreSQL JDBC pueda devolver el escalar por `CallableStatement`.
+Las 6 rutinas se invocan formalmente desde Java en
+`Backend/src/main/java/com/biopet/repository/ProcedimientoBiopetRepository.java`.
+PostgreSQL distingue funciones de procedimientos, por lo que el mecanismo JPA
+debe ajustarse al tipo de rutina (no se usa `@Query` con texto libre arbitrario
+ni JDBC directo desde servicios):
+
+- Las 4 **funciones** (`fn_*`) se invocan con `@Query(nativeQuery = true)` y
+  `SELECT * FROM fn_...( :param )`: PostgreSQL invoca las funciones con `SELECT`,
+  no con `CALL`. Las de `RETURNS TABLE` se proyectan a interfaces
+  (`ResumenEspecie`, `HistorialClinico`, `ReporteDashboard`) con mapeo por
+  nombre de columna (camelCase en SQL ↔ getters).
+- Los 2 **procedimientos** (`sp_*`) se invocan con `@Procedure`: Spring Data
+  genera `{call sp_...(?)}`, que es la única sintaxis válida para PROCEDURE.
+- Los OUT escalares (`p_afectadas`, `p_consulta_id`) se leen con
+  `outputParameterName` en `@Procedure`; `fn_siguiente_numero_ficha` declara
+  `OUT p_codigo` y se invoca con `SELECT p_codigo FROM fn_siguiente_numero_ficha(...)`
+  para que PostgreSQL JDBC devuelva el escalar como columna.
+- Sin `@Procedure` sobre funciones: Hibernate generaría `CALL fn_...(...)`, que
+  PostgreSQL rechaza con `procedure ... does not exist` (verificación F03 real).
 
 ## Control de acceso
 
