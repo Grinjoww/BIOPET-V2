@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="460" viewBox="0 0 900 460">
+<text x="450.0" y="30" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="bold">BIOPET - latencia por percentil (caliente vs frio)</text>
+<line x1="70" y1="400.0" x2="870" y2="400.0" stroke="#ccc" stroke-width="1"/>
+<text x="62" y="404.0" text-anchor="end" font-family="sans-serif" font-size="11">0</text>
+<line x1="70" y1="332.0" x2="870" y2="332.0" stroke="#ccc" stroke-width="1"/>
+<text x="62" y="336.0" text-anchor="end" font-family="sans-serif" font-size="11">9</text>
+<line x1="70" y1="264.0" x2="870" y2="264.0" stroke="#ccc" stroke-width="1"/>
+<text x="62" y="268.0" text-anchor="end" font-family="sans-serif" font-size="11">19</text>
+<line x1="70" y1="196.0" x2="870" y2="196.0" stroke="#ccc" stroke-width="1"/>
+<text x="62" y="200.0" text-anchor="end" font-family="sans-serif" font-size="11">28</text>
+<line x1="70" y1="128.0" x2="870" y2="128.0" stroke="#ccc" stroke-width="1"/>
+<text x="62" y="132.0" text-anchor="end" font-family="sans-serif" font-size="11">38</text>
+<line x1="70" y1="60.0" x2="870" y2="60.0" stroke="#ccc" stroke-width="1"/>
+<text x="62" y="64.0" text-anchor="end" font-family="sans-serif" font-size="11">47</text>
+<rect x="130.0" y="354.9" width="40.0" height="45.1" fill="#2e7d32" opacity="0.85"/>
+<text x="150.0" y="349.9" text-anchor="middle" font-family="sans-serif" font-size="10">6.2</text>
+<rect x="170.0" y="340.9" width="40.0" height="59.1" fill="#e65100" opacity="0.85"/>
+<text x="190.0" y="335.9" text-anchor="middle" font-family="sans-serif" font-size="10">8.2</text>
+<text x="170.0" y="420" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold">p50</text>
+<rect x="330.0" y="331.3" width="40.0" height="68.7" fill="#2e7d32" opacity="0.85"/>
+<text x="350.0" y="326.3" text-anchor="middle" font-family="sans-serif" font-size="10">9.5</text>
+<rect x="370.0" y="286.1" width="40.0" height="113.9" fill="#e65100" opacity="0.85"/>
+<text x="390.0" y="281.1" text-anchor="middle" font-family="sans-serif" font-size="10">15.7</text>
+<text x="370.0" y="420" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold">p90</text>
+<rect x="530.0" y="319.9" width="40.0" height="80.1" fill="#2e7d32" opacity="0.85"/>
+<text x="550.0" y="314.9" text-anchor="middle" font-family="sans-serif" font-size="10">11.1</text>
+<rect x="570.0" y="253.4" width="40.0" height="146.6" fill="#e65100" opacity="0.85"/>
+<text x="590.0" y="248.4" text-anchor="middle" font-family="sans-serif" font-size="10">20.3</text>
+<text x="570.0" y="420" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold">p95</text>
+<rect x="730.0" y="274.6" width="40.0" height="125.4" fill="#2e7d32" opacity="0.85"/>
+<text x="750.0" y="269.6" text-anchor="middle" font-family="sans-serif" font-size="10">17.3</text>
+<rect x="770.0" y="160.0" width="40.0" height="240.0" fill="#e65100" opacity="0.85"/>
+<text x="790.0" y="155.0" text-anchor="middle" font-family="sans-serif" font-size="10">33.2</text>
+<text x="770.0" y="420" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold">p99</text>
+<rect x="70" y="440" width="14" height="14" fill="#2e7d32"/>
+<text x="90" y="452" font-family="sans-serif" font-size="12">caliente</text>
+<rect x="180" y="440" width="14" height="14" fill="#e65100"/>
+<text x="200" y="452" font-family="sans-serif" font-size="12">frio</text>
+<text x="870" y="452" text-anchor="end" font-family="sans-serif" font-size="10" fill="#666">latencia en ms (promedio entre corridas del mismo modo); grafico generado por scripts/perf-analysis.py</text>
+</svg>
