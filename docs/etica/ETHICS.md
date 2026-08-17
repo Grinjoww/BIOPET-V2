@@ -84,11 +84,14 @@ PFC. Para esa actividad, el equipo aplica el siguiente mecanismo:
    reporte con media, desviación típica e IC 95 %) se vinculan al código de
    participante, nunca a su nombre, correo o cualquier otro dato identificable.
 
-**Estado a la fecha de esta entrega:** la prueba SUS ya se ejecutó con diez
-participantes externos al equipo (P01–P10), siguiendo el mecanismo de
-consentimiento descrito arriba. Los datos crudos y el reporte agregado están
-disponibles en `docs/mediciones/sus/sus-raw.csv` y
-`docs/mediciones/sus/REPORT.md`, respectivamente.
+**Estado a la fecha de esta entrega:** la prueba SUS se ejecutó inicialmente
+con diez participantes externos al equipo (P01–P10, Tercera Entrega) y se
+amplió para la Entrega Final con ocho participantes adicionales (P11–P18),
+alcanzando n=18 (por encima del mínimo de 15 exigido), siguiendo el mismo
+mecanismo de consentimiento descrito arriba para cada participante nuevo.
+Los datos crudos y el reporte agregado están disponibles en
+`docs/mediciones/sus/sus-raw.csv` y `docs/mediciones/sus/REPORT.md`,
+respectivamente.
 
 ## iv. Ausencia de datos identificables en el repositorio público
 
