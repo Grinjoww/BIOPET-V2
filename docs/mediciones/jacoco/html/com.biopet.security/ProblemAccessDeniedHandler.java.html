@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProblemAccessDeniedHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.security</a> &gt; <span class="el_source">ProblemAccessDeniedHandler.java</span></div><h1>ProblemAccessDeniedHandler.java</h1><pre class="source lang-java linenums">package com.biopet.security;
+
+import com.biopet.exception.ProblemDetailFactory;
+import com.biopet.exception.ProblemType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+@Component
+public class ProblemAccessDeniedHandler implements AccessDeniedHandler {
+    private final ObjectMapper objectMapper;
+
+<span class="fc" id="L22">    public ProblemAccessDeniedHandler(ObjectMapper objectMapper) {</span>
+<span class="fc" id="L23">        this.objectMapper = objectMapper;</span>
+<span class="fc" id="L24">    }</span>
+
+    @Override
+    public void handle(HttpServletRequest request, HttpServletResponse response,
+                        AccessDeniedException accessDeniedException) throws IOException {
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">        if (response.isCommitted()) {</span>
+<span class="nc" id="L30">            return;</span>
+        }
+
+<span class="fc" id="L33">        ProblemDetail problemDetail = ProblemDetailFactory.build(</span>
+                HttpStatus.FORBIDDEN,
+                ProblemType.FORBIDDEN,
+                &quot;Acceso denegado&quot;,
+                &quot;No tiene permisos suficientes para acceder a este recurso.&quot;,
+                request
+        );
+
+<span class="fc" id="L41">        response.setStatus(HttpStatus.FORBIDDEN.value());</span>
+<span class="fc" id="L42">        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);</span>
+<span class="fc" id="L43">        response.setCharacterEncoding(StandardCharsets.UTF_8.name());</span>
+<span class="fc" id="L44">        objectMapper.writeValue(response.getWriter(), problemDetail);</span>
+<span class="fc" id="L45">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

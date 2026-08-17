@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExternalApiController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.controller</a> &gt; <span class="el_source">ExternalApiController.java</span></div><h1>ExternalApiController.java</h1><pre class="source lang-java linenums">package com.biopet.controller;
+
+import com.biopet.dto.ExternalApiResponse;
+import com.biopet.integration.ExternalApiService;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping(&quot;/api/externa/especies&quot;)
+public class ExternalApiController {
+
+    private final ExternalApiService externalApiService;
+
+<span class="fc" id="L17">    public ExternalApiController(ExternalApiService externalApiService) {</span>
+<span class="fc" id="L18">        this.externalApiService = externalApiService;</span>
+<span class="fc" id="L19">    }</span>
+
+    @GetMapping
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')&quot;)
+    public ExternalApiResponse infoEspecie(@RequestParam String especie) {
+<span class="nc" id="L24">        return externalApiService.obtenerInfoEspecie(especie);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

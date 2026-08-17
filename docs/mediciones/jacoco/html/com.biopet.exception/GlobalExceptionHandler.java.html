@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.exception</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package com.biopet.exception;
+
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestControllerAdvice
+<span class="fc" id="L22">public class GlobalExceptionHandler {</span>
+
+    @ExceptionHandler(EmailDuplicadoException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; emailDuplicado(EmailDuplicadoException ex, HttpServletRequest request) {
+<span class="fc" id="L26">        return problemResponse(HttpStatus.CONFLICT, ProblemType.CONFLICT, &quot;Conflicto de datos&quot;, ex.getMessage(), request);</span>
+    }
+
+    @ExceptionHandler(RecursoNoEncontradoException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; noEncontrado(RecursoNoEncontradoException ex, HttpServletRequest request) {
+<span class="fc" id="L31">        return problemResponse(HttpStatus.NOT_FOUND, ProblemType.NOT_FOUND, &quot;Recurso no encontrado&quot;, ex.getMessage(), request);</span>
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; credencialesInvalidas(BadCredentialsException ex, HttpServletRequest request) {
+<span class="fc" id="L36">        return problemResponse(HttpStatus.UNAUTHORIZED, ProblemType.UNAUTHORIZED, &quot;No autenticado&quot;, &quot;Credenciales inválidas&quot;, request);</span>
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; validacion(MethodArgumentNotValidException ex, HttpServletRequest request) {
+<span class="fc" id="L41">        Map&lt;String, List&lt;String&gt;&gt; errores = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {</span>
+<span class="fc" id="L43">            errores.computeIfAbsent(fieldError.getField(), key -&gt; new ArrayList&lt;&gt;())</span>
+<span class="fc" id="L44">                    .add(fieldError.getDefaultMessage());</span>
+<span class="fc" id="L45">        }</span>
+
+<span class="fc" id="L47">        ProblemDetail problemDetail = ProblemDetailFactory.build(</span>
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                ProblemType.VALIDATION,
+                &quot;Error de validación&quot;,
+                &quot;Uno o más campos contienen valores inválidos.&quot;,
+                request
+        );
+<span class="fc" id="L54">        problemDetail.setProperty(&quot;errors&quot;, errores);</span>
+
+<span class="fc" id="L56">        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)</span>
+<span class="fc" id="L57">                .contentType(MediaType.APPLICATION_PROBLEM_JSON)</span>
+<span class="fc" id="L58">                .body(problemDetail);</span>
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; argumentoInvalido(IllegalArgumentException ex, HttpServletRequest request) {
+<span class="fc" id="L63">        return problemResponse(HttpStatus.BAD_REQUEST, ProblemType.BAD_REQUEST, &quot;Solicitud inválida&quot;, ex.getMessage(), request);</span>
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; parametroInvalido(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+<span class="fc" id="L68">        String detail = &quot;El parámetro '&quot; + ex.getName() + &quot;' tiene un formato inválido.&quot;;</span>
+<span class="fc" id="L69">        return problemResponse(HttpStatus.BAD_REQUEST, ProblemType.BAD_REQUEST, &quot;Parámetro inválido&quot;, detail, request);</span>
+    }
+
+    @ExceptionHandler(RateLimitExcedidoException.class)
+    public ResponseEntity&lt;ProblemDetail&gt; demasiadosIntentos(RateLimitExcedidoException ex, HttpServletRequest request) {
+<span class="fc" id="L74">        ProblemDetail problemDetail = ProblemDetailFactory.build(</span>
+                HttpStatus.TOO_MANY_REQUESTS,
+                ProblemType.RATE_LIMITED,
+                &quot;Demasiados intentos&quot;,
+                &quot;Se ha excedido el número máximo de intentos fallidos de inicio de sesión. Intente nuevamente más tarde.&quot;,
+                request
+        );
+<span class="fc" id="L81">        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)</span>
+<span class="fc" id="L82">                .contentType(MediaType.APPLICATION_PROBLEM_JSON)</span>
+<span class="fc" id="L83">                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getSegundosRestantes()))</span>
+<span class="fc" id="L84">                .body(problemDetail);</span>
+    }
+
+    private ResponseEntity&lt;ProblemDetail&gt; problemResponse(HttpStatus status, ProblemType type, String title,
+                                                            String detail, HttpServletRequest request) {
+<span class="fc" id="L89">        ProblemDetail problemDetail = ProblemDetailFactory.build(status, type, title, detail, request);</span>
+<span class="fc" id="L90">        return ResponseEntity.status(status)</span>
+<span class="fc" id="L91">                .contentType(MediaType.APPLICATION_PROBLEM_JSON)</span>
+<span class="fc" id="L92">                .body(problemDetail);</span>
+    }
+    @ExceptionHandler(ExternalApiException.class)
+public ResponseEntity&lt;ProblemDetail&gt; errorApiExterna(ExternalApiException ex, HttpServletRequest request) {
+<span class="nc" id="L96">    return problemResponse(HttpStatus.BAD_GATEWAY, ProblemType.BAD_GATEWAY,</span>
+            &quot;Servicio externo no disponible&quot;,
+            &quot;No se pudo obtener información de la especie en este momento. Intente nuevamente más tarde.&quot;,
+            request);
+}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

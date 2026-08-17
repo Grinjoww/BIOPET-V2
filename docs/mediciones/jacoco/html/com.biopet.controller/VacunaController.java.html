@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VacunaController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.controller</a> &gt; <span class="el_source">VacunaController.java</span></div><h1>VacunaController.java</h1><pre class="source lang-java linenums">package com.biopet.controller;
+
+import com.biopet.dto.VacunaRequest;
+import com.biopet.dto.VacunaResponse;
+import com.biopet.service.VacunaService;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping(&quot;/api/vacunas&quot;)
+public class VacunaController {
+    private final VacunaService vacunaService;
+
+<span class="fc" id="L21">    public VacunaController(VacunaService vacunaService) {</span>
+<span class="fc" id="L22">        this.vacunaService = vacunaService;</span>
+<span class="fc" id="L23">    }</span>
+
+    @GetMapping
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')&quot;)
+    public Page&lt;VacunaResponse&gt; listar(Pageable pageable, @AuthenticationPrincipal UserDetails userDetails) {
+<span class="fc" id="L28">        return vacunaService.listar(pageable, userDetails.getUsername());</span>
+    }
+
+    @GetMapping(&quot;/mascota/{mascotaId:\\d+}&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')&quot;)
+    public Page&lt;VacunaResponse&gt; listarPorMascota(@PathVariable Long mascotaId, Pageable pageable,
+                                                  @AuthenticationPrincipal UserDetails userDetails) {
+<span class="nc" id="L35">        return vacunaService.listarPorMascota(mascotaId, pageable, userDetails.getUsername());</span>
+    }
+
+    @GetMapping(&quot;/{id:\\d+}&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')&quot;)
+    public VacunaResponse buscar(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+<span class="nc" id="L41">        return vacunaService.buscar(id, userDetails.getUsername());</span>
+    }
+
+    @PostMapping
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR')&quot;)
+    public ResponseEntity&lt;VacunaResponse&gt; crear(@Valid @RequestBody VacunaRequest request) {
+<span class="fc" id="L47">        return ResponseEntity.status(HttpStatus.CREATED).body(vacunaService.crear(request));</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR')&quot;)
+    public VacunaResponse actualizar(@PathVariable Long id, @Valid @RequestBody VacunaRequest request,
+                                      @AuthenticationPrincipal UserDetails userDetails) {
+<span class="fc" id="L54">        return vacunaService.actualizar(id, request, userDetails.getUsername());</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    @PreAuthorize(&quot;hasAnyRole('ADMIN','VETERINARIO','AUXILIAR')&quot;)
+    public ResponseEntity&lt;Void&gt; eliminar(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+<span class="fc" id="L60">        vacunaService.eliminar(id, userDetails.getUsername());</span>
+<span class="fc" id="L61">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

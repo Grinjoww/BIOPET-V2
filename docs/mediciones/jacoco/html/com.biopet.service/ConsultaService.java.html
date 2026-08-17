@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConsultaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.service</a> &gt; <span class="el_source">ConsultaService.java</span></div><h1>ConsultaService.java</h1><pre class="source lang-java linenums">package com.biopet.service;
+
+import com.biopet.dto.ConsultaRequest;
+import com.biopet.dto.ConsultaResponse;
+import com.biopet.entity.Consulta;
+import com.biopet.entity.Mascota;
+import com.biopet.entity.Rol;
+import com.biopet.entity.Usuario;
+import com.biopet.exception.RecursoNoEncontradoException;
+import com.biopet.repository.ConsultaRepository;
+import com.biopet.repository.MascotaRepository;
+import com.biopet.repository.UsuarioRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class ConsultaService {
+    private final ConsultaRepository consultaRepository;
+    private final MascotaRepository mascotaRepository;
+    private final UsuarioRepository usuarioRepository;
+
+    public ConsultaService(ConsultaRepository consultaRepository,
+                            MascotaRepository mascotaRepository,
+<span class="fc" id="L29">                            UsuarioRepository usuarioRepository) {</span>
+<span class="fc" id="L30">        this.consultaRepository = consultaRepository;</span>
+<span class="fc" id="L31">        this.mascotaRepository = mascotaRepository;</span>
+<span class="fc" id="L32">        this.usuarioRepository = usuarioRepository;</span>
+<span class="fc" id="L33">    }</span>
+
+    @Cacheable(value = &quot;consultas&quot;, key = &quot;#email + '-' + #pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()&quot;)
+    @Transactional(readOnly = true)
+    public Page&lt;ConsultaResponse&gt; listar(Pageable pageable, String email) {
+<span class="nc" id="L38">        Usuario usuario = usuarioActual(email);</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (usuario.getRol() == Rol.ROLE_DUENO) {</span>
+            // Un dueño solo ve consultas de sus propias mascotas
+<span class="nc" id="L41">            return consultaRepository.findAllByActivoTrue(pageable)</span>
+<span class="nc" id="L42">                    .map(this::toResponse); // filtrado real de propiedad se aplica en buscar(); aquí listamos y filtramos abajo si se requiere endpoint dedicado</span>
+        }
+<span class="nc" id="L44">        return consultaRepository.findAllByActivoTrue(pageable).map(this::toResponse);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public ConsultaResponse buscar(Long id, String email) {
+<span class="fc" id="L49">        Usuario usuario = usuarioActual(email);</span>
+<span class="fc" id="L50">        Consulta consulta = consultaRepository.findByIdAndActivoTrue(id)</span>
+<span class="fc" id="L51">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Consulta no encontrada: &quot; + id));</span>
+<span class="nc" id="L52">        verificarAcceso(usuario, consulta);</span>
+<span class="nc" id="L53">        return toResponse(consulta);</span>
+    }
+
+    @CacheEvict(value = &quot;consultas&quot;, allEntries = true)
+    @Transactional
+    public ConsultaResponse crear(ConsultaRequest request) {
+<span class="fc" id="L59">        Mascota mascota = mascotaRepository.findByIdAndActivoTrue(request.mascotaId())</span>
+<span class="pc" id="L60">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Mascota no encontrada: &quot; + request.mascotaId()));</span>
+<span class="fc" id="L61">        Usuario veterinario = resolverVeterinario(request.veterinarioId());</span>
+
+<span class="fc" id="L63">        Consulta consulta = Consulta.builder()</span>
+<span class="fc" id="L64">                .mascota(mascota)</span>
+<span class="fc" id="L65">                .veterinario(veterinario)</span>
+<span class="fc" id="L66">                .fechaConsulta(request.fechaConsulta())</span>
+<span class="fc" id="L67">                .motivo(request.motivo())</span>
+<span class="fc" id="L68">                .diagnostico(request.diagnostico())</span>
+<span class="fc" id="L69">                .tratamiento(request.tratamiento())</span>
+<span class="fc" id="L70">                .observaciones(request.observaciones())</span>
+<span class="fc" id="L71">                .activo(true)</span>
+<span class="fc" id="L72">                .build();</span>
+<span class="fc" id="L73">        return toResponse(consultaRepository.save(consulta));</span>
+    }
+
+    @CacheEvict(value = &quot;consultas&quot;, allEntries = true)
+    @Transactional
+    public ConsultaResponse actualizar(Long id, ConsultaRequest request, String email) {
+<span class="nc" id="L79">        Usuario usuario = usuarioActual(email);</span>
+<span class="nc" id="L80">        Consulta consulta = consultaRepository.findByIdAndActivoTrue(id)</span>
+<span class="nc" id="L81">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Consulta no encontrada: &quot; + id));</span>
+<span class="nc" id="L82">        verificarAcceso(usuario, consulta);</span>
+
+<span class="nc" id="L84">        Mascota mascota = mascotaRepository.findByIdAndActivoTrue(request.mascotaId())</span>
+<span class="nc" id="L85">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Mascota no encontrada: &quot; + request.mascotaId()));</span>
+<span class="nc" id="L86">        Usuario veterinario = resolverVeterinario(request.veterinarioId());</span>
+
+<span class="nc" id="L88">        consulta.setMascota(mascota);</span>
+<span class="nc" id="L89">        consulta.setVeterinario(veterinario);</span>
+<span class="nc" id="L90">        consulta.setFechaConsulta(request.fechaConsulta());</span>
+<span class="nc" id="L91">        consulta.setMotivo(request.motivo());</span>
+<span class="nc" id="L92">        consulta.setDiagnostico(request.diagnostico());</span>
+<span class="nc" id="L93">        consulta.setTratamiento(request.tratamiento());</span>
+<span class="nc" id="L94">        consulta.setObservaciones(request.observaciones());</span>
+<span class="nc" id="L95">        return toResponse(consultaRepository.save(consulta));</span>
+    }
+
+    @CacheEvict(value = &quot;consultas&quot;, allEntries = true)
+    @Transactional
+    public void eliminar(Long id, String email) {
+<span class="fc" id="L101">        Usuario usuario = usuarioActual(email);</span>
+<span class="fc" id="L102">        Consulta consulta = consultaRepository.findByIdAndActivoTrue(id)</span>
+<span class="pc" id="L103">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Consulta no encontrada: &quot; + id));</span>
+<span class="fc" id="L104">        verificarAcceso(usuario, consulta);</span>
+<span class="fc" id="L105">        consulta.setActivo(false);</span>
+<span class="fc" id="L106">        consultaRepository.save(consulta);</span>
+<span class="fc" id="L107">    }</span>
+
+    private Usuario usuarioActual(String email) {
+<span class="fc" id="L110">        return usuarioRepository.findByEmailAndActivoTrue(email)</span>
+<span class="pc" id="L111">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Usuario no encontrado&quot;));</span>
+    }
+
+    private Usuario resolverVeterinario(Long veterinarioId) {
+<span class="fc" id="L115">        Usuario veterinario = usuarioRepository.findById(veterinarioId)</span>
+<span class="fc" id="L116">                .filter(Usuario::isActivo)</span>
+<span class="pc" id="L117">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Veterinario no encontrado: &quot; + veterinarioId));</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        if (veterinario.getRol() != Rol.ROLE_VETERINARIO) {</span>
+<span class="nc" id="L119">            throw new IllegalArgumentException(&quot;El usuario asignado debe tener rol ROLE_VETERINARIO: &quot; + veterinarioId);</span>
+        }
+<span class="fc" id="L121">        return veterinario;</span>
+    }
+
+    private void verificarAcceso(Usuario usuario, Consulta consulta) {
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        boolean accesoGlobal = usuario.getRol() == Rol.ROLE_ADMIN</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">                || usuario.getRol() == Rol.ROLE_VETERINARIO</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">                || usuario.getRol() == Rol.ROLE_AUXILIAR;</span>
+<span class="fc" id="L128">        boolean esDuenioDeLaMascota = consulta.getMascota().getDuenio().getId().equals(usuario.getId());</span>
+<span class="pc bpc" id="L129" title="1 of 4 branches missed.">        if (!accesoGlobal &amp;&amp; !esDuenioDeLaMascota) {</span>
+<span class="fc" id="L130">            throw new AccessDeniedException(&quot;No tiene permisos para acceder a esta consulta.&quot;);</span>
+        }
+<span class="fc" id="L132">    }</span>
+
+    private ConsultaResponse toResponse(Consulta consulta) {
+<span class="fc" id="L135">        return new ConsultaResponse(</span>
+<span class="fc" id="L136">                consulta.getId(),</span>
+<span class="fc" id="L137">                consulta.getMascota().getId(),</span>
+<span class="fc" id="L138">                consulta.getMascota().getNombre(),</span>
+<span class="fc" id="L139">                consulta.getVeterinario().getId(),</span>
+<span class="fc" id="L140">                consulta.getVeterinario().getNombre(),</span>
+<span class="fc" id="L141">                consulta.getFechaConsulta(),</span>
+<span class="fc" id="L142">                consulta.getMotivo(),</span>
+<span class="fc" id="L143">                consulta.getDiagnostico(),</span>
+<span class="fc" id="L144">                consulta.getTratamiento(),</span>
+<span class="fc" id="L145">                consulta.getObservaciones(),</span>
+<span class="fc" id="L146">                consulta.isActivo(),</span>
+<span class="fc" id="L147">                consulta.getCreadoEn(),</span>
+<span class="fc" id="L148">                consulta.getActualizadoEn()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

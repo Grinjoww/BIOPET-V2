@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.controller</a> &gt; <span class="el_source">AuthController.java</span></div><h1>AuthController.java</h1><pre class="source lang-java linenums">package com.biopet.controller;
+
+import com.biopet.dto.*;
+import com.biopet.security.JwtCookieService;
+import com.biopet.service.AuthService;
+import io.jsonwebtoken.JwtException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping(&quot;/api/auth&quot;)
+public class AuthController {
+    private final AuthService authService;
+    private final JwtCookieService jwtCookieService;
+
+<span class="fc" id="L21">    public AuthController(AuthService authService, JwtCookieService jwtCookieService) {</span>
+<span class="fc" id="L22">        this.authService = authService;</span>
+<span class="fc" id="L23">        this.jwtCookieService = jwtCookieService;</span>
+<span class="fc" id="L24">    }</span>
+
+    @PostMapping(&quot;/registro&quot;)
+    public ResponseEntity&lt;UsuarioResponse&gt; registro(@Valid @RequestBody RegistroRequest request) {
+<span class="fc" id="L28">        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registrar(request));</span>
+    }
+
+    @PostMapping(&quot;/login&quot;)
+    public ResponseEntity&lt;AuthSessionResponse&gt; login(@Valid @RequestBody LoginRequest request,
+                                                       HttpServletRequest servletRequest,
+                                                       HttpServletResponse response) {
+<span class="fc" id="L35">        AuthResponse authResponse = authService.login(request, servletRequest.getRemoteAddr());</span>
+<span class="fc" id="L36">        jwtCookieService.addAccessCookie(response, authResponse.accessToken());</span>
+<span class="fc" id="L37">        jwtCookieService.addRefreshCookie(response, authResponse.refreshToken());</span>
+<span class="fc" id="L38">        return ResponseEntity.ok(new AuthSessionResponse(authResponse.expiresIn()));</span>
+    }
+
+    @PostMapping(&quot;/refresh&quot;)
+    public ResponseEntity&lt;AuthSessionResponse&gt; refresh(HttpServletRequest servletRequest,
+                                                         HttpServletResponse servletResponse) {
+<span class="fc" id="L44">        String refreshToken = jwtCookieService.readRefreshToken(servletRequest).orElse(null);</span>
+
+        AuthResponse authResponse;
+        try {
+<span class="fc" id="L48">            authResponse = authService.refresh(new RefreshRequest(refreshToken), servletRequest.getRemoteAddr());</span>
+<span class="fc" id="L49">        } catch (JwtException | IllegalArgumentException ex) {</span>
+<span class="fc" id="L50">            throw new BadCredentialsException(&quot;Refresh token ausente o inválido&quot;);</span>
+<span class="fc" id="L51">        }</span>
+
+<span class="fc" id="L53">        jwtCookieService.addAccessCookie(servletResponse, authResponse.accessToken());</span>
+<span class="fc" id="L54">        return ResponseEntity.ok(new AuthSessionResponse(authResponse.expiresIn()));</span>
+    }
+
+    @PostMapping(&quot;/logout&quot;)
+    public ResponseEntity&lt;Void&gt; logout(HttpServletRequest servletRequest,
+                                        HttpServletResponse servletResponse) {
+<span class="fc" id="L60">        String accessToken = jwtCookieService.readAccessToken(servletRequest).orElse(null);</span>
+<span class="fc" id="L61">        String refreshToken = jwtCookieService.readRefreshToken(servletRequest).orElse(null);</span>
+<span class="fc" id="L62">        authService.logout(accessToken, refreshToken, servletRequest.getRemoteAddr());</span>
+
+<span class="fc" id="L64">        jwtCookieService.clearAccessCookie(servletResponse);</span>
+<span class="fc" id="L65">        jwtCookieService.clearRefreshCookie(servletResponse);</span>
+
+<span class="fc" id="L67">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CitaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">BIOPET Backend</a> &gt; <a href="index.source.html" class="el_package">com.biopet.service</a> &gt; <span class="el_source">CitaService.java</span></div><h1>CitaService.java</h1><pre class="source lang-java linenums">package com.biopet.service;
+
+import com.biopet.dto.CitaRequest;
+import com.biopet.dto.CitaResponse;
+import com.biopet.entity.Cita;
+import com.biopet.entity.EstadoCita;
+import com.biopet.entity.Mascota;
+import com.biopet.entity.Rol;
+import com.biopet.entity.Usuario;
+import com.biopet.exception.RecursoNoEncontradoException;
+import com.biopet.repository.CitaRepository;
+import com.biopet.repository.MascotaRepository;
+import com.biopet.repository.UsuarioRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * CRUD de citas (agendamiento previo de atención veterinaria). No reemplaza ni
+ * duplica el futuro módulo de &quot;Consulta&quot; (registro clínico posterior), que
+ * pertenece a otro integrante del equipo.
+ * &lt;p&gt;
+ * Reglas de acceso (aplicadas aquí porque dependen de datos, no solo del rol;
+ * el control por rol &quot;puro&quot; ya vive en {@code CitaController} vía @PreAuthorize):
+ * &lt;ul&gt;
+ *   &lt;li&gt;DUENO: solo lee citas de sus propias mascotas (igual que MascotaService).&lt;/li&gt;
+ *   &lt;li&gt;VETERINARIO: lee todas, pero solo puede actualizar las citas donde él
+ *       es el veterinario asignado.&lt;/li&gt;
+ *   &lt;li&gt;ADMIN/AUXILIAR: sin restricciones adicionales de datos.&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+@Service
+public class CitaService {
+    private final CitaRepository citaRepository;
+    private final MascotaRepository mascotaRepository;
+    private final UsuarioRepository usuarioRepository;
+
+<span class="fc" id="L40">    public CitaService(CitaRepository citaRepository, MascotaRepository mascotaRepository, UsuarioRepository usuarioRepository) {</span>
+<span class="fc" id="L41">        this.citaRepository = citaRepository;</span>
+<span class="fc" id="L42">        this.mascotaRepository = mascotaRepository;</span>
+<span class="fc" id="L43">        this.usuarioRepository = usuarioRepository;</span>
+<span class="fc" id="L44">    }</span>
+
+    @Transactional(readOnly = true)
+    public Page&lt;CitaResponse&gt; listar(Pageable pageable, String email) {
+<span class="fc" id="L48">        Usuario usuario = usuarioActual(email);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (usuario.getRol() == Rol.ROLE_DUENO) {</span>
+<span class="fc" id="L50">            return citaRepository.findAllByMascota_Duenio_IdAndActivoTrue(usuario.getId(), pageable).map(this::toResponse);</span>
+        }
+<span class="fc" id="L52">        return citaRepository.findAllByActivoTrue(pageable).map(this::toResponse);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public CitaResponse buscar(Long id, String email) {
+<span class="fc" id="L57">        Usuario usuario = usuarioActual(email);</span>
+<span class="fc" id="L58">        Cita cita = citaRepository.findByIdAndActivoTrue(id)</span>
+<span class="fc" id="L59">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Cita no encontrada: &quot; + id));</span>
+<span class="fc" id="L60">        verificarAccesoLectura(usuario, cita);</span>
+<span class="fc" id="L61">        return toResponse(cita);</span>
+    }
+
+    @Transactional
+    public CitaResponse crear(CitaRequest request) {
+<span class="fc" id="L66">        Mascota mascota = resolverMascota(request.mascotaId());</span>
+<span class="fc" id="L67">        Usuario veterinario = resolverVeterinario(request.veterinarioId());</span>
+
+<span class="fc" id="L69">        Cita cita = Cita.builder()</span>
+<span class="fc" id="L70">                .mascota(mascota)</span>
+<span class="fc" id="L71">                .veterinario(veterinario)</span>
+<span class="fc" id="L72">                .fechaHora(request.fechaHora())</span>
+<span class="fc" id="L73">                .estado(EstadoCita.PROGRAMADA)</span>
+<span class="fc" id="L74">                .motivo(request.motivo())</span>
+<span class="fc" id="L75">                .activo(true)</span>
+<span class="fc" id="L76">                .build();</span>
+<span class="fc" id="L77">        return toResponse(citaRepository.save(cita));</span>
+    }
+
+    @Transactional
+    public CitaResponse actualizar(Long id, CitaRequest request, String email) {
+<span class="fc" id="L82">        Usuario usuario = usuarioActual(email);</span>
+<span class="fc" id="L83">        Cita cita = citaRepository.findByIdAndActivoTrue(id)</span>
+<span class="fc" id="L84">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Cita no encontrada: &quot; + id));</span>
+<span class="fc" id="L85">        verificarPermisoEscritura(usuario, cita);</span>
+
+<span class="fc" id="L87">        Mascota mascota = resolverMascota(request.mascotaId());</span>
+<span class="fc" id="L88">        Usuario veterinario = resolverVeterinario(request.veterinarioId());</span>
+
+<span class="fc" id="L90">        cita.setMascota(mascota);</span>
+<span class="fc" id="L91">        cita.setVeterinario(veterinario);</span>
+<span class="fc" id="L92">        cita.setFechaHora(request.fechaHora());</span>
+<span class="fc" id="L93">        cita.setEstado(request.estado());</span>
+<span class="fc" id="L94">        cita.setMotivo(request.motivo());</span>
+<span class="fc" id="L95">        return toResponse(citaRepository.save(cita));</span>
+    }
+
+    @Transactional
+    public void eliminar(Long id) {
+<span class="fc" id="L100">        Cita cita = citaRepository.findByIdAndActivoTrue(id)</span>
+<span class="fc" id="L101">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Cita no encontrada: &quot; + id));</span>
+<span class="fc" id="L102">        cita.setActivo(false);</span>
+<span class="fc" id="L103">        citaRepository.save(cita);</span>
+<span class="fc" id="L104">    }</span>
+
+    private Usuario usuarioActual(String email) {
+<span class="fc" id="L107">        return usuarioRepository.findByEmailAndActivoTrue(email)</span>
+<span class="pc" id="L108">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Usuario no encontrado: &quot; + email));</span>
+    }
+
+    private Mascota resolverMascota(Long mascotaId) {
+<span class="fc" id="L112">        return mascotaRepository.findByIdAndActivoTrue(mascotaId)</span>
+<span class="fc" id="L113">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Mascota no encontrada: &quot; + mascotaId));</span>
+    }
+
+    private Usuario resolverVeterinario(Long veterinarioId) {
+<span class="fc" id="L117">        Usuario veterinario = usuarioRepository.findById(veterinarioId)</span>
+<span class="fc" id="L118">                .filter(Usuario::isActivo)</span>
+<span class="fc" id="L119">                .orElseThrow(() -&gt; new RecursoNoEncontradoException(&quot;Veterinario no encontrado: &quot; + veterinarioId));</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (veterinario.getRol() != Rol.ROLE_VETERINARIO) {</span>
+<span class="fc" id="L121">            throw new IllegalArgumentException(</span>
+                    &quot;El usuario asignado como veterinario debe tener rol ROLE_VETERINARIO: &quot; + veterinarioId);
+        }
+<span class="fc" id="L124">        return veterinario;</span>
+    }
+
+    private boolean tieneAccesoGlobal(Rol rol) {
+<span class="pc bpc" id="L128" title="2 of 6 branches missed.">        return rol == Rol.ROLE_ADMIN || rol == Rol.ROLE_VETERINARIO || rol == Rol.ROLE_AUXILIAR;</span>
+    }
+
+    private void verificarAccesoLectura(Usuario usuario, Cita cita) {
+<span class="fc bfc" id="L132" title="All 4 branches covered.">        if (!tieneAccesoGlobal(usuario.getRol()) &amp;&amp; !cita.getMascota().getDuenio().getId().equals(usuario.getId())) {</span>
+<span class="fc" id="L133">            throw new AccessDeniedException(&quot;No tiene permisos para acceder a esta cita.&quot;);</span>
+        }
+<span class="fc" id="L135">    }</span>
+
+    private void verificarPermisoEscritura(Usuario usuario, Cita cita) {
+<span class="fc bfc" id="L138" title="All 4 branches covered.">        if (usuario.getRol() == Rol.ROLE_VETERINARIO &amp;&amp; !cita.getVeterinario().getId().equals(usuario.getId())) {</span>
+<span class="fc" id="L139">            throw new AccessDeniedException(&quot;Solo puede modificar las citas asignadas a usted.&quot;);</span>
+        }
+<span class="fc" id="L141">    }</span>
+
+    private CitaResponse toResponse(Cita cita) {
+<span class="fc" id="L144">        return new CitaResponse(</span>
+<span class="fc" id="L145">                cita.getId(),</span>
+<span class="fc" id="L146">                cita.getMascota().getId(),</span>
+<span class="fc" id="L147">                cita.getMascota().getNombre(),</span>
+<span class="fc" id="L148">                cita.getVeterinario().getId(),</span>
+<span class="fc" id="L149">                cita.getVeterinario().getNombre(),</span>
+<span class="fc" id="L150">                cita.getFechaHora(),</span>
+<span class="fc" id="L151">                cita.getEstado(),</span>
+<span class="fc" id="L152">                cita.getMotivo(),</span>
+<span class="fc" id="L153">                cita.isActivo(),</span>
+<span class="fc" id="L154">                cita.getCreadoEn(),</span>
+<span class="fc" id="L155">                cita.getActualizadoEn()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
