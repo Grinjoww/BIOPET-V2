@@ -11,10 +11,12 @@
 --   IN  p_mascota_id BIGINT         - mascota atendida.
 --   IN  p_veterinario_id BIGINT     - profesional que registra.
 --   IN  p_motivo VARCHAR(200)       - motivo de la consulta (obligatorio).
---   IN  p_diagnostico VARCHAR(500)  - diagnostico (opcional).
---   IN  p_tratamiento VARCHAR(500)  - tratamiento (opcional).
---   IN  p_observaciones VARCHAR(500)- observaciones (opcional).
+--   IN  p_diagnostico VARCHAR(500)  - diagnostico (opcional, NULL si no aplica).
+--   IN  p_tratamiento VARCHAR(500)  - tratamiento (opcional, NULL si no aplica).
+--   IN  p_observaciones VARCHAR(500)- observaciones (opcional, NULL si no aplica).
 --   OUT p_consulta_id BIGINT        - id de la consulta insertada.
+-- Nota: los IN opcionales NO llevan DEFAULT para respetar la restriccion de
+-- PostgreSQL de que los OUT no pueden ir despues de un parametro con default.
 -- Sin SQL dinamico ni concatenacion.
 -- Ejemplo de invocacion (psql):
 --   CALL sp_registrar_consulta_validada(1, 2, 'Chequeo anual', NULL, NULL, NULL, NULL);
@@ -23,9 +25,9 @@ CREATE OR REPLACE PROCEDURE sp_registrar_consulta_validada(
     p_mascota_id BIGINT,
     p_veterinario_id BIGINT,
     p_motivo VARCHAR(200),
-    p_diagnostico VARCHAR(500) DEFAULT NULL,
-    p_tratamiento VARCHAR(500) DEFAULT NULL,
-    p_observaciones VARCHAR(500) DEFAULT NULL,
+    p_diagnostico VARCHAR(500),
+    p_tratamiento VARCHAR(500),
+    p_observaciones VARCHAR(500),
     OUT p_consulta_id BIGINT
 )
 LANGUAGE plpgsql

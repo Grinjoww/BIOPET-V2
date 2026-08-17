@@ -178,9 +178,9 @@ CREATE OR REPLACE PROCEDURE sp_registrar_consulta_validada(
     p_mascota_id BIGINT,
     p_veterinario_id BIGINT,
     p_motivo VARCHAR(200),
-    p_diagnostico VARCHAR(500) DEFAULT NULL,
-    p_tratamiento VARCHAR(500) DEFAULT NULL,
-    p_observaciones VARCHAR(500) DEFAULT NULL,
+    p_diagnostico VARCHAR(500),
+    p_tratamiento VARCHAR(500),
+    p_observaciones VARCHAR(500),
     OUT p_consulta_id BIGINT
 )
 LANGUAGE plpgsql
