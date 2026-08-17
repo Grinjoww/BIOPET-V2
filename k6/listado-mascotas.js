@@ -5,11 +5,21 @@ import { options } from './opts.js';
 export { options };
 
 const BASE_URL = __ENV.BASE_URL || 'https://localhost:8443';
+const ADMIN_EMAIL = __ENV.K6_ADMIN_EMAIL;
+const ADMIN_PASSWORD = __ENV.K6_ADMIN_PASSWORD;
 
 export function setup() {
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+        throw new Error(
+            'Faltan credenciales. Ejecuta k6 con: ' +
+            '--env K6_ADMIN_EMAIL=<email> --env K6_ADMIN_PASSWORD=<password> ' +
+            '(ver k6/README.md). No se permiten credenciales en texto plano.'
+        );
+    }
+
     const loginRes = http.post(
         `${BASE_URL}/api/auth/login`,
-        JSON.stringify({ email: 'admin@biopet.ec', password: 'Admin123*' }),
+        JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD }),
         { headers: { 'Content-Type': 'application/json' } }
     );
 
