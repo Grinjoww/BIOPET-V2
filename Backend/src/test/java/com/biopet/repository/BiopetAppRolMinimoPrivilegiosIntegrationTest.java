@@ -19,6 +19,7 @@ import java.nio.file.Paths;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.Date;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
@@ -105,14 +106,54 @@ class BiopetAppRolMinimoPrivilegiosIntegrationTest {
     }
 
     @Test
-    void biopet_app_ejecutaLasSeisFuncionesYProcedimientos() {
-        assertThat(jdbcApp.queryForList("SELECT * FROM fn_resumen_mascotas_por_especie(NULL)")).isEmpty();
-        assertThat(jdbcApp.queryForList("SELECT * FROM fn_historial_clinico_mascota(999999)")).isEmpty();
-        assertThat(jdbcApp.queryForList("SELECT * FROM fn_reporte_dashboard('2026-01-01', '2026-12-31')"))
-                .hasSize(1);
+    void biopet_app_ejecutaLasSeisFuncionesYProcedimientos() throws SQLException {
+        // Las 6 rutinas son ahora PROCEDURE (F02, acceso JPA formal: ver
+        // ProcedimientoBiopetRepository). Las 3 que devuelven un conjunto de
+        // filas exponen OUT refcursor; el cursor solo es legible dentro de la
+        // transaccion donde se abre, por eso aqui se usa una conexion JDBC
+        // cruda con autoCommit(false).
+        try (Connection con = jdbcApp.getDataSource().getConnection()) {
+            con.setAutoCommit(false);
 
-        String codigo = jdbcApp.queryForObject("SELECT p_codigo FROM fn_siguiente_numero_ficha('ROL')", String.class);
-        assertThat(codigo).matches("ROL-\\d{6}");
+            try (CallableStatement cs = con.prepareCall("CALL fn_resumen_mascotas_por_especie(?, ?)")) {
+                cs.setNull(1, Types.BIGINT);
+                cs.registerOutParameter(2, Types.REF_CURSOR);
+                cs.execute();
+                try (ResultSet rs = (ResultSet) cs.getObject(2)) {
+                    assertThat(rs.next()).isFalse();
+                }
+            }
+
+            try (CallableStatement cs = con.prepareCall("CALL fn_historial_clinico_mascota(?, ?)")) {
+                cs.setLong(1, 999999L);
+                cs.registerOutParameter(2, Types.REF_CURSOR);
+                cs.execute();
+                try (ResultSet rs = (ResultSet) cs.getObject(2)) {
+                    assertThat(rs.next()).isFalse();
+                }
+            }
+
+            try (CallableStatement cs = con.prepareCall("CALL fn_reporte_dashboard(?, ?, ?)")) {
+                cs.setDate(1, Date.valueOf(LocalDate.of(2026, 1, 1)));
+                cs.setDate(2, Date.valueOf(LocalDate.of(2026, 12, 31)));
+                cs.registerOutParameter(3, Types.REF_CURSOR);
+                cs.execute();
+                try (ResultSet rs = (ResultSet) cs.getObject(3)) {
+                    assertThat(rs.next()).isTrue();
+                    assertThat(rs.isLast()).isTrue();
+                }
+            }
+
+            con.commit();
+        }
+
+        try (Connection con = jdbcApp.getDataSource().getConnection();
+             CallableStatement cs = con.prepareCall("CALL fn_siguiente_numero_ficha(?, ?)")) {
+            cs.setString(1, "ROL");
+            cs.registerOutParameter(2, Types.VARCHAR);
+            cs.execute();
+            assertThat(cs.getString(2)).matches("ROL-\\d{6}");
+        }
 
         try (Connection con = jdbcApp.getDataSource().getConnection();
              CallableStatement cs = con.prepareCall("CALL sp_actualizar_estado_citas_masivas(?, ?, ?, ?, ?)")) {
@@ -123,8 +164,6 @@ class BiopetAppRolMinimoPrivilegiosIntegrationTest {
             cs.registerOutParameter(5, Types.BIGINT);
             cs.execute();
             assertThat(cs.getLong(5)).isZero();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 

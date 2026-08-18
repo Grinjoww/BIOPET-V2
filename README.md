@@ -1,605 +1,302 @@
-# BIOPET — Unidad IV | GA — Revisión Cruzada del PFC
+# BIOPET — Sistema Web de Gestión Veterinaria
 
-Sistema web de gestión veterinaria desarrollado como Proyecto Fin de Curso (PFC) de la asignatura **Aplicaciones Web**.
+**Universidad Técnica Estatal de Quevedo**
+Proyecto Fin de Curso — Aplicaciones Web
+**Entrega Final — versión objetivo `v1.0.0`**
 
-Este repositorio corresponde al trabajo de **GA de la Unidad IV** y utiliza como proyecto de referencia el PFC **BIOPET**, manteniendo íntegro su código fuente y su historial de desarrollo para realizar sobre él el proceso de revisión, análisis, retroalimentación e investigación solicitado para la práctica.
-
----
-
-## Organización del trabajo en la Unidad IV
-
-Para esta actividad se está aplicando la modalidad de trabajo indicada para los grupos de GA: el **PFC es desarrollado y completado por sus integrantes originales**, mientras que los compañeros asignados al grupo de GA realizan una **revisión cruzada del proyecto**, con el objetivo de conocer el trabajo desarrollado por otro equipo, identificar fortalezas, detectar posibles limitaciones y plantear recomendaciones de mejora.
-
-Por esta razón, este repositorio **no representa un nuevo desarrollo de BIOPET ni un cambio de autoría del PFC**.
-
-El proyecto técnico fue desarrollado y completado por su equipo original de PFC:
-
-- **Mariscal Cabrera Jaime Josue**
-- **Beltrán Montiel Fred Adrian**
-- **Taipe Mora Zaida Melissa**
-
-Para la actividad de GA de Unidad IV, el grupo está conformado por:
-
-- **Mariscal Cabrera Jaime Josue**
-- **Carvajal Loor Johan Stalin**
-- **Fajardo Montes Michael Xavier**
-
-BIOPET fue seleccionado como el PFC que será analizado por este grupo.
+> Estado: preparación final de `v1.0.0`. El tag `v1.0.0` todavía no ha sido
+> publicado (ver [Historial de entregas / tags](#historial-de-entregas--tags)).
 
 ---
 
-## ¿Cómo se está trabajando?
+## Integrantes
 
-El proceso se divide en dos responsabilidades claramente diferenciadas.
+- **Beltrán Montiel, Fred Adrián** — Universidad Técnica Estatal de Quevedo
+- **Mariscal Cabrera, Jaime Josué** — Universidad Técnica Estatal de Quevedo (`jmariscalc@uteq.edu.ec`)
+- **Taipe Mora, Zaida Melissa** — Universidad Técnica Estatal de Quevedo
 
-### 1. Desarrollo y finalización del PFC
-
-La implementación funcional de BIOPET corresponde a los integrantes originales del PFC.
-
-Antes de iniciar la revisión cruzada de GA, el proyecto fue completado e integrado con los elementos requeridos para la práctica, incluyendo los recursos REST, documentación de API, seguridad, pruebas automatizadas, persistencia, caché y demás componentes técnicos del sistema.
-
-Por lo tanto, **Carvajal y Fajardo reciben un PFC ya desarrollado y funcional para su evaluación**.
-
-Ellos no tienen como responsabilidad reconstruir módulos, apropiarse del código existente ni repetir el desarrollo realizado por el equipo original.
-
-### 2. Revisión cruzada del grupo GA
-
-A partir de la versión terminada de BIOPET, los integrantes del grupo GA que no pertenecen al equipo original realizan la revisión del proyecto.
-
-Su participación comprende principalmente:
-
-- analizar la organización y arquitectura del sistema;
-- revisar el uso del patrón MVC;
-- evaluar la API REST y su documentación;
-- revisar aspectos de seguridad, pruebas, mantenibilidad y estructura general;
-- identificar fortalezas del PFC;
-- detectar posibles limitaciones o aspectos mejorables;
-- proponer recomendaciones justificadas;
-- realizar la investigación correspondiente a la Unidad IV;
-- aportar a la documentación y al informe final de la práctica.
-
-El objetivo de esta dinámica es que los estudiantes puedan **examinar un PFC desarrollado por otros compañeros y generar retroalimentación técnica sobre un trabajo distinto al propio**, conservando al mismo tiempo la autoría original de cada contribución.
+Docente responsable (evaluación, no autoría del software): Dr. Gleiston
+Cicerón Guerrero Ulloa, Ph.D.
 
 ---
 
-## Responsabilidades dentro del grupo GA
+## Descripción
 
-| Integrante | Responsabilidad en esta actividad |
+BIOPET es un sistema web de gestión veterinaria que permite administrar
+usuarios (dueños, veterinarios y administradores), mascotas, citas,
+consultas y vacunas, con control de acceso por roles y trazabilidad de la
+información clínica. El backend expone una API REST con Spring Boot sobre
+PostgreSQL; el frontend es una aplicación Angular que consume esa API.
+Redis se usa como caché de datos de consulta frecuente y para el manejo de
+tokens de sesión (lista negra de JWT invalidados).
+
+El proyecto se desarrolla siguiendo un ciclo de entregas incrementales
+(ver [Historial de entregas / tags](#historial-de-entregas--tags)), con
+pruebas automatizadas, análisis estático de seguridad y validación
+dinámica (OWASP ZAP) integrados al flujo de trabajo.
+
+---
+
+## Arquitectura y tecnologías
+
+Versiones verificadas en [`docs/entorno/versions.txt`](docs/entorno/versions.txt)
+y en la configuración real del proyecto (`Backend/pom.xml`,
+`frontend/package.json`, `docker-compose.yml`):
+
+| Componente | Versión |
 |---|---|
-| **Jaime Mariscal** | Presentación del PFC seleccionado, evidencias técnicas de BIOPET, documentación del flujo MVC y API REST, integración de los aportes y elaboración del informe final. |
-| **Johan Carvajal** | Revisión crítica independiente de BIOPET, identificación de fortalezas y debilidades, y desarrollo de la investigación comparativa SOAP vs REST. |
-| **Michael Fajardo** | Segunda revisión crítica independiente de BIOPET y desarrollo de la investigación sobre Jamstack, PWA e inteligencia artificial generativa aplicada al desarrollo web. |
-
-Las revisiones de Carvajal y Fajardo se documentarán de forma independiente para posteriormente realizar un análisis conjunto de las coincidencias, diferencias y recomendaciones encontradas.
-
----
-
-## Evidencia de la revisión cruzada
-
-La documentación específica de Unidad IV se organizará principalmente dentro de:
-
-```text
-docs/u4/
-```
-
-La estructura prevista es:
-
-```text
-docs/u4/
-├── RETROALIMENTACION-PFC.md
-│
-├── evidencias/
-│   ├── jaime/
-│   └── fred/
-│
-├── revisiones/
-│   ├── REVISION-CARVAJAL.md
-│   └── REVISION-FAJARDO.md
-│
-└── investigacion/
-    ├── SOAP-VS-REST.md
-    └── TENDENCIAS-WEB.md
-```
-
-De esta manera se diferencia claramente:
-
-- el **código e historial técnico del PFC original**;
-- las **revisiones realizadas por los integrantes del GA**;
-- la **investigación de Unidad IV**;
-- y la **integración final para el informe de la práctica**.
+| Java | 21 (Eclipse Temurin) |
+| Spring Boot | 3.2.12 |
+| Angular | 17.3.x (CLI 17.3.17, core 17.3.12) |
+| TypeScript | 5.4.5 |
+| PostgreSQL | 16-alpine |
+| Redis | 7-alpine |
+| Docker / Docker Compose | 29.6.x / v5.3.0 |
+| Maven | 3.9 (imagen de build `maven:3.9-eclipse-temurin-21`) |
+| Node / npm | 20-alpine (imagen de build), local 24.18.0 / 11.16.0 |
+| Flyway | integrado vía Spring Boot (migraciones `V1`→`V6`) |
+| JaCoCo | 0.8.12 |
+| SpotBugs / Find Security Bugs | 4.10.3.0 / 1.14.0 |
+| OWASP ZAP | 2.17.0 (`ghcr.io/zaproxy/zaproxy:stable`) |
+| k6 (rendimiento) | v2.1.0 |
 
 ---
 
-## Autoría e historial del repositorio
+## Funcionalidades principales
 
-Este repositorio fue creado tomando como base la rama `main` del repositorio final de BIOPET y **conservando intencionalmente su historial de Git**.
-
-Esto permite mantener la trazabilidad y reconocer correctamente qué integrantes desarrollaron originalmente cada parte del sistema.
-
-Por este motivo, en la sección **Contributors** de GitHub pueden aparecer integrantes del equipo original del PFC, como Fred Beltrán y Zaida Taipe, aunque no formen parte del grupo actual de GA.
-
-Su presencia en el historial **no significa que formen parte del grupo GA**, sino que GitHub reconoce correctamente los commits que realizaron durante el desarrollo original de BIOPET.
-
-Del mismo modo, Carvajal y Fajardo comenzarán a registrar sus propias contribuciones en este repositorio mediante commits relacionados con:
-
-- revisión crítica;
-- retroalimentación;
-- investigación;
-- documentación;
-- y elaboración del informe de Unidad IV.
-
-De esta forma se conserva la autoría real del proyecto y, al mismo tiempo, queda registrada de manera independiente la participación correspondiente a la actividad GA.
+- **Autenticación y autorización**: JWT, cookies `HttpOnly`/`Secure`/`SameSite`, control de acceso por roles (`ROLE_ADMIN`, `ROLE_VETERINARIO`, `ROLE_DUENO`).
+- **Usuarios**: alta, consulta y administración de cuentas.
+- **Mascotas**: registro, edición, baja lógica, resumen agregado por especie.
+- **Citas**: programación y actualización de estado (individual y masiva).
+- **Consultas**: registro clínico validado (mascota activa, veterinario autorizado).
+- **Vacunas**: registro y seguimiento de aplicaciones.
+- **Integración externa con caché**: `ExternalApiService` usa Redis para reducir llamadas repetidas.
+- **Auditoría y manejo de errores**: respuestas de error estandarizadas (RFC 7807 / `ProblemDetail`), *rate limiting* de login, auditoría de eventos de autenticación.
 
 ---
 
-## Alcance de este repositorio
+## Base de datos y procedimientos
 
-Este repositorio tiene dos propósitos:
-
-1. **Conservar una versión funcional y trazable del PFC BIOPET que será objeto de análisis.**
-2. **Centralizar las evidencias, revisiones, investigación y documentación desarrolladas por el grupo GA durante la Unidad IV.**
-
-No se pretende modificar el historial para atribuir el desarrollo del PFC a los integrantes nuevos del grupo.
-
-La finalidad académica es utilizar un proyecto ya desarrollado como base para realizar **evaluación cruzada, retroalimentación técnica, análisis de tecnologías web y elaboración del informe correspondiente a la Unidad IV**.
+Las migraciones Flyway del backend llegan actualmente hasta **`V6`**
+(`Backend/src/main/resources/db/migration/`). Existen **6 rutinas
+PostgreSQL finales** (objetos `PROCEDURE`), todas invocadas desde Java
+mediante un mecanismo JPA formal (`@Procedure`, con
+`@NamedStoredProcedureQuery` explícito para las tres que devuelven un
+conjunto de filas vía `REF_CURSOR`). El catálogo completo — nombre,
+categoría, parámetros, mecanismo de invocación y control de acceso — está
+en [`docs/basedatos/CATALOGOSP.md`](docs/basedatos/CATALOGOSP.md).
 
 ---
 
-## Proyecto técnico utilizado para la revisión
+## Cómo ejecutar el proyecto
 
-BIOPET implementa una arquitectura web con:
+### Requisitos
 
-- **Angular 17.3** para el frontend.
-- **Spring Boot 3.2.12 / Java 21** para el backend.
-- **PostgreSQL 16** para persistencia.
-- **Redis 7** para caché y soporte de revocación.
-- **Spring Security + JWT** para autenticación y autorización.
-- **OpenAPI / Swagger UI** para documentación de la API.
-- **Flyway** para migraciones.
-- **JUnit y JaCoCo** para pruebas y cobertura.
-- **Docker Compose** para orquestación del entorno.
+- Docker Desktop (o Docker Engine + Compose) con soporte para `docker compose`.
+- Java 21 y Maven (si se ejecuta el backend fuera de contenedor).
+- Node.js 20+ y npm (si se ejecuta el frontend fuera de contenedor).
+- GNU Make.
+- Bash, para los scripts `.sh` de `scripts/` (en Windows: Git Bash en el `PATH`).
 
-A partir de este punto se conserva la documentación técnica propia del PFC.
-
-## Estado del proyecto
-
-BIOPET está **terminado para el alcance académico** definido en esta
-actividad de Unidad IV. Las funcionalidades requeridas están integradas:
-autenticación y autorización por rol y por propiedad, CRUD de
-Usuarios/Mascotas/Citas/Consultas/Vacunas, integración con una API externa
-con caché Redis, y documentación OpenAPI/Swagger de la API.
-
-Las pruebas automatizadas actuales pasan sin incidencias — 166 pruebas,
-0 fallos, 0 errores, `BUILD SUCCESS` — y la cobertura verificada por
-JaCoCo cumple los umbrales automáticos configurados (`jacoco:check`, ≥ 60 %
-en LINE, BRANCH y COMPLEXITY; ver
-[Pruebas y cobertura](#pruebas-y-cobertura)). Existe además documentación
-técnica y evidencia reproducible respaldando cada componente (ADRs,
-diagramas C4, evidencia de seguridad OWASP, rendimiento, caché y
-accesibilidad — ver
-[Consideraciones para evolución y despliegue](#consideraciones-para-evolución-y-despliegue)).
-
-Esto **no equivale a certificar el sistema como listo para un entorno
-productivo real**: usa un certificado TLS autofirmado, credenciales de
-desarrollo y no ha sido evaluado en un entorno equivalente a producción.
-
-## Stack tecnológico
-
-| Componente | Versión / detalle |
-|---|---|
-| Backend | Java 21, Spring Boot 3.2.12 (`Backend/pom.xml`) |
-| Seguridad | Spring Security 6, JWT firmado por el backend (`jjwt` 0.12.6, HMAC-SHA256) |
-| Persistencia | Spring Data JPA + Hibernate, PostgreSQL 16, Flyway |
-| Caché / revocación | Redis 7 (Spring Data Redis + Spring Cache) |
-| Documentación de API | springdoc-openapi 2.5.0 (Swagger UI) |
-| Cobertura | JaCoCo 0.8.12 (`jacoco-maven-plugin`) |
-| Frontend | Angular 17.3, TypeScript 5.4, componentes standalone |
-| Orquestación | Docker Compose, `Makefile` |
-
-## Arquitectura
-
-Angular (frontend) ↔ Spring Boot (backend) ↔ PostgreSQL + Redis, todo
-orquestado con Docker Compose. El backend expone HTTP en el puerto 8080 y,
-con el perfil `tls` activo, HTTPS/TLS 1.3 en el puerto 8443. El detalle
-completo, con relaciones verificadas contra el código, está en:
-
-- [`docs/diagrams/c4-contenedores/`](docs/diagrams/c4-contenedores/) — C4 Nivel 2 (contenedores).
-- [`docs/diagrams/c4-componentes-backend/C4-L3-backend.md`](docs/diagrams/c4-componentes-backend/C4-L3-backend.md) — C4 Nivel 3 (componentes del backend).
-
-### Flujo MVC de una petición autenticada
-
-El siguiente diagrama de secuencia muestra el ciclo de vida de una petición autenticada dentro de BIOPET, desde el cliente Angular hasta PostgreSQL y el retorno de la respuesta JSON.
-
-[Ver diagrama de secuencia del flujo MVC](docs/diagramas/flujo-mvc-springboot.png)
-
-![Flujo MVC Spring Boot](docs/diagramas/flujo-mvc-springboot.png)
-
-#### Descripción del flujo
-
-1. **Cliente Angular:** `MascotaApiService.listar()` envía la petición `GET /api/mascotas` incluyendo la cookie de autenticación.
-2. **JwtAuthenticationFilter:** `doFilterInternal()` intercepta la petición y obtiene el JWT mediante `resolveToken(request)`.
-3. **SecurityContextHolder:** Spring registra la autenticación del usuario validado.
-4. **MascotaController:** `listar(Pageable, UserDetails)` recibe la petición autenticada y los parámetros de paginación.
-5. **MascotaService:** `listar(Pageable, String email)` ejecuta la lógica de negocio dentro de una transacción de solo lectura.
-6. **UsuarioRepository:** `findByEmailAndActivoTrue(email)` obtiene al usuario autenticado.
-7. **MascotaRepository:** según el rol, ejecuta `findAllByActivoTrue(pageable)` o `findAllByDuenioIdAndActivoTrue(...)`.
-8. **PostgreSQL:** Hibernate genera y ejecuta la consulta SQL correspondiente sobre la tabla `mascotas`.
-9. **MascotaResponse:** las entidades obtenidas se transforman al DTO mediante `map(this::toResponse)`.
-10. **Jackson:** `MappingJackson2HttpMessageConverter` serializa el resultado a JSON.
-11. **Cliente Angular:** recibe la respuesta HTTP `200 OK` con el contenido paginado en formato JSON.
-
-## Inicio rápido
-
-```bash
-# 1. Clonar el repositorio
-git clone https://github.com/JirachinG19Stdio/PFC-VET-ENTR3-v0.9.0-rc.git
-cd PFC-VET-ENTR3-v0.9.0-rc
-
-# 2. Copiar variables de entorno
-cp .env.example .env
-
-# 3. Levantar el sistema (postgres, redis, backend, frontend)
-make up
-
-# 4. Verificar que los 4 servicios estén healthy
-docker compose ps
-
-# 5. Acceder a la aplicación
-# Frontend:        http://localhost:4200
-# Swagger UI:       http://localhost:8080/api/docs
-# OpenAPI JSON:     http://localhost:8080/api/openapi
-# Actuator Health:  http://localhost:8080/actuator/health
-```
-
-Sin pasos manuales adicionales (no requiere IntelliJ ni pgAdmin): el
-esquema de PostgreSQL, los roles de base de datos y el usuario
-administrador se inicializan automáticamente (ver
-[Variables de entorno](#variables-de-entorno) y
-[Autenticación](#autenticación-actual)).
-
-## Variables de entorno
-
-Copia `.env.example` como `.env` y ajusta solo si es necesario. Ningún
-valor por defecto de `.env.example` es un secreto real: son valores de
-desarrollo, ya documentados en el propio archivo.
-
-| Variable | Para qué sirve |
-|---|---|
-| `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Base, usuario propietario y contraseña con que Postgres se inicializa (Flyway usa esta cuenta). |
-| `DB_URL` | URL JDBC que usa Spring Boot (`postgres` es el nombre del servicio en `docker-compose.yml`, no un host externo). |
-| `DB_APP_USER`, `DB_APP_PASSWORD` | Cuenta de aplicación de privilegios mínimos (`biopet_app`, sin DDL) que usa Hibernate en tiempo de ejecución; ver `db/roles.sql` y `docs/adr/ADR-004-postgresql.md`. |
-| `JWT_SECRET` | Clave HMAC de desarrollo para firmar los JWT. No reutilizar en un entorno real. |
-| `JWT_EXPIRATION_MS` / `JWT_REFRESH_EXPIRATION_MS` | Duración del access token y del refresh token, en milisegundos. |
-| `JWT_ISSUER` / `JWT_AUDIENCE` | Claims `iss`/`aud` incluidos en cada token. |
-| `REDIS_HOST` / `REDIS_PORT` | Conexión al servicio Redis. |
-| `CACHE_TTL_MS` | TTL de las entradas de caché de Spring Cache (listado de mascotas). |
-| `CORS_ALLOWED_ORIGINS` | Origen permitido para el frontend (nunca `*`, siempre un valor concreto junto con `allowCredentials(true)`). |
-| `TLS_KEYSTORE_PASSWORD`, `TLS_KEY_ALIAS`, `TLS_HTTPS_PORT`, `TLS_HTTP_PORT` | Solo aplican con el perfil `tls` (ver [TLS/HTTPS](#tlshttps)); no se definen en `.env.example`, tienen valores por defecto en `application-tls.yml`. |
-
-## Comandos del Makefile
-
-Objetivos reales, verificados contra `Makefile` (raíz del repositorio):
-
-| Comando | Estado | Función |
-|---|---|---|
-| `make up` | Implementado | Levanta el sistema completo (`docker compose up --build -d`). |
-| `make down` | Implementado | Detiene los contenedores **sin borrar volúmenes** (los datos de Postgres/Redis se conservan). |
-| `make test` | Implementado | Ejecuta las pruebas del backend (`cd Backend && mvn test`). No aplica por sí solo el umbral de cobertura (ver [Pruebas y cobertura](#pruebas-y-cobertura)). |
-| `make bench` | Implementado | Ejecuta un benchmark k6 (`k6 run k6/listado-mascotas.js`) contra el endpoint de listado de mascotas. Para las 6 corridas oficiales (frío/caliente) usar los comandos documentados en `docs/mediciones/perf/REPORT.md`; este objetivo corre una única corrida rápida. |
-| `make audit` | Implementado | Ejecuta la auditoría de seguridad OWASP (`scripts/security-evidence.sh`) y genera evidencia cruda en `docs/mediciones/sec/raw/` (config de docker-compose, headers HTTP/HTTPS, resultado de `mvn clean verify`). |
-| `make clean` | Implementado | Detiene contenedores y elimina huérfanos, conservando los datos. |
-| `make reset-db` | Implementado (**destructivo**) | Elimina también los volúmenes (borra los datos de Postgres y Redis) para reiniciar desde cero. |
-| `make lighthouse` | Implementado | Ejecuta `scripts/run-lighthouse.sh` contra el frontend servido por Docker. Requiere `make up` previo. Existen resultados versionados en [`docs/mediciones/lighthouse/`](docs/mediciones/lighthouse/README.md) (6 corridas oficiales del 2026-08-01, solicitando `/login` y `/mascotas`; la solicitud a `/mascotas` redirige a `/login` sin sesión, por lo que solo `/login` fue auditada directamente); no cubren cambios de frontend posteriores a esa fecha (ver el propio README de esa carpeta). |
-
-## Ejecución HTTP y HTTPS
-
-**HTTP (por defecto, puerto 8080):**
+### Levantar el entorno
 
 ```bash
 make up
 ```
 
-**HTTPS/TLS 1.3 (además del HTTP interno en 8080; ver [TLS/HTTPS](#tlshttps)):**
+Equivale a `docker compose -f docker-compose.yml -f docker-compose.tls.yml up --build -d`, generando primero el keystore TLS de desarrollo.
+
+### Detener el entorno
 
 ```bash
-# 1. Generar el keystore local una sola vez (no se versiona)
-scripts/generate-dev-keystore.ps1   # Windows
-scripts/generate-dev-keystore.sh    # Linux/macOS
-
-# 2. Levantar el stack combinado
-docker compose -f docker-compose.yml -f docker-compose.tls.yml up --build -d
+make down
 ```
 
-Con el overlay `docker-compose.tls.yml` activo, el backend queda accesible
-en `https://localhost:8443` (y sigue respondiendo en `http://localhost:8080`
-para tráfico interno).
+Detiene los contenedores sin borrar los volúmenes de datos.
 
-## Pruebas y cobertura
+### Validación técnica completa
 
 ```bash
-cd Backend
-mvn clean verify
+make all
 ```
 
-`mvn clean verify` ejecuta la suite completa y, en la fase `verify`, aplica
-el umbral automático de cobertura (`jacoco:check`); `make test` (`mvn test`)
-solo ejecuta las pruebas y genera el reporte, sin exigir el umbral.
+Ejecuta, en orden y con parada inmediata ante el primer fallo:
 
-Resultado real más reciente:
+1. **Backend + JaCoCo** (`mvn clean verify`: pruebas, Testcontainers, Flyway, gate de cobertura ≥70% LINE/BRANCH)
+2. **Frontend** (build de producción Angular)
+3. **Trazabilidad** (SRS ↔ matriz de requisitos ↔ historias/casos de uso)
+4. **Auditoría SQL dinámica** (`db/procs/*.sql`)
+5. **Análisis estático de seguridad** (SpotBugs + Find Security Bugs)
+6. **OWASP ZAP Baseline Scan**
 
-| Métrica | Valor |
+`make all` **no** incluye Lighthouse ni ningún paso de despliegue/GHCR/Zenodo (ver secciones correspondientes más abajo).
+
+---
+
+## Estado técnico verificado
+
+| Validación | Resultado |
 |---|---|
-| Pruebas ejecutadas | 166 |
-| Fallos | 0 |
-| Errores | 0 |
-| Omitidas | 0 |
-| Clases analizadas por JaCoCo | 45 |
-| Cobertura LINE | 87.45 % |
-| Cobertura BRANCH | 67.98 % |
-| Cobertura COMPLEXITY | 71.81 % |
-| Umbral automático (`jacoco:check`, regla `BUNDLE`) | ≥ 60 % en LINE, BRANCH y COMPLEXITY |
-| Resultado | `BUILD SUCCESS` |
+| Tests backend | 205 / 205 |
+| Failures | 0 |
+| Errors | 0 |
+| JaCoCo LINE | 91.8 % |
+| JaCoCo BRANCH | 79.4 % |
+| Flyway | V1 → V6 |
+| Trazabilidad | 38 / 38 |
+| SQL dinámico inseguro | 0 hallazgos |
+| SpotBugs `SQL_*` | 0 hallazgos |
+| ZAP High | 0 |
+| Frontend production build | OK |
+| `make all` | OK |
+| SUS (usabilidad, n=18) | media 74.44 / 100, IC95 % [63.33, 85.56] |
 
-Detalle y exclusiones justificadas en
-[`docs/mediciones/sec/jacoco-summary.md`](docs/mediciones/sec/jacoco-summary.md).
-`Backend/target/` no se versiona: estos reportes se regeneran localmente en
-cada `mvn clean verify`.
+Fuentes: ejecución real de `make all` sobre este repositorio;
+[`docs/trazabilidad/matriz.csv`](docs/trazabilidad/matriz.csv);
+[`docs/mediciones/sec/static-analysis/README.md`](docs/mediciones/sec/static-analysis/README.md);
+[`docs/mediciones/sec/zap/README.md`](docs/mediciones/sec/zap/README.md);
+[`docs/mediciones/sus/REPORT.md`](docs/mediciones/sus/REPORT.md).
 
-## Autenticación actual
+---
 
-- JWT firmado por el propio backend (HMAC-SHA256), **no completamente
-  stateless**: la revocación depende de una lista negra en Redis (ver
-  abajo). Access token y refresh token son tokens separados, generados por
-  el mismo mecanismo y distinguidos por el claim `typ`.
-- Los tokens se entregan mediante **cookies** `access_token` y
-  `refresh_token`, con los atributos `HttpOnly`, `Secure` y
-  `SameSite=Strict` (`Path=/` y `Path=/api/auth` respectivamente). El
-  frontend Angular **no usa `localStorage` ni agrega manualmente
-  `Authorization: Bearer`**: envía las cookies automáticamente
-  (`credentials: include`) y depende del *cookie jar* del navegador (o de
-  Postman, al probar la API).
-- `POST /api/auth/refresh` **no recibe el refresh token en el body**: lo
-  lee directamente de la cookie `refresh_token` y responde emitiendo una
-  nueva cookie de access token.
-- `POST /api/auth/logout` revoca en Redis cada token presente
-  (`TokenBlacklistService`, TTL igual al tiempo de vida restante) y borra
-  ambas cookies en el cliente; es idempotente (responde `204` incluso sin
-  sesión activa).
-- Soporte adicional de `Authorization: Bearer` en el backend para clientes
-  no-navegador, pero **no es el flujo del frontend web**.
+## Seguridad
 
-Detalle completo, incluidos los 10 claims del JWT (7 estándar de RFC 7519 +
-3 propios), en
-[`docs/adr/ADR-006-autenticacion-seguridad.md`](docs/adr/ADR-006-autenticacion-seguridad.md).
+BIOPET aplica varios controles verificables en el repositorio, no una
+afirmación genérica de "sistema seguro":
 
-## Autorización
+- Autenticación con **JWT** y cookies `HttpOnly` + `Secure` + `SameSite`.
+- Control de acceso por roles a nivel de endpoint y de servicio.
+- ***Rate limiting*** de intentos de login (`LoginRateLimiterService`).
+- Manejo de errores estandarizado con **`ProblemDetail`** (RFC 7807).
+- Cabeceras de seguridad HTTP configuradas (ver [`docs/mediciones/sec/A05-security-headers.md`](docs/mediciones/sec/A05-security-headers.md)).
+- **Auditoría SQL dinámica** automatizada sobre `db/procs/*.sql` (0 hallazgos actuales).
+- **SpotBugs + Find Security Bugs**, con gate obligatorio sobre hallazgos `SQL_*` (0 actuales). Existe un hallazgo documentado y no-SQL, `SPRING_CSRF_PROTECTION_DISABLED`, que está mitigado por la arquitectura de cookies adoptada (ver [`docs/mediciones/sec/static-analysis/README.md`](docs/mediciones/sec/static-analysis/README.md) para el detalle); no se lo descarta como falso positivo, se documenta su mitigación.
+- **OWASP ZAP Baseline Scan**, con gate obligatorio: **High = 0**. Alertas de severidad media/baja/informativa se conservan íntegras como evidencia y no bloquean el build.
 
-Cuatro roles reales (`Rol` / columna `usuarios.rol`, con *constraint* en
-`V1__schema_inicial.sql`): `ROLE_ADMIN`, `ROLE_VETERINARIO`,
-`ROLE_AUXILIAR`, `ROLE_DUENO`.
+Ningún control anterior implica que el sistema esté libre de riesgo; son
+las medidas y umbrales efectivamente verificados hasta esta entrega.
 
-| Operación | Roles permitidos (verificado en `MascotaController`) |
+---
+
+## Rendimiento
+
+Evidencia real en [`docs/mediciones/perf/REPORT.md`](docs/mediciones/perf/REPORT.md):
+5 corridas en caliente y 5 en frío con k6, sobre HTTPS/TLS 1.3.
+
+- p95 en caliente ≤ 200 ms en las 5 corridas.
+- p95 en frío ≤ 500 ms en las 5 corridas.
+- Tasa de error: 0 % en todas las corridas.
+
+El reporte incluye intervalos de confianza al 95 % (t de Student) y una
+comparación pareada (Wilcoxon) entre corridas en frío y en caliente.
+
+---
+
+## Evidencias y documentación
+
+| Tema | Documento |
 |---|---|
-| `GET /api/mascotas`, `GET /api/mascotas/{id}`, `GET /api/mascotas/resumen-especies` | `ADMIN`, `VETERINARIO`, `AUXILIAR`, `DUENO` |
-| `POST /api/mascotas`, `PUT /api/mascotas/{id}`, `DELETE /api/mascotas/{id}` | `ADMIN`, `VETERINARIO`, `AUXILIAR` únicamente — `DUENO` recibe 403, incluso sobre su propia mascota |
+| Requisitos (SRS) | [`docs/requisitos/SRS.md`](docs/requisitos/SRS.md) |
+| Trazabilidad | [`docs/trazabilidad/matriz.csv`](docs/trazabilidad/matriz.csv) |
+| Procedimientos PostgreSQL | [`docs/basedatos/CATALOGOSP.md`](docs/basedatos/CATALOGOSP.md) |
+| Rendimiento (k6) | [`docs/mediciones/perf/REPORT.md`](docs/mediciones/perf/REPORT.md) |
+| Seguridad — ZAP | [`docs/mediciones/sec/zap/README.md`](docs/mediciones/sec/zap/README.md) |
+| Seguridad — análisis estático | [`docs/mediciones/sec/static-analysis/README.md`](docs/mediciones/sec/static-analysis/README.md) |
+| Usabilidad (SUS) | [`docs/mediciones/sus/REPORT.md`](docs/mediciones/sus/REPORT.md) |
+| Lighthouse | [`docs/mediciones/lighthouse/README.md`](docs/mediciones/lighthouse/README.md) |
+| Calidad ISO/IEC 25010 | [`docs/arquitectura/ISO-25010.md`](docs/arquitectura/ISO-25010.md) |
+| Checklists metodológicos (PRISMA, INCOSE, RALPH) | [`docs/checklists/`](docs/checklists/) |
+| Bitácora de observaciones | [`docs/observaciones/OBSERVACIONES.md`](docs/observaciones/OBSERVACIONES.md) |
+| Decisiones de arquitectura (ADR) | [`docs/adr/`](docs/adr/) |
+| Política de versionado | [`docs/VERSIONING.md`](docs/VERSIONING.md) |
 
-Además del rol, `ROLE_DUENO` está sujeto a **control por propietario**
-(`MascotaService.verificarPropiedad`): solo puede listar y consultar sus
-propias mascotas; acceder a la de otro dueño responde 403.
-`ADMIN`/`VETERINARIO`/`AUXILIAR` tienen alcance global (no están limitados
-por propiedad).
+---
 
-Diferencia entre códigos: **401** cuando no hay autenticación válida
-(sin cookie, cookie inválida o revocada); **403** cuando hay autenticación
-válida pero el rol o la propiedad no lo permiten.
+## CI/CD
 
-El registro público (`POST /api/auth/registro`) siempre asigna
-`ROLE_DUENO`, sin importar el valor de `rol` enviado en el body (el campo
-es obligatorio por validación, pero el servidor lo ignora): no existe alta
-pública de `ADMIN`/`VETERINARIO`/`AUXILIAR`.
+GitHub Actions (`.github/workflows/ci.yml`) ejecuta validaciones sobre la
+rama `main` en cada `push` y `pull_request`, con los jobs:
 
-## Rate limiting
+- `backend-test` — `mvn clean verify` (pruebas + gate JaCoCo).
+- `frontend-build` — `npm ci` + build de producción Angular.
+- `traceability` — `scripts/validate-traceability.sh`.
+- `sql-audit` — `scripts/audit-sql-dynamic.sh`.
+- `security-static` — SpotBugs + Find Security Bugs, gate sobre hallazgos SQL.
+- `zap-baseline` — OWASP ZAP Baseline Scan, gate sobre severidad alta.
 
-Límite de intentos fallidos de login por IP (`LoginRateLimiterService`,
-en memoria, `ConcurrentHashMap`, **estado por instancia del backend, no
-distribuido**):
+Lighthouse **no** forma parte de CI todavía (ver [Lighthouse](#lighthouse)).
 
-- Intentos 1 a 5 fallidos consecutivos: responden **401**.
-- Intento 6: responde **429** con cabecera `Retry-After` (segundos).
-- El contador se reinicia tras un login exitoso y es independiente entre
-  IP distintas.
+---
 
-## ProblemDetail y códigos reales
+## Historial de entregas / tags
 
-Todas las respuestas de error usan el formato uniforme `ProblemDetail`
-(RFC 7807, `application/problem+json`: `type`, `title`, `status`,
-`detail`, `instance`). Códigos confirmados en el código
-(`GlobalExceptionHandler`, `ProblemAuthenticationEntryPoint`,
-`ProblemAccessDeniedHandler`):
-
-| Código | Cuándo ocurre |
+| Tag | Significado |
 |---|---|
-| 400 | Parámetro con formato incompatible (`MethodArgumentTypeMismatchException`), por ejemplo `duenioId` no numérico. |
-| 401 | Sin autenticación válida, o credenciales incorrectas en login. |
-| 403 | Autenticado pero sin el rol o la propiedad requeridos. |
-| 404 | Recurso inexistente (`RecursoNoEncontradoException`). |
-| 409 | Conflicto de datos: email ya registrado (`EmailDuplicadoException`). |
-| 422 | Validación de Bean Validation fallida (`MethodArgumentNotValidException`). |
-| 429 | Rate limiting de login excedido. |
+| `v0.1.0-entrega-1b` | Entrega 1B (histórico) |
+| `v0.7.0` | Entrega previa |
+| `v0.7.1` | Entrega previa |
+| `v0.9.0-rc` | Tercera Entrega (release candidate) |
+| `v1.0.0` | **Versión final objetivo, pendiente de publicación** |
 
-## TLS/HTTPS
+---
 
-Perfil Spring `tls` (`SPRING_PROFILES_INCLUDE=tls`, activado por
-`docker-compose.tls.yml`): agrega un conector HTTPS en el puerto **8443**
-(único protocolo habilitado: **TLS 1.3**) junto al conector HTTP interno en
-el puerto **8080** (`TomcatDualConnectorConfig`). El certificado es PKCS12,
-**autofirmado y exclusivamente académico** (nunca válido para producción),
-generado localmente con `scripts/generate-dev-keystore.ps1`/`.sh` y
-**nunca versionado** (`Backend/certs/`, excluido por `.gitignore`).
+## Despliegue
 
-## Endpoints actuales
+Pendiente de incorporar/verificar URL pública HTTPS final. No existe en
+esta rama evidencia verificable de un despliegue activo y accesible; no se
+publica ninguna URL como si estuviera en producción. La estrategia de
+reproducibilidad local (Docker, digests fijados por imagen) está
+documentada en [`docs/adr/ADR-005-despliegue.md`](docs/adr/ADR-005-despliegue.md).
 
-Verificados contra `AuthController`, `UsuarioController`, `MascotaController`,
-`CitaController`, `ConsultaController`, `VacunaController` y
-`ExternalApiController` (y sus respectivos `Service` para las reglas de
-propiedad/veterinario asignado que no dependen solo del rol):
+---
 
-| Método | Ruta | Autenticación | Rol requerido |
-|---|---|---|---|
-| POST | `/api/auth/registro` | No | — (crea siempre `ROLE_DUENO`) |
-| POST | `/api/auth/login` | No | — |
-| POST | `/api/auth/refresh` | Cookie `refresh_token` | — |
-| POST | `/api/auth/logout` | Cookie (idempotente sin sesión) | — |
-| GET | `/api/usuarios/me` | Cookie `access_token` | Cualquier rol autenticado |
-| GET | `/api/usuarios` | Cookie `access_token` | `ADMIN` únicamente |
-| GET | `/api/usuarios/{id}` | Cookie `access_token` | `ADMIN` únicamente |
-| POST | `/api/usuarios` | Cookie `access_token` | `ADMIN` únicamente |
-| PUT | `/api/usuarios/{id}` | Cookie `access_token` | `ADMIN` únicamente |
-| DELETE | `/api/usuarios/{id}` | Cookie `access_token` | `ADMIN` únicamente |
-| GET | `/api/mascotas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
-| GET | `/api/mascotas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
-| GET | `/api/mascotas/resumen-especies` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` |
-| POST | `/api/mascotas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` |
-| PUT | `/api/mascotas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` |
-| DELETE | `/api/mascotas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` (baja lógica) |
-| GET | `/api/citas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
-| GET | `/api/citas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
-| POST | `/api/citas` | Cookie `access_token` | `ADMIN`/`AUXILIAR` únicamente |
-| PUT | `/api/citas/{id}` | Cookie `access_token` | `ADMIN`/`AUXILIAR`/`VETERINARIO` (`VETERINARIO` solo si es el veterinario asignado a la cita) |
-| DELETE | `/api/citas/{id}` | Cookie `access_token` | `ADMIN` únicamente (baja lógica) |
-| GET | `/api/consultas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (el listado actual no filtra por propietario; el filtrado por propiedad se aplica en la consulta individual) |
-| GET | `/api/consultas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
-| POST | `/api/consultas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` |
-| PUT | `/api/consultas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` |
-| DELETE | `/api/consultas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` (baja lógica) |
-| GET | `/api/vacunas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
-| GET | `/api/vacunas/mascota/{mascotaId}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
-| GET | `/api/vacunas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` (propiedad para `DUENO`) |
-| POST | `/api/vacunas` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` |
-| PUT | `/api/vacunas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` |
-| DELETE | `/api/vacunas/{id}` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR` (baja lógica) |
-| GET | `/api/externa/especies` | Cookie `access_token` | `ADMIN`/`VETERINARIO`/`AUXILIAR`/`DUENO` |
-| GET | `/actuator/health` | No | — |
-| GET | `/api/docs` | No | — (Swagger UI) |
-| GET | `/api/openapi` | No | — (documento OpenAPI en JSON) |
+## GHCR
 
-### Cuenta de desarrollo sembrada
+Pendiente de publicación de imagen final y digest GHCR.
 
-El backend crea automáticamente, en cada arranque
-(`DataInitializer.seedAdmin`, de forma idempotente), un único usuario:
-`admin@biopet.ec`, rol `ROLE_ADMIN`. **Es una cuenta académica de
-desarrollo**, no un dato real: la contraseña está definida en el propio
-`DataInitializer.java` (y replicada en `db/seed.sql`); este README no la
-reproduce. **Antes de cualquier despliegue fuera del entorno académico,
-esta cuenta debe eliminarse o su contraseña debe externalizarse** (por
-ejemplo, mediante un gestor de secretos), ya que hoy es un valor fijo en
-el código fuente.
+---
 
-También puedes registrar un usuario nuevo con `POST /api/auth/registro`
-(siempre queda como `ROLE_DUENO`):
+## DOI / Zenodo
 
-```json
-{
-  "nombre": "Usuario de ejemplo",
-  "email": "usuario@example.test",
-  "password": "ClaveDeEjemplo123*",
-  "rol": "ROLE_DUENO"
-}
-```
+- DOI de software: pendiente de publicación en Zenodo.
+- DOI del dataset: pendiente de publicación.
 
-Un usuario `ROLE_DUENO` puede consultar sus propias mascotas, pero crear,
-actualizar o eliminar requiere una cuenta `ADMIN`/`VETERINARIO`/`AUXILIAR`.
+---
 
-## Postman
+## Lighthouse
 
-Colección y entorno reproducibles, verificados contra el código actual,
-cookies automáticas, sin JWT ni `Authorization: Bearer` en el flujo
-principal:
+Existe evidencia histórica en
+[`docs/mediciones/lighthouse/README.md`](docs/mediciones/lighthouse/README.md),
+correspondiente a una única corrida en perfil móvil simulado (SEO = 82,
+por debajo del umbral configurado de 90). La evaluación final en los
+perfiles móvil **y** desktop, exigida para el cierre de esta entrega,
+todavía está en proceso; no se presenta la evidencia histórica como
+cumplimiento final de los umbrales. `make lighthouse` reproduce la
+auditoría (requiere `make up` previo) pero no está integrado en
+`make all` ni en CI mientras esa evaluación no se cierre.
 
-- [`docs/postman/BIOPET.postman_collection.json`](docs/postman/BIOPET.postman_collection.json)
-  — colección principal (Auth + Mascotas): 44 requests definidos en 7
-  carpetas. Ejecutada de punta a punta con Newman contra el backend real:
-  46 requests, 234 assertions, 0 fallos (resumen en
-  [`docs/mediciones/postman/newman-report.json`](docs/mediciones/postman/newman-report.json)).
-- [`docs/postman/BIOPET-Vacunas.postman_collection.json`](docs/postman/BIOPET-Vacunas.postman_collection.json)
-  — colección adicional del CRUD de Vacunas: 12 requests.
-- [`docs/postman/BIOPET-Local.postman_environment.json`](docs/postman/BIOPET-Local.postman_environment.json)
-- Instrucciones de uso: [`docs/postman/README.md`](docs/postman/README.md)
+---
 
-## Documentación
+## Reproducibilidad
 
-| Documento | Contenido |
-|---|---|
-| [`docs/adr/`](docs/adr/) | Decisiones de arquitectura (ADR-002 a ADR-007); ver especialmente [`ADR-006-autenticacion-seguridad.md`](docs/adr/ADR-006-autenticacion-seguridad.md) (autenticación y seguridad) y [`ADR-007-acceso-datos.md`](docs/adr/ADR-007-acceso-datos.md) (estrategia híbrida de acceso a datos). |
-| [`docs/diagrams/c4-componentes-backend/C4-L3-backend.md`](docs/diagrams/c4-componentes-backend/C4-L3-backend.md) | C4 Nivel 3: componentes del backend. |
-| [`docs/mediciones/sec/`](docs/mediciones/sec/) | Evidencia OWASP (A01, A02, A03, A05, A07, A09) y resumen JaCoCo, con [`REPORT.md`](docs/mediciones/sec/REPORT.md) como índice. |
-| [`docs/mediciones/redis/`](docs/mediciones/redis/) | Evidencia cruda de caché: configuración `maxmemory`/`maxmemory-policy`, tamaño de la base (`DBSIZE`), TTL y claves activas del caché de listado de mascotas. |
-| [`docs/mediciones/postgres/`](docs/mediciones/postgres/) | Evidencia formal de privilegios de rol: confirma que `biopet_app` opera con privilegios mínimos (`arwd`, sin `Superuser`/`Create role`/`Create DB`/owner completo) sobre `usuarios` y `mascotas`. |
-| [`docs/mediciones/lighthouse/`](docs/mediciones/lighthouse/README.md) | Resultados Lighthouse disponibles (Performance, Accessibility, Best Practices, SEO), 6 corridas oficiales del 2026-08-01 sobre las solicitudes `/login` y `/mascotas` (esta última redirige a `/login` sin sesión), con assertions configuradas y cuáles se cumplieron o no. |
-| [`docs/mediciones/DATA-DICTIONARY.md`](docs/mediciones/DATA-DICTIONARY.md) | Diccionario de datos de todas las mediciones (seguridad, cobertura, rendimiento, usabilidad). |
-| [`docs/informe/`](docs/informe/README.md) | Código fuente LaTeX del informe final de la Tercera Entrega; ver `docs/informe/README.md` para compilarlo. |
-| [`docs/requisitos/`](docs/requisitos/) | SRS, historias de usuario, casos de uso. |
-| [`docs/trazabilidad/matriz.csv`](docs/trazabilidad/matriz.csv) | Matriz de trazabilidad de requisitos. |
-| [`docs/basedatos/CATALOGO-SP.md`](docs/basedatos/CATALOGO-SP.md) | Catálogo de funciones/procedimientos de PostgreSQL. |
-| [`docs/etica/ETHICS.md`](docs/etica/ETHICS.md) | Declaración ética y de gestión de datos. |
-
-## Reproducibilidad de imágenes Docker
-
-Las imágenes de terceros están fijadas por **digest sha256**, no solo por
-*tag*, para que una reconstrucción futura no use, sin darse cuenta, una
-versión distinta si el *tag* se actualiza silenciosamente:
-
-- `postgres:16-alpine` y `redis:7-alpine` en `docker-compose.yml`.
-- `maven:3.9-eclipse-temurin-21` y `eclipse-temurin:21-jre-alpine` en `Backend/Dockerfile`.
-
-Las imágenes `backend` y `frontend` se construyen localmente desde el
-código del repositorio (`Dockerfile` propio): su reproducibilidad depende
-de que el código fuente esté versionado, no de un pin de registro externo.
-
-**Para actualizar un digest:**
+El comando principal de reproducción técnica es:
 
 ```bash
-docker pull <imagen:tag>
-docker inspect --format='{{index .RepoDigests 0}}' <imagen:tag>
-# o, sin descargar la imagen completa:
-docker buildx imagetools inspect <imagen:tag>
+make all
 ```
 
-Copia la línea completa `imagen:tag@sha256:...` en el `image:` (o `FROM`)
-correspondiente, valida con `docker compose config`, y confirma con
-`make up && docker compose ps` que el sistema arranca correctamente con la
-nueva imagen.
+Requiere Docker, Java, Maven, Node/npm, GNU Make y Bash (para los scripts
+`.sh` de `scripts/`). La referencia de reproducibilidad es Linux/GitHub
+Actions; el Makefile evita construcciones específicas de un único shell
+para poder ejecutarse también en Windows con Git Bash en el `PATH`.
 
-## Consideraciones para evolución y despliegue
+---
 
-BIOPET está **terminado para el alcance académico definido** en esta
-Unidad IV: los módulos funcionales, la seguridad, las pruebas automatizadas
-y la evidencia reproducible descritas en este README ya están integradas y
-verificadas. Lo que sigue no son funcionalidades académicas faltantes, sino
-condiciones reales del entorno de desarrollo/evaluación que habría que
-resolver **antes de un hipotético despliegue productivo**:
+## Licencia / citación
 
-- El certificado TLS es autofirmado y exclusivamente académico; no válido
-  para producción.
-- El rate limiting de login es en memoria y por instancia del backend, no
-  distribuido.
-- Todo el sistema se evaluó como **una sola instancia** del backend
-  (`docker-compose.yml`, sin réplicas).
-- Los logs de auditoría (`AUTH_AUDIT`) son locales al proceso/contenedor,
-  sin integración con un SIEM centralizado.
-- Existen mediciones Lighthouse versionadas ([`docs/mediciones/lighthouse/`](docs/mediciones/lighthouse/README.md)),
-  6 corridas oficiales del 2026-08-01, solicitando `/login` y `/mascotas`.
-  La solicitud a `/mascotas` redirige a `/login` al ejecutarse sin sesión
-  (comportamiento esperado del `authGuard`), por lo que esta evidencia no
-  constituye todavía una auditoría de la vista autenticada de Mascotas,
-  solo de `/login` y del comportamiento de esa redirección. Performance,
-  Accessibility y Best Practices alcanzaron sus umbrales configurados; SEO
-  obtuvo 82 frente al umbral configurado de 90, documentado como
-  oportunidad de mejora identificada por la medición. La evidencia cubre
-  únicamente lo efectivamente auditado en esa fecha; no incluye cambios de
-  frontend posteriores (ver el README de esa carpeta).
-- Las credenciales y secretos de `.env.example`/código son de desarrollo,
-  no aptos para un entorno real.
-- **Este sistema no está certificado como listo para producción**:
-  certificado académico, secretos de desarrollo, sin SIEM, sin evaluación
-  de alta disponibilidad.
+Este proyecto se distribuye bajo licencia **MIT** — ver [`LICENSE`](LICENSE).
+
+Para citar el software, usar los metadatos de [`CITATION.cff`](CITATION.cff).
+Sus metadatos (versión, DOI) se actualizarán antes de publicar el tag
+`v1.0.0`, conforme a lo que quede pendiente en las secciones
+[GHCR](#ghcr) y [DOI / Zenodo](#doi--zenodo) de este README.

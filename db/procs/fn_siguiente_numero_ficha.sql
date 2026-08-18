@@ -3,26 +3,37 @@
 -- Proposito: generar el siguiente numero de ficha secuencial de la clinica,
 -- con el formato '<PREFIJO>-NNNNNN' (ej. FICHA-000042), consumiendo un valor
 -- de la secuencia dedicada seq_ficha_biopet. Los numeros nunca se repiten
--- aunque la funcion se invoque en paralelo.
+-- aunque la rutina se invoque en paralelo.
 -- Tablas que toca: ninguna (solo la secuencia seq_ficha_biopet).
 -- Parametros:
 --   IN  p_prefijo VARCHAR - prefijo opcional del codigo (default 'FICHA');
 --                           se normaliza a mayusculas y sin espacios.
---   OUT p_codigo VARCHAR  - codigo secuencial generado.
--- El OUT permite la invocacion formal desde JPA (@Procedure con
--- outputParameterName = 'p_codigo') via JDBC CallableStatement.
--- Sin SQL dinamico ni concatenacion en queries.
+--   OUT p_codigo VARCHAR  - codigo secuencial generado (escalar directo,
+--                           sin refcursor: es un unico valor, no una tabla).
 -- Ejemplo de invocacion:
---   SELECT * FROM fn_siguiente_numero_ficha();           -- FICHA-000001
---   SELECT * FROM fn_siguiente_numero_ficha('HIST');     -- HIST-000002
+--   CALL fn_siguiente_numero_ficha('HIST', NULL);   -- HIST-000002
+--
+-- Reclasificada de FUNCTION a PROCEDURE (F02, cierre de acceso JPA formal):
+-- Spring Data @Procedure invoca siempre con la sentencia CALL, valida solo
+-- sobre PROCEDURE (ver la nota completa en
+-- fn_resumen_mascotas_por_especie.sql). A diferencia de las otras 3
+-- rutinas fn_*, esta no necesita OUT refcursor porque su resultado ya era
+-- un escalar (un unico VARCHAR), no una tabla: un PROCEDURE con OUT
+-- escalar directo es exactamente el mismo patron que ya usan sp_* y
+-- funciona con @Procedure sin ningun ajuste adicional.
+-- p_prefijo ya no tiene DEFAULT: PostgreSQL prohibe un parametro OUT
+-- despues de uno con DEFAULT en un PROCEDURE. El llamador debe pasar el
+-- prefijo de forma explicita (ProcedimientoBiopetRepository ya lo hace).
+-- La normalizacion a 'FICHA' cuando el valor es NULL o vacio se mantiene
+-- intacta dentro del cuerpo de la rutina.
 
 CREATE SEQUENCE IF NOT EXISTS seq_ficha_biopet
     START WITH 1
     INCREMENT BY 1
     NO CYCLE;
 
-CREATE OR REPLACE FUNCTION fn_siguiente_numero_ficha(
-    p_prefijo VARCHAR DEFAULT 'FICHA',
+CREATE OR REPLACE PROCEDURE fn_siguiente_numero_ficha(
+    IN p_prefijo VARCHAR,
     OUT p_codigo VARCHAR
 )
 LANGUAGE plpgsql

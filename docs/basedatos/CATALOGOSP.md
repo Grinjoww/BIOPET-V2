@@ -1,18 +1,39 @@
 # Catálogo de procedimientos y funciones almacenadas — BIOPET
 
-Inventario al 100% de los SP/funciones de `db/procs/` (F04). Cada fila es trazable
+Inventario al 100% de las rutinas de `db/procs/` (F04). Cada fila es trazable
 a un archivo `.sql` real del repositorio. Categorías (rúbrica P1): 1) multi-tabla,
 2) agregado, 3) reporte, 4) actualización masiva, 5) validación cruzada,
 6) código secuencial.
 
-| Nombre | Categoría | Propósito | Parámetros IN/OUT/INOUT | Cursores | Tablas afectadas | Archivo |
-|---|---|---|---|---|---|---|
-| `fn_resumen_mascotas_por_especie` | 2) Agregado | Resumen de mascotas activas agrupadas por especie, filtrable por dueño | IN `p_duenio_id` BIGINT (default `NULL`) | No (RETURNS TABLE) | Lectura: `mascotas` | `db/procs/fn_resumen_mascotas_por_especie.sql` |
-| `fn_historial_clinico_mascota` | 1) Multi-tabla | Historial clínico consolidado de una mascota: datos, dueño, conteos de consultas/citas, última consulta, última y próxima vacuna | IN `p_mascota_id` BIGINT | No (RETURNS TABLE) | Lectura: `mascotas`, `usuarios`, `consultas`, `vacunas`, `citas` | `db/procs/fn_historial_clinico_mascota.sql` |
-| `fn_reporte_dashboard` | 3) Reporte | Indicadores de dashboard en una fila para un rango de fechas: mascotas activas, citas programadas, consultas y vacunas en rango, mascotas sin consulta | IN `p_desde` DATE, IN `p_hasta` DATE | No (RETURNS TABLE) | Lectura: `mascotas`, `citas`, `consultas`, `vacunas` | `db/procs/fn_reporte_dashboard.sql` |
-| `fn_siguiente_numero_ficha` | 6) Código secuencial | Genera el siguiente número de ficha `PREFIJO-NNNNNN` consumiendo la secuencia dedicada `seq_ficha_biopet` | IN `p_prefijo` VARCHAR (default `'FICHA'`), OUT `p_codigo` VARCHAR | No (OUT escalar) | Secuencia `seq_ficha_biopet` | `db/procs/fn_siguiente_numero_ficha.sql` |
-| `sp_actualizar_estado_citas_masivas` | 4) Actualización masiva | UPDATE controlado del estado de citas de un veterinario por estado anterior y fecha límite, con conteo de filas afectadas | IN `p_veterinario_id` BIGINT, IN `p_estado_anterior` VARCHAR(20), IN `p_estado_nuevo` VARCHAR(20), IN `p_fecha_limite` TIMESTAMPTZ, OUT `p_afectadas` BIGINT | No | Escritura: `citas` | `db/procs/sp_actualizar_estado_citas_masivas.sql` |
-| `sp_registrar_consulta_validada` | 5) Validación cruzada | Registra una consulta solo si la mascota existe y está activa y el veterinario es VETERINARIO/ADMIN activo; `RAISE EXCEPTION` si no | IN `p_mascota_id` BIGINT, IN `p_veterinario_id` BIGINT, IN `p_motivo` VARCHAR(200), IN `p_diagnostico` VARCHAR(500), IN `p_tratamiento` VARCHAR(500), IN `p_observaciones` VARCHAR(500) (opcionales: `NULL` si no aplican, sin `DEFAULT` por restricción de PostgreSQL sobre OUT tras parámetros con default), OUT `p_consulta_id` BIGINT | No | Lectura: `mascotas`, `usuarios`; escritura: `consultas` | `db/procs/sp_registrar_consulta_validada.sql` |
+**Nota (F02, cierre de acceso JPA formal):** las 6 rutinas son objetos
+PostgreSQL `PROCEDURE`. Las 4 con prefijo `fn_*` originalmente eran
+`FUNCTION`; se reclasificaron a `PROCEDURE` (conservando el nombre `fn_...`
+por compatibilidad con el resto del repositorio) para poder invocarse desde
+JPA con `@Procedure` — ver "Notas de invocación" más abajo para el motivo
+técnico exacto.
+
+**Estado final vs. migraciones Flyway:** los archivos de `db/procs/`
+representan el estado final v1.0.0 (las 4 `fn_*` ya como `PROCEDURE`). Esto
+**no** se aplicó reescribiendo `V5__procedimientos_biopet.sql` — esa
+migración ya estaba publicada en `main` y pudo haberse aplicado en bases
+persistentes; reescribirla habría producido `checksum mismatch` en Flyway.
+`V5` se dejó intacta con su contenido histórico original (las 4 `fn_*` como
+`FUNCTION`, invocadas en su momento con `@Query(nativeQuery = true)`). La
+reclasificación a `PROCEDURE` se hizo en una migración nueva y aditiva,
+`Backend/src/main/resources/db/migration/V6__formalizar_procedimientos_jpa.sql`,
+que hace `DROP FUNCTION IF EXISTS` de las 4 rutinas creadas por V5 y las
+vuelve a crear como `PROCEDURE` con la firma final. `V6` se aplica sobre
+cualquier base que ya tenga V1–V5 (persistente o nueva); Flyway ejecuta
+V1→V6 en orden en un checkout nuevo.
+
+| Nombre | Tipo PostgreSQL | Categoría | Propósito | Parámetros IN/OUT/INOUT | Cursores | Tablas afectadas | Archivo |
+|---|---|---|---|---|---|---|---|
+| `fn_resumen_mascotas_por_especie` | PROCEDURE | 2) Agregado | Resumen de mascotas activas agrupadas por especie, filtrable por dueño | IN `p_duenio_id` BIGINT (`NULL` explícito para el resumen global; sin `DEFAULT` por restricción de PostgreSQL sobre OUT tras parámetros con default), OUT `p_cursor` refcursor | Sí (OUT refcursor) | Lectura: `mascotas` | `db/procs/fn_resumen_mascotas_por_especie.sql` |
+| `fn_historial_clinico_mascota` | PROCEDURE | 1) Multi-tabla | Historial clínico consolidado de una mascota: datos, dueño, conteos de consultas/citas, última consulta, última y próxima vacuna | IN `p_mascota_id` BIGINT, OUT `p_cursor` refcursor | Sí (OUT refcursor) | Lectura: `mascotas`, `usuarios`, `consultas`, `vacunas`, `citas` | `db/procs/fn_historial_clinico_mascota.sql` |
+| `fn_reporte_dashboard` | PROCEDURE | 3) Reporte | Indicadores de dashboard en una fila para un rango de fechas: mascotas activas, citas programadas, consultas y vacunas en rango, mascotas sin consulta | IN `p_desde` DATE, IN `p_hasta` DATE, OUT `p_cursor` refcursor | Sí (OUT refcursor) | Lectura: `mascotas`, `citas`, `consultas`, `vacunas` | `db/procs/fn_reporte_dashboard.sql` |
+| `fn_siguiente_numero_ficha` | PROCEDURE | 6) Código secuencial | Genera el siguiente número de ficha `PREFIJO-NNNNNN` consumiendo la secuencia dedicada `seq_ficha_biopet` | IN `p_prefijo` VARCHAR (explícito; `NULL`/vacío se normaliza a `'FICHA'` dentro de la rutina; sin `DEFAULT` por la misma restricción de PostgreSQL), OUT `p_codigo` VARCHAR | No (OUT escalar) | Secuencia `seq_ficha_biopet` | `db/procs/fn_siguiente_numero_ficha.sql` |
+| `sp_actualizar_estado_citas_masivas` | PROCEDURE | 4) Actualización masiva | UPDATE controlado del estado de citas de un veterinario por estado anterior y fecha límite, con conteo de filas afectadas | IN `p_veterinario_id` BIGINT, IN `p_estado_anterior` VARCHAR(20), IN `p_estado_nuevo` VARCHAR(20), IN `p_fecha_limite` TIMESTAMPTZ, OUT `p_afectadas` BIGINT | No | Escritura: `citas` | `db/procs/sp_actualizar_estado_citas_masivas.sql` |
+| `sp_registrar_consulta_validada` | PROCEDURE | 5) Validación cruzada | Registra una consulta solo si la mascota existe y está activa y el veterinario es VETERINARIO/ADMIN activo; `RAISE EXCEPTION` si no | IN `p_mascota_id` BIGINT, IN `p_veterinario_id` BIGINT, IN `p_motivo` VARCHAR(200), IN `p_diagnostico` VARCHAR(500), IN `p_tratamiento` VARCHAR(500), IN `p_observaciones` VARCHAR(500) (opcionales: `NULL` si no aplican, sin `DEFAULT` por restricción de PostgreSQL sobre OUT tras parámetros con default), OUT `p_consulta_id` BIGINT | No | Lectura: `mascotas`, `usuarios`; escritura: `consultas` | `db/procs/sp_registrar_consulta_validada.sql` |
 
 ## Funciones complementarias fuera de db/procs/
 
@@ -23,24 +44,70 @@ a un archivo `.sql` real del repositorio. Categorías (rúbrica P1): 1) multi-ta
 ## Notas de invocación (F02)
 
 Las 6 rutinas se invocan formalmente desde Java en
-`Backend/src/main/java/com/biopet/repository/ProcedimientoBiopetRepository.java`.
-PostgreSQL distingue funciones de procedimientos, por lo que el mecanismo JPA
-debe ajustarse al tipo de rutina (no se usa `@Query` con texto libre arbitrario
-ni JDBC directo desde servicios):
+`Backend/src/main/java/com/biopet/repository/ProcedimientoBiopetRepository.java`,
+las 6 con `@Procedure` (mecanismo JPA formal). No se usa `@Query` con texto
+libre arbitrario ni JDBC directo desde servicios; `@Query(nativeQuery = true)`
+no se considera invocación formal a efectos de este requisito.
 
-- Las 4 **funciones** (`fn_*`) se invocan con `@Query(nativeQuery = true)` y
-  `SELECT * FROM fn_...( :param )`: PostgreSQL invoca las funciones con `SELECT`,
-  no con `CALL`. Las de `RETURNS TABLE` se proyectan a interfaces
-  (`ResumenEspecie`, `HistorialClinico`, `ReporteDashboard`) con mapeo por
-  nombre de columna (camelCase en SQL ↔ getters).
-- Los 2 **procedimientos** (`sp_*`) se invocan con `@Procedure`: Spring Data
-  genera `{call sp_...(?)}`, que es la única sintaxis válida para PROCEDURE.
-- Los OUT escalares (`p_afectadas`, `p_consulta_id`) se leen con
-  `outputParameterName` en `@Procedure`; `fn_siguiente_numero_ficha` declara
-  `OUT p_codigo` y se invoca con `SELECT p_codigo FROM fn_siguiente_numero_ficha(...)`
-  para que PostgreSQL JDBC devuelva el escalar como columna.
-- Sin `@Procedure` sobre funciones: Hibernate generaría `CALL fn_...(...)`, que
-  PostgreSQL rechaza con `procedure ... does not exist` (verificación F03 real).
+**Motivo técnico de la reclasificación `FUNCTION` → `PROCEDURE` (verificación
+real F03):** Spring Data JPA / Hibernate generan siempre una sentencia
+`CALL` para `@Procedure`, y PostgreSQL solo acepta `CALL` sobre objetos
+`PROCEDURE`. Antes de este cierre, las 4 rutinas `fn_*` eran `FUNCTION`
+(`RETURNS TABLE` u `OUT` escalar directo, creadas en `V5`) invocadas con
+`@Query(nativeQuery = true)`; probar `@Procedure` directamente sobre esas
+`FUNCTION` — incluida una variante intermedia con `OUT p_cursor refcursor`
+sin cambiar el tipo de objeto — fue rechazado en ambos casos por PostgreSQL
+con el error real `"... is not a procedure. Hint: To call a function, use
+SELECT"`. Por eso las 4 rutinas `fn_*` se reclasificaron de `FUNCTION` a
+`PROCEDURE` real (conservando su nombre `fn_...`) en `V6`, que es el mismo
+tipo de objeto que ya usaban `sp_*` y que sí acepta `CALL`:
+
+- Las 3 rutinas que devuelven un **conjunto de filas**
+  (`fn_resumen_mascotas_por_especie`, `fn_historial_clinico_mascota`,
+  `fn_reporte_dashboard`) exponen un único parámetro `OUT p_cursor
+  refcursor` — un `PROCEDURE` no admite `RETURNS TABLE`, así que el cursor
+  es el mecanismo para devolver varias filas. Se invocan con
+  `@Procedure(name = "fn_...")` referenciando un
+  `@NamedStoredProcedureQuery` declarado explícitamente en
+  `Backend/src/main/java/com/biopet/entity/Mascota.java` con
+  `@StoredProcedureParameter(mode = ParameterMode.REF_CURSOR, type =
+  void.class)`. Fue necesario declarar el `@NamedStoredProcedureQuery` de
+  forma explícita porque `@Procedure` con parámetros auto-derivados de los
+  metadatos JDBC (sin `@NamedStoredProcedureQuery`) genera un `CALL` que
+  omite el placeholder del parámetro `refcursor`, y PostgreSQL lo rechaza
+  por discordancia de aridad con `procedure ... does not exist`
+  (verificación real F03). El cursor abierto por `OPEN p_cursor FOR SELECT
+  ...` solo es legible dentro de la misma transacción en la que se abre;
+  probar con `@Transactional(readOnly = true)` en el propio método del
+  repositorio falla con `InvalidDataAccessApiUsageException` ("sin
+  transacción circundante"), porque Spring Data no reconoce esa transacción
+  autogestionada por el propio proxy como "circundante". Por eso estos 3
+  métodos no declaran su propio `@Transactional`: dependen de que el
+  código llamador ya esté dentro de una transacción, como ya lo está
+  `MascotaService.resumenPorEspecie` (`@Transactional(readOnly = true)`), y
+  como declaran explícitamente los tests de integración que los
+  ejercitan. El resultado se proyecta a interfaces (`ResumenEspecie`,
+  `HistorialClinico`, `ReporteDashboard`) con mapeo por nombre de columna
+  (camelCase en SQL ↔ getters).
+- `fn_siguiente_numero_ficha` ya devolvía un escalar (un único `VARCHAR`),
+  no una tabla, así que no necesita `refcursor` ni
+  `@NamedStoredProcedureQuery`: usa `OUT p_codigo VARCHAR` directo,
+  exactamente el mismo patrón que ya usan `sp_*`, y se invoca con
+  `@Procedure(procedureName = "fn_siguiente_numero_ficha",
+  outputParameterName = "p_codigo")`.
+- Los 2 **procedimientos** (`sp_*`) no cambiaron: ya eran `PROCEDURE` y ya
+  se invocaban con `@Procedure` (`{call sp_...(?)}`), que es la sentencia
+  válida para `PROCEDURE`. Los OUT escalares (`p_afectadas`,
+  `p_consulta_id`) se leen con `outputParameterName`.
+
+Consecuencia documental: con este cierre, las 6 rutinas de `db/procs/`
+son objetos `PROCEDURE`; ninguna es ya una `FUNCTION` real, aunque 4
+conserven el prefijo `fn_` por compatibilidad con el resto del repositorio
+(código, tests, SRS, trazabilidad). Esto es el estado final v1.0.0 tal como
+queda **después de aplicar V6**; `V5`, tomada de forma aislada, sigue
+creando esas 4 rutinas como `FUNCTION` (su contenido histórico no se
+modificó — ver nota "Estado final vs. migraciones Flyway" más arriba). Ver
+"Tipo PostgreSQL" en la tabla de arriba.
 
 ## Control de acceso
 
@@ -62,8 +129,12 @@ ni JDBC directo desde servicios):
   6 rutinas y `USAGE, SELECT` sobre `seq_ficha_biopet`, de forma condicional
   (no-op si el rol u objeto no existe), para cubrir también los PROCEDURE (que
   no siempre quedan cubiertos por los default privileges sobre FUNCTIONS).
-- La migración `V5__procedimientos_biopet.sql` replica las definiciones y los
-  mismos grants condicionales para el flujo Flyway.
+- Para el flujo Flyway, `V5__procedimientos_biopet.sql` crea las rutinas y
+  sus grants originales (las 4 `fn_*` como `FUNCTION`); `V6__formalizar_procedimientos_jpa.sql`
+  hace `DROP FUNCTION` de esas 4 y las vuelve a crear como `PROCEDURE`, y
+  vuelve a conceder `EXECUTE` sobre ellas a `biopet_app` (el `DROP`
+  revoca implícitamente los grants anteriores sobre los objetos
+  eliminados).
 
 ## Verificación automatizada
 
@@ -77,5 +148,6 @@ desechable) en `Backend/src/test/java/com/biopet/repository/`:
   `biopet_app`: ni de más (sin DDL, sin objetos fuera de permiso) ni de menos
   (CRUD sobre tablas de dominio y EXECUTE de las 6 rutinas).
 
-Pendiente explícito: ejecución real de `mvn clean verify` y de `docker compose up`
-(verificaciones F03/F05) — los resultados se pegarán aquí cuando se ejecuten.
+`mvn clean verify` ejecutado con Docker/Testcontainers real (PostgreSQL 16),
+Flyway aplicando V1→V6: 205+ tests, 0 failures, 0 errors, BUILD SUCCESS,
+cobertura JaCoCo LINE y BRANCH por encima del umbral 70 %.

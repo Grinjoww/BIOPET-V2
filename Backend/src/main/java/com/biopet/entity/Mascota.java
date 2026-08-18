@@ -13,6 +13,33 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Entity
 @Table(name = "mascotas")
+@NamedStoredProcedureQueries({
+        @NamedStoredProcedureQuery(
+                name = "fn_resumen_mascotas_por_especie",
+                procedureName = "fn_resumen_mascotas_por_especie",
+                parameters = {
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = Long.class),
+                        @StoredProcedureParameter(mode = ParameterMode.REF_CURSOR, type = void.class)
+                }
+        ),
+        @NamedStoredProcedureQuery(
+                name = "fn_historial_clinico_mascota",
+                procedureName = "fn_historial_clinico_mascota",
+                parameters = {
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = Long.class),
+                        @StoredProcedureParameter(mode = ParameterMode.REF_CURSOR, type = void.class)
+                }
+        ),
+        @NamedStoredProcedureQuery(
+                name = "fn_reporte_dashboard",
+                procedureName = "fn_reporte_dashboard",
+                parameters = {
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = LocalDate.class),
+                        @StoredProcedureParameter(mode = ParameterMode.IN, type = LocalDate.class),
+                        @StoredProcedureParameter(mode = ParameterMode.REF_CURSOR, type = void.class)
+                }
+        )
+})
 public class Mascota {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
