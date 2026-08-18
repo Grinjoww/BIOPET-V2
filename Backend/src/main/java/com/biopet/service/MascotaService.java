@@ -8,6 +8,7 @@ import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
 import com.biopet.exception.RecursoNoEncontradoException;
 import com.biopet.repository.MascotaRepository;
+import com.biopet.repository.ProcedimientoBiopetRepository;
 import com.biopet.repository.UsuarioRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -23,10 +24,14 @@ import java.util.List;
 public class MascotaService {
     private final MascotaRepository mascotaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ProcedimientoBiopetRepository procedimientoBiopetRepository;
 
-    public MascotaService(MascotaRepository mascotaRepository, UsuarioRepository usuarioRepository) {
+    public MascotaService(MascotaRepository mascotaRepository,
+                          UsuarioRepository usuarioRepository,
+                          ProcedimientoBiopetRepository procedimientoBiopetRepository) {
         this.mascotaRepository = mascotaRepository;
         this.usuarioRepository = usuarioRepository;
+        this.procedimientoBiopetRepository = procedimientoBiopetRepository;
     }
 
     @Cacheable(value = "mascotas", key = "#email + '-' + #pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()")
@@ -104,7 +109,7 @@ public class MascotaService {
                 ? duenioIdSolicitado
                 : usuarioAutenticado.getId();
 
-        return mascotaRepository.resumenPorEspecie(duenioIdEfectivo).stream()
+        return procedimientoBiopetRepository.resumenPorEspecie(duenioIdEfectivo).stream()
                 .map(r -> new ResumenEspecieResponse(r.getEspecie(), r.getTotal()))
                 .toList();
     }

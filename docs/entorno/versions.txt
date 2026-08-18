@@ -1,0 +1,45 @@
+﻿# Versiones exactas del entorno de desarrollo - BIOPET (F16)
+#
+# Generado con scripts/generar-versions.ps1 - NO editar a mano.
+# Revisar commit asociado en el historial del repo.
+
+Fecha (ISO 8601): 2026-08-17T15:26:06-05:00
+Commit:            f2e659c
+
+## Host (Windows)
+- SO:               Windows 10/11 (PowerShell 5.1)
+
+## Docker / contenedores
+- Docker:           29.6.1, build 8900f1d
+- Docker Compose:   v5.3.0
+
+## SO de los contenedores (imagenes, /etc/os-release)
+- postgres:16-alpine (postgres runtime) -> Alpine Linux v3.24
+- redis:7-alpine (redis runtime) -> Alpine Linux v3.21
+- eclipse-temurin:21-jre-alpine (backend runtime) -> Alpine Linux v3.23
+- nginx:1.25-alpine (frontend runtime) -> Alpine Linux v3.19
+- maven:3.9-eclipse-temurin-21 (backend build) -> Ubuntu 24.04.4 LTS
+- node:20-alpine (frontend build) -> Alpine Linux v3.23
+
+## JDK (local, Eclipse Adoptium Temurin 21 LTS)
+- JAVA_HOME:        C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot
+- java:             openjdk version 21.0.11
+
+## Frontend (local y contenedor de build)
+- Node (local):     v24.18.0
+- npm (local):      11.16.0
+- Angular CLI:      17.3.17 (package-lock.json)
+- Angular core:     17.3.12 (package-lock.json)
+- TypeScript:       5.4.5 (package-lock.json)
+
+## Pruebas de rendimiento (k6)
+- k6:               k6.exe v2.1.0 (commit/83a87a41e2, go1.26.4, windows/amd64)
+
+## Analisis estadistico (Python, scripts/perf-analysis.py)
+- Python:           Python 3.12.10
+- numpy:            2.5.1
+- scipy:            1.18.0
+
+## Base de datos / cache (imagenes docker-compose.yml)
+- postgres:16-alpine           (Alpine Linux v3.24)
+- redis:7-alpine               (Alpine Linux v3.21)
