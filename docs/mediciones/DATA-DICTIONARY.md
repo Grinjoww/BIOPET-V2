@@ -181,12 +181,15 @@ archivo `lhci-YYYYMMDD-HHMM.meta.txt` que acompaña cada lote documenta fecha
 ISO 8601, commit hash corto y versiones de herramientas, exigido por el
 Bloque B.2 de la guía.
 
-> **Estado a la fecha de este documento:** configuración (`lighthouserc.js`,
-> `scripts/run-lighthouse.sh`) completa y verificada, pero la corrida real
-> contra el contenedor todavía no se ha ejecutado ni archivado. Esta sección
-> describe el esquema que tendrán las variables una vez generados los JSON
-> crudos; los valores de "Resultados medidos actuales" se añaden en cuanto
-> exista `docs/mediciones/lighthouse/*.json` real.
+> **Estado a la fecha de este documento:** la corrida real contra el
+> contenedor **ya existe y está archivada** (6 corridas oficiales,
+> 2026-08-01, ver `docs/mediciones/lighthouse/README.md` y
+> `docs/mediciones/lighthouse/raw/`). Este diccionario describía antes el
+> esquema sin datos; se completa aquí con los valores medidos reales.
+> Pendiente: una corrida adicional en perfil **desktop** (hasta ahora solo
+> se auditó perfil móvil) y una nueva corrida móvil que confirme que SEO
+> llega a ≥90 tras los dos fixes aplicados a `frontend/` (meta description
+> y `robots.txt`, ver `docs/requisitos/SRS.md`, sección 7).
 
 ### Identificación de la corrida
 
@@ -247,13 +250,25 @@ se documentan aquí porque explican variaciones entre corridas.
 
 ### Resultados medidos actuales
 
-_Pendiente de completar tras ejecutar `bash scripts/run-lighthouse.sh` contra
-el contenedor real y archivar los JSON crudos en
-`docs/mediciones/lighthouse/`. No se reportan aquí valores hasta que existan
-los archivos crudos correspondientes — reportar cifras sin archivo crudo
-respaldándolas violaría la regla transversal 8 de la guía ("los archivos
-crudos deben conservarse tal cual, su edición manual invalida la
-evidencia")._
+Fuente: `docs/mediciones/lighthouse/raw/manifest.json` y
+`docs/mediciones/lighthouse/raw/assertion-results.json` (6 corridas
+oficiales, 2026-08-01, perfil móvil simulado). Valores tomados
+directamente de los JSON crudos, sin editar.
+
+| Solicitud | Performance | Accessibility | Best Practices | SEO | Assertion SEO (`>= 0.90`) |
+|---|---:|---:|---:|---:|---|
+| `/login` (3 corridas) | 93–94 | 91 | 100 | 82 | FAIL (`actual: 0.82`) |
+| `/mascotas` (3 corridas, redirige a `/login`) | 92 | 91 | 96 | 82 | FAIL (`actual: 0.82`) |
+
+**Causa raíz del FAIL de SEO** (auditorías con `score: 0` en
+`categories.seo.auditRefs`, extraídas del reporte JSON): `meta-description`
+(sin meta descripción en `frontend/src/index.html`) y `robots-txt`
+(`robots.txt` inválido/inexistente). Ambas se corrigieron en este cierre:
+meta descripción agregada a `index.html`; `frontend/public/robots.txt`
+creado y registrado como `assets` en `angular.json`. **Falta re-ejecutar**
+`make lighthouse` para confirmar el nuevo puntaje y archivar la evidencia
+actualizada (no se reporta un puntaje proyectado sin la corrida real, seria
+inventar datos).
 
 ## Cobertura JaCoCo (`Backend/target/site/jacoco/`, resumida en `docs/mediciones/sec/jacoco-summary.md`) — responsable: Jaime
 
