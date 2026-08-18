@@ -34,6 +34,10 @@ keywords:
   - "PostgreSQL"
   - "aplicaciones web"
   - "PFC"
-# doi: pendiente de asignación por Zenodo al archivar el tag v1.0.0.
-# Se agregará aquí, en README.md y en docs/checklists/fair.md (item F1)
-# una vez obtenido -- no se inventa ningún DOI mientras tanto.
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.21988746"
+    description: "DOI del software BIOPET, archivado en Zenodo."
+  - type: doi
+    value: "10.5281/zenodo.21988785"
+    description: "DOI del dataset de evidencias empíricas de BIOPET (rendimiento, seguridad, usabilidad), archivado en Zenodo por separado del software."

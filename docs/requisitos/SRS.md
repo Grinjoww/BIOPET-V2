@@ -897,33 +897,39 @@ cerrar un pendiente.
   quedaron cerradas al corregirse `CONTRIBUTORS.md` con acuerdo del equipo
   completo.
 
-**Sigue pendiente, con acción concreta requerida del equipo (no ejecutable
-solo con lo que ya existe en el repositorio):**
+**Cierre 2026-08-17 — decisión del equipo de cerrar sin el bloque de Fred.**
+Fred tenía asignada la ejecución de varios de los pendientes de abajo
+(corridas Lighthouse, hit ratio de Redis) y no los va a completar. El
+equipo decide cerrar la Entrega Final con la evidencia ya disponible en el
+repositorio, dejando estos puntos como **limitación declarada**, no como
+bloqueo indefinido:
 
-- **Lighthouse — perfil de escritorio y vista autenticada.** Las 6 corridas
-  oficiales existentes (`docs/mediciones/lighthouse/`, 2026-08-01) solo
-  cubren perfil móvil simulado y, por la redirección de `authGuard`, solo
-  auditan efectivamente `/login`. **SEO quedó en 82/100 frente al umbral de
-  90** por dos causas concretas identificadas en el propio reporte
-  (`docs/mediciones/lighthouse/raw/*.report.json`, categoría `seo`):
-  1. `meta-description` ausente en `frontend/src/index.html` — **ya
-     corregido** en este cierre (se agregó una meta descripción).
-  2. `robots.txt` inválido/inexistente — **ya corregido** en este cierre
-     (se creó `frontend/public/robots.txt` y se registró `public/` como
-     `assets` en `angular.json` para que Angular lo sirva en la raíz).
-  Falta que alguien del equipo con acceso al entorno Docker corra
-  `make up && make lighthouse` de nuevo (con `lighthouserc.js` ajustado
-  para incluir un perfil `desktop` además del móvil) para confirmar que
-  SEO llega a ≥90 con estos dos cambios y para obtener, además, la primera
-  corrida real de escritorio.
-- **Hit ratio de caché Redis (REQ-NF-012).** Solo se verificó TTL (195 s) y
-  existencia de la clave bajo carga; falta una medición real de
-  aciertos/total (por ejemplo, `INFO stats` de Redis antes/después de una
-  corrida k6, comparando `keyspace_hits` y `keyspace_misses`).
-- **REQ-NF-006 (compatibilidad de navegadores).** No hay evidencia
-  archivada de ejecución manual en Chrome/Firefox/Edge; requiere que
-  alguien del equipo lo ejecute y documente capturas o notas.
+- **Lighthouse — perfil de escritorio y re-ejecución tras el fix de SEO.**
+  Las 6 corridas oficiales (2026-08-01) siguen siendo la única evidencia
+  archivada: perfil móvil, SEO en 82/100 (umbral 90). Los dos fixes de
+  causa raíz (`meta description` en `frontend/src/index.html`,
+  `robots.txt` + `angular.json`) ya están aplicados en el código, pero
+  **no existe una corrida posterior que confirme el nuevo puntaje**, ni
+  ninguna corrida en perfil desktop. Requiere levantar el stack Docker
+  (`make up && make lighthouse`), algo que no se pudo ejecutar en esta
+  fase de cierre por no contar con ese entorno disponible. Se documenta
+  como limitación del REQ-NF-005, no se reporta un puntaje sin corrida
+  real.
+- **Hit ratio de caché Redis (REQ-NF-012).** Sigue sin una medición de
+  `keyspace_hits`/`keyspace_misses`; solo hay evidencia de TTL y
+  existencia de clave bajo carga. Limitación declarada, no cerrada.
+- **REQ-NF-006 (compatibilidad de navegadores).** Sin evidencia archivada
+  de ejecución manual en Chrome/Firefox/Edge. Limitación declarada.
 - **Wireframes de la pantalla de Mascotas y de los módulos pendientes**
-  (historial clínico, citas, facturación): siguen siendo los de la Entrega
-  1A (login y dashboard genérico); no existe wireframe específico de la
-  pantalla real de gestión de mascotas con paginación y formularios.
+  (historial clínico, citas, facturación): siguen siendo los de la
+  Entrega 1A. Limitación declarada, no bloqueante para el cierre de esta
+  entrega (el producto real y su documentación de arquitectura — C4, DER,
+  SRS — sí reflejan el sistema implementado).
+- **PRISMA (trabajos relacionados):** cerrado con 7 estudios (3 de Zaida +
+  4 de Jaime) en `docs/checklists/prisma2020.md`; Fred (F20) no entregó su
+  bloque. Bibliografía candidata de Zaida y Jaime ya integrada a
+  `docs/informe/referencias.bib` (28 entradas).
+
+Ninguno de estos puntos se cierra con datos inventados. Quedan como
+limitaciones explícitas de la Entrega Final, consistentes con el criterio
+de todo este documento.

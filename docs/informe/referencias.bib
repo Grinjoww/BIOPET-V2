@@ -1,6 +1,6 @@
 % referencias.bib
 %
-% Bibliografia del Informe final de la Tercera Entrega de BIOPET.
+% Bibliografia del Informe final de la Entrega Final de BIOPET (v1.0.0).
 % Estilo de compilacion: BibTeX clasico con \bibliographystyle{ieeetr}
 % (ver informe-entrega-3.tex). No se inventaron autores, titulos, anios
 % ni identificadores: cada entrada corresponde a una norma tecnica (RFC,
@@ -8,12 +8,23 @@
 % real en este proyecto (Spring, JaCoCo, PostgreSQL, Redis, k6,
 % Lighthouse), o a una referencia academica/de la industria ampliamente
 % citada por su nombre estandar (OWASP Top 10, modelo C4, SUS de Brooke,
-% WCAG, taxonomia CRediT).
+% WCAG, taxonomia CRediT), o a un trabajo academico real verificado via
+% Crossref/pagina oficial del editor (bloque de trabajos relacionados,
+% seccion final de este archivo).
 %
 % Los campos "url" y "note" de cada entrada se limitan a la pagina oficial
 % del proyecto/norma correspondiente, sin DOI inventado. Cuando un dato no
 % pudo verificarse contra una fuente ya citada en este repositorio, se deja
 % explicito en un comentario junto a la entrada, en vez de inventarlo.
+%
+% CIERRE 2026-08-17: se integran aqui las listas de referencias candidatas
+% de Jaime (docs/informe/borradores/jaime/referencias-candidatas.md, 12
+% entradas, 11 nuevas + 1 ya existente) y de Zaida
+% (docs/informe/borradores/zaida/estudios-primarios-zaida.md, 3 entradas,
+% 1 compartida con la de Jaime: Bangor, Kortum & Miller 2008, incluida una
+% sola vez). Fred (F20) no entrego su bloque de estudios; se cierra la
+% integracion sin el, dejando constancia explicita del hueco en
+% docs/checklists/prisma2020.md en vez de inventar su aporte.
 
 @misc{owasp-top10,
   author       = {{OWASP Foundation}},
@@ -120,11 +131,160 @@
   author       = {{Google Chrome Developers}},
   title        = {{Lighthouse}},
   howpublished = {\url{https://developer.chrome.com/docs/lighthouse/}},
-  note         = {Herramienta prevista para la auditoria de accesibilidad automatica del frontend (pendiente de ejecucion, ver capitulo de Resultados -- Zaida).}
+  note         = {Herramienta usada para la auditoria de accesibilidad/SEO/performance del frontend; 6 corridas archivadas en docs/mediciones/lighthouse/ (2026-08-01, perfil movil). Corrida en perfil desktop y re-ejecucion tras el fix de SEO (meta description + robots.txt) quedan pendientes de que el equipo las ejecute contra el contenedor real.}
 }
 
 @misc{credit-taxonomy,
   author       = {{NISO / CRediT}},
   title        = {{CRediT} -- Contributor Roles Taxonomy},
   howpublished = {\url{https://credit.niso.org/}}
+}
+
+% ===========================================================================
+% Trabajos relacionados y metodologia (integrados 2026-08-17)
+% Fuente: docs/informe/borradores/jaime/referencias-candidatas.md (A1-A4,
+% B1-B3, C1, D1-D2, E1) y docs/informe/borradores/zaida/estudios-primarios-zaida.md
+% (E1-E3 de Zaida, con Bangor et al. 2008 unificado con B3 de Jaime).
+% Todos los DOI fueron verificados contra Crossref (api.crossref.org) o la
+% pagina oficial del editor/norma antes de esta integracion.
+% ===========================================================================
+
+@misc{ralph2021-empirical-standards,
+  author       = {Paul Ralph and Nauman bin Ali and Sebastian Baltes and Domenico Bianculli and Jessica Diaz and Yvonne Dittrich and Neil Ernst and Michael Felderer and Robert Feldt and Antonio Filieri and Breno B. N. de Fran\c{c}a and Carlo A. Furia and Gregory Gay and Nicolas Gold and Daniel Graziotin and Pinjia He and Rashina Hoda and Natalia Juristo and Barbara Kitchenham and Valentina Lenarduzzi and Jorge Mart{\'i}nez and Jorge Melegati and Daniel Mendez and Tim Menzies and Jefferson Molleri and Dietmar Pfahl and Romain Robbes and Daniel Russo and Nyyti Saarim{\"a}ki and Federica Sarro and Davide Taibi and Janet Siegmund and Diomidis Spinellis and Miroslaw Staron and Klaas Stol and Margaret-Anne Storey and Damian Tamburri and Marco Torchiano and Christoph Treude and Burak Turhan and Sira Vegas and Xiaofeng Wang},
+  title        = {Empirical Standards for Software Engineering Research},
+  year         = {2021},
+  howpublished = {arXiv:2010.03525 [cs.SE]},
+  doi          = {10.48550/arXiv.2010.03525},
+  note         = {Fundamento del estandar Engineering Research usado en docs/checklists/ralph2021-engineering-research.md. Verificado via arXiv.org y el repositorio oficial de la iniciativa ACM SIGSOFT (www2.sigsoft.org/EmpiricalStandards).}
+}
+
+@article{peffers2007dsrm,
+  author  = {Ken Peffers and Tuure Tuunanen and Marcus A. Rothenberger and Samir Chatterjee},
+  title    = {A Design Science Research Methodology for Information Systems Research},
+  journal  = {Journal of Management Information Systems},
+  volume   = {24},
+  number   = {3},
+  pages    = {45--77},
+  year     = {2007},
+  doi      = {10.2753/MIS0742-1222240302},
+  note     = {Fundamento del mapeo de las 6 actividades DSR en docs/informe/borradores/jaime/metodologia-y-amenazas.md. Verificado via Crossref.}
+}
+
+@incollection{vansolingen2002gqm,
+  author    = {Rini van Solingen and Victor Basili and Gianluigi Caldiera and H. Dieter Rombach},
+  title     = {Goal Question Metric ({GQM}) Approach},
+  booktitle = {Encyclopedia of Software Engineering},
+  publisher = {Wiley},
+  year      = {2002},
+  doi       = {10.1002/0471028959.sof142},
+  note      = {Fundamento del enfoque GQM en docs/checklists/ralph2021-engineering-research.md y metodologia-y-amenazas.md. Verificado via Crossref.}
+}
+
+@inproceedings{hasselbring2021benchmarking,
+  author    = {Wilhelm Hasselbring},
+  title     = {Benchmarking as Empirical Standard in Software Engineering Research},
+  booktitle = {Proceedings of the 25th International Conference on Evaluation and Assessment in Software Engineering (EASE 2021)},
+  pages     = {365--372},
+  publisher = {ACM},
+  year      = {2021},
+  doi       = {10.1145/3463274.3463361},
+  note      = {Respalda la clasificacion de BIOPET como estudio de benchmarking tecnico. Verificado via Crossref.}
+}
+
+@misc{iso25010-2011,
+  author       = {{International Organization for Standardization / International Electrotechnical Commission}},
+  title        = {{ISO/IEC 25010:2011} -- Systems and software engineering -- Systems and software Quality Requirements and Evaluation ({SQuaRE}) -- System and software quality models},
+  year         = {2011},
+  howpublished = {\url{https://www.iso.org/standard/35733.html}},
+  note         = {Sin DOI publico (norma ISO); marco de referencia de docs/arquitectura/ISO-25010.md.}
+}
+
+@inproceedings{estdale2018applying25010,
+  author    = {Jenny Estdale and Elli Georgiadou},
+  title     = {Applying the {ISO/IEC 25010} Quality Models to Software Product},
+  booktitle = {Systems, Software and Services Process Improvement (EuroSPI 2018)},
+  series    = {Communications in Computer and Information Science},
+  volume    = {896},
+  pages     = {492--503},
+  publisher = {Springer},
+  year      = {2018},
+  doi       = {10.1007/978-3-319-97925-0_42},
+  note      = {Trabajo relacionado metodologico directo, ver docs/informe/borradores/jaime/trabajos-relacionados.md. Verificado via Crossref.}
+}
+
+@article{bangor2008sus,
+  author  = {Aaron Bangor and Philip T. Kortum and James T. Miller},
+  title   = {An Empirical Evaluation of the System Usability Scale ({SUS})},
+  journal = {International Journal of Human--Computer Interaction},
+  volume  = {24},
+  number  = {6},
+  pages   = {574--594},
+  year    = {2008},
+  doi     = {10.1080/10447310802205776},
+  note    = {Fuente del benchmark SUS (media 68, excelente >80.3) citado en docs/mediciones/sus/, docs/arquitectura/ISO-25010.md y docs/checklists/ralph2021-engineering-research.md. Entrada compartida entre los aportes de Jaime (B3) y Zaida (E2); incluida una sola vez. Verificado via Crossref.}
+}
+
+@inproceedings{yang2026tokentimebomb,
+  author    = {Jing Yang and Erqiang Wang and Jiongyi Chen and Qi Wang and Yifan Zhang and Haixin Duan and Wenxin Xie and Baojun Wang},
+  title     = {Token Time Bomb: Evaluating {JWT} Implementations for Vulnerability Discovery},
+  booktitle = {Proceedings of the Network and Distributed System Security Symposium (NDSS 2026)},
+  year      = {2026},
+  doi       = {10.14722/ndss.2026.240697},
+  note      = {Trabajo relacionado de seguridad JWT, ver docs/informe/borradores/jaime/trabajos-relacionados.md. Verificado contra la pagina oficial de NDSS Symposium.}
+}
+
+@inproceedings{putri2017perftesting,
+  author    = {Melia Amanda Putri and Hanugra Nurmuslimah Hadi and Fajar Ramdani},
+  title     = {Performance Testing Analysis on Web Application: Study Case Student Admission Web System},
+  booktitle = {2017 International Conference on Sustainable Information Engineering and Technology (SIET)},
+  publisher = {IEEE},
+  year      = {2017},
+  doi       = {10.1109/SIET.2017.8304099},
+  note      = {Paralelo metodologico directo a la evaluacion de rendimiento k6 de BIOPET, ver docs/mediciones/perf/REPORT.md. Verificado via Crossref.}
+}
+
+@inproceedings{rempel2015webperf,
+  author    = {Guido Rempel},
+  title     = {Defining Standards for Web Page Performance in Business Applications},
+  booktitle = {Proceedings of the 6th ACM/SPEC International Conference on Performance Engineering (ICPE '15)},
+  pages     = {245--252},
+  publisher = {ACM},
+  year      = {2015},
+  doi       = {10.1145/2668930.2688056},
+  note      = {Marco de referencia para interpretar los percentiles p95/p99 reportados en docs/mediciones/perf/REPORT.md. Verificado via Crossref.}
+}
+
+@inproceedings{rodriguez2024oscrum,
+  author    = {N. Rodr{\'i}guez and L. Llerena and P. Guevara and R. Baren and J. W. Castro},
+  title     = {Open-Source Web System for Veterinary Management: A Case Study of {OSCRUM}},
+  booktitle = {Information Systems and Technologies},
+  series    = {Lecture Notes in Networks and Systems},
+  pages     = {320--329},
+  publisher = {Springer Nature Switzerland},
+  year      = {2024},
+  doi       = {10.1007/978-3-031-45642-8_32},
+  note      = {Trabajo relacionado de dominio (gestion veterinaria) mas cercano encontrado y verificado, ver trabajos-relacionados.md (Jaime). Verificado via Crossref.}
+}
+
+@article{pacheco2018requirements,
+  author  = {Claudia Pacheco and Ivan Garc{\'i}a and Miriam Reyes},
+  title   = {Requirements Elicitation Techniques: A Systematic Literature Review Based on the Maturity of the Techniques},
+  journal = {IET Software},
+  volume  = {12},
+  number  = {4},
+  pages   = {365--378},
+  year    = {2018},
+  doi     = {10.1049/iet-sen.2017.0144},
+  note    = {Aporte de Zaida (E1); contrasta la practica de elicitacion detras de docs/requisitos/SRS.md. Verificado via IEEE Xplore/IET Digital Library y busqueda cruzada.}
+}
+
+@article{cedeno2021veterinaria,
+  author  = {A. Cede{\~n}o Ochoa and A. Catuto Murillo and J. Rodas-Silva},
+  title   = {Use of Web Applications for the Management of Veterinary Clinics and Their Impact on the Improvement of Administrative Processes},
+  journal = {Ecuadorian Science Journal},
+  volume  = {5},
+  number  = {3},
+  year    = {2021},
+  howpublished = {\url{https://journals.gdeon.org/index.php/esj/article/view/174}},
+  note    = {Aporte de Zaida (E3); dominio y contexto pais mas cercano a BIOPET encontrado y verificado. Revista regional sin DOI publico verificado; se cita el enlace oficial de la revista.}
 }

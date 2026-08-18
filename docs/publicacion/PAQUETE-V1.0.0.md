@@ -13,7 +13,7 @@ Ninguna acción aquí se ejecuta en esta rama; todo es preparación verificable.
 | Versión | `0.9.0-rc` (`CITATION.cff`, `git describe`, k6 filenames) | **cambiar a `1.0.0`** |
 | `repository-code` | `https://github.com/JirachinG19Stdio/PFC-VET-ENTR3-v0.9.0-rc` (repo anterior) | **corregir a `https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET`** |
 | Licencia | MIT (`LICENSE`, `CITATION.cff`) | mantener |
-| DOI | ausente (comentado en `CITATION.cff:28`) | **asignar en Zenodo al archivar** |
+| DOI | software `10.5281/zenodo.21988746`, dataset `10.5281/zenodo.21988785` (`CITATION.cff`, bloque `identifiers`) | ya asignado — mantener |
 | Fecha de release | `date-released: 2026-07-24` (v0.9.0-rc) | actualizar a fecha del tag v1.0.0 |
 | Keywords | 8 keywords en `CITATION.cff` | mantener |
 

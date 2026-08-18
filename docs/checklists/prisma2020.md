@@ -127,9 +127,11 @@ datos inventados.
 | Trivial, cerrado | 2 |
 | **Total** | **27** |
 
-## Condición de cierre
+## Condición de cierre — CERRADO 2026-08-17
 
-Este checklist pasa de "parcial" a "completo" cuando:
+Se cierra este checklist con 7 estudios incluidos, decisión explícita del
+equipo ante la no entrega del bloque de Fred (F20), en vez de dejarlo
+indefinidamente abierto. Queda declarado como limitación, no oculto:
 
 1. ~~**Fred (F20) entregue sus 3 estudios verificados**~~ — **CUMPLIDO el
    2026-08-18**: el bloque Fred (F20-F21) fue integrado a este checklist

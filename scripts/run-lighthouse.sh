@@ -14,9 +14,15 @@
 # Uso:
 #   bash scripts/run-lighthouse.sh
 #
-# Salida:
-#   docs/mediciones/lighthouse/lhci-YYYYMMDD-HHMM-login.json        (crudo, sin tocar)
-#   docs/mediciones/lighthouse/lhci-YYYYMMDD-HHMM-mascotas.json     (crudo, sin tocar)
+# Corre los DOS perfiles exigidos: móvil (lighthouserc.js, perfil por
+# defecto del bloque C.5) y desktop (lighthouserc.desktop.js). Mismas URLs,
+# mismos umbrales, mismo numberOfRuns; solo cambia el formFactor.
+#
+# Salida (por cada perfil, sufijo "-mobile"/"-desktop"):
+#   docs/mediciones/lighthouse/lhci-YYYYMMDD-HHMM-mobile-login-runN.json
+#   docs/mediciones/lighthouse/lhci-YYYYMMDD-HHMM-mobile-mascotas-runN.json
+#   docs/mediciones/lighthouse/lhci-YYYYMMDD-HHMM-desktop-login-runN.json
+#   docs/mediciones/lighthouse/lhci-YYYYMMDD-HHMM-desktop-mascotas-runN.json
 #   docs/mediciones/lighthouse/lhci-YYYYMMDD-HHMM.meta.txt          (fecha ISO 8601,
 #       commit hash corto, version de node/lighthouse — exigido por bloque B.2)
 
@@ -37,27 +43,59 @@ if ! curl -sSf -o /dev/null "http://localhost:4200/login"; then
   exit 1
 fi
 
-echo "== Ejecutando lhci autorun (3 corridas por URL, perfil movil/Slow 4G) =="
 cd "$REPO_ROOT"
-npx --yes @lhci/cli@0.14.x autorun --config=lighthouserc.js
 
-echo "== Archivando resultados crudos en $OUT_DIR =="
-RAW_DIR="$REPO_ROOT/.lighthouseci"
-if [[ ! -d "$RAW_DIR" ]]; then
-  echo "ERROR: no se encontró $RAW_DIR; ¿lhci autorun falló antes de generar reportes?"
-  exit 1
-fi
+# En Windows, chrome-launcher falla de forma intermitente al borrar su
+# carpeta temporal tras cerrar Chrome (EPERM: normalmente el antivirus
+# retiene el handle un instante). Es un fallo transitorio del entorno, no
+# de la app ni de la configuracion; se reintenta el autorun completo hasta
+# 3 veces antes de abortar de verdad.
+run_lhci_autorun() {
+  local config="$1"
+  local attempt
+  for attempt in 1 2 3; do
+    echo "-- lhci autorun (config=$config, intento $attempt/3) --"
+    if npx --yes @lhci/cli@0.14.x autorun --config="$config"; then
+      return 0
+    fi
+    echo "-- intento $attempt fallo (posible EPERM transitorio de chrome-launcher en Windows); reintentando --"
+  done
+  echo "ERROR: lhci autorun (config=$config) fallo 3 veces seguidas."
+  return 1
+}
 
-# lhci nombra cada corrida como lhr-<n>.json; los copiamos con el nombre
-# exigido por la Guía sin modificar su contenido.
-i=0
-for f in "$RAW_DIR"/lhr-*.json; do
-  [[ -e "$f" ]] || continue
-  url=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['requestedUrl'])" "$f")
-  slug=$(echo "$url" | sed -E 's#https?://[^/]+/##; s#[^a-zA-Z0-9]+#-#g')
-  cp "$f" "$OUT_DIR/lhci-${STAMP}-${slug:-root}-run${i}.json"
-  i=$((i+1))
-done
+# Archiva los reportes crudos de un perfil ($1=nombre de perfil,
+# $2=directorio .lighthouseci-* generado por ese perfil) con el nombre
+# exigido por la Guía, sin modificar su contenido.
+archive_profile() {
+  local profile="$1"
+  local raw_dir="$2"
+  if [[ ! -d "$raw_dir" ]]; then
+    echo "ERROR: no se encontró $raw_dir; ¿lhci autorun (perfil $profile) falló antes de generar reportes?"
+    exit 1
+  fi
+  local i=0
+  for f in "$raw_dir"/lhr-*.json; do
+    [[ -e "$f" ]] || continue
+    local url slug
+    url=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['requestedUrl'])" "$f")
+    slug=$(echo "$url" | sed -E 's#https?://[^/]+/##; s#[^a-zA-Z0-9]+#-#g')
+    cp "$f" "$OUT_DIR/lhci-${STAMP}-${profile}-${slug:-root}-run${i}.json"
+    i=$((i+1))
+  done
+}
+
+echo "== [1/2] Ejecutando lhci autorun — perfil movil/Slow 4G (lighthouserc.js) =="
+rm -rf "$REPO_ROOT/.lighthouseci"
+run_lhci_autorun lighthouserc.js
+echo "== Archivando resultados crudos (movil) en $OUT_DIR =="
+archive_profile "mobile" "$REPO_ROOT/.lighthouseci"
+
+echo "== [2/2] Ejecutando lhci autorun — perfil desktop (lighthouserc.desktop.js) =="
+rm -rf "$REPO_ROOT/.lighthouseci-desktop"
+run_lhci_autorun lighthouserc.desktop.js
+echo "== Archivando resultados crudos (desktop) en $OUT_DIR =="
+archive_profile "desktop" "$REPO_ROOT/.lighthouseci-desktop"
 
 cat > "$OUT_DIR/lhci-${STAMP}.meta.txt" <<EOF
 fecha_iso8601: $ISO_DATE
@@ -65,8 +103,8 @@ commit_hash_corto: $COMMIT
 node_version: $(node --version)
 lighthouse_cli_version: $(npx --yes @lhci/cli@0.14.x --version 2>/dev/null || echo "desconocida")
 urls_auditadas: http://localhost:4200/login, http://localhost:4200/mascotas
-perfil: mobile, throttlingMethod=simulate (Slow 4G equivalente)
-corridas_por_url: 3
+perfiles: mobile (throttlingMethod=simulate, Slow 4G equivalente, lighthouserc.js), desktop (formFactor=desktop, throttling devtools preset, lighthouserc.desktop.js)
+corridas_por_url: 3 por perfil (6 total por URL, 12 total)
 EOF
 
 echo ""
