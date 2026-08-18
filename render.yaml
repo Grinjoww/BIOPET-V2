@@ -1,0 +1,119 @@
+# render.yaml — Despliegue de BIOPET en Render (F08)
+# Blueprint (IaC) de Render. Los valores de entorno sensibles se definen en el
+# dashboard de Render (sync: false) o se generan (generateValue); NINGUN secreto
+# real esta versionado en este archivo.
+#
+# Como usar (resumen, ver docs/despliegue/DEPLOYMENT.md):
+#   1. Conectar el repositorio https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET
+#      en Render (New -> Blueprint).
+#   2. Render lee este archivo y crea: biopet-backend (web docker),
+#      biopet-frontend (web docker), biopet-cache (key value) y
+#      biopet-db (Postgres).
+#   3. Completar en el dashboard las variables marcadas con sync: false
+#      (JWT_SECRET, CORS_ALLOWED_ORIGINS, TLS_KEYSTORE_*).
+#   4. El healthcheck del backend usa /actuator/health (HTTP 200 = UP).
+
+services:
+  # ------------------------------------------------------------------
+  # Backend Spring Boot (docker)
+  # ------------------------------------------------------------------
+  - type: web
+    name: biopet-backend
+    runtime: docker
+    repo: https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET
+    rootDir: Backend
+    plan: free
+    dockerCommand: >-
+      sh -c 'export DB_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}" &&
+      exec java -jar /app/app.jar'
+    healthCheckPath: /actuator/health
+    envVars:
+      # Postgres gestionado de Render (valores reales enlazados por Render)
+      - key: DB_HOST
+        fromDatabase:
+          name: biopet-db
+          property: hostname
+      - key: DB_PORT
+        fromDatabase:
+          name: biopet-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: biopet-db
+          property: databaseName
+      # Usuario de aplicacion: rol con privilegios sobre las tablas.
+      # En Render se usa el rol de la BD gestionada (ver DEPLOYMENT.md,
+      # seccion "Rol de aplicacion").
+      - key: DB_APP_USER
+        fromDatabase:
+          name: biopet-db
+          property: user
+      - key: DB_APP_PASSWORD
+        fromDatabase:
+          name: biopet-db
+          property: password
+      - key: DB_USER
+        fromDatabase:
+          name: biopet-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: biopet-db
+          property: password
+      # Redis / Valkey gestionado de Render
+      - key: REDIS_HOST
+        fromService:
+          type: keyvalue
+          name: biopet-cache
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: keyvalue
+          name: biopet-cache
+          property: port
+      # Valores que el operador completa en el dashboard (sync: false)
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: JWT_EXPIRATION_MS
+        value: "3600000"
+      - key: JWT_REFRESH_EXPIRATION_MS
+        value: "604800000"
+      - key: JWT_ISSUER
+        value: biopet-api
+      - key: JWT_AUDIENCE
+        value: biopet-frontend
+      - key: CACHE_TTL_MS
+        value: "300000"
+
+  # ------------------------------------------------------------------
+  # Frontend Angular (docker + nginx). Requiere el ajuste documentado en
+  # DEPLOYMENT.md: el proxy /api apunta al nombre interno del backend
+  # (docs/despliegue/nginx-render.conf).
+  # ------------------------------------------------------------------
+  - type: web
+    name: biopet-frontend
+    runtime: docker
+    repo: https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET
+    rootDir: frontend
+    plan: free
+    healthCheckPath: /
+
+  # ------------------------------------------------------------------
+  # Redis / Valkey gestionado (cache)
+  # ------------------------------------------------------------------
+  - type: keyvalue
+    name: biopet-cache
+    plan: free
+
+# ------------------------------------------------------------------
+# Postgres gestionado (datos de produccion)
+# Nota: el plan free de Postgres se elimina a los 30 dias de crearse;
+# para datos de produccion permanentes usar plan starter o superior.
+# ------------------------------------------------------------------
+databases:
+  - name: biopet-db
+    databaseName: biopet_db
+    user: biopet_user
+    plan: free

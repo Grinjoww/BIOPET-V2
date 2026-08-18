@@ -1,0 +1,104 @@
+# docker-compose.prod.yml — Despliegue de BIOPET en un VPS propio (alternativa a Render)
+#
+# No reemplaza a docker-compose.yml (desarrollo): define el stack de PRODUCCION
+# con HTTPS valido terminado en un proxy inverso (Caddy), healthcheck real de
+# /actuator/health y sin montar los scripts de initdb de desarrollo.
+#
+# Uso (ver docs/despliegue/DEPLOYMENT.md, seccion "Alternativa VPS"):
+#   1. Copiar .env.example a .env y completar SOLO los valores reales del
+#      operador (JWT_SECRET, DB_PASSWORD, APP_EXTERNAL_API_KEY, dominio).
+#   2. docker compose -f docker-compose.prod.yml up -d --build
+#   3. El proxy Caddy emite y renueva HTTPS automaticamente (Let's Encrypt).
+#
+# Requiere: dominio apuntando al VPS y puertos 80/443 abiertos.
+
+services:
+  postgres:
+    image: postgres:16-alpine@sha256:57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777
+    container_name: biopet-prod-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - prod_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
+    container_name: biopet-prod-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./Backend
+    container_name: biopet-prod-backend
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME}
+      DB_APP_USER: ${DB_APP_USER}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      CACHE_TTL_MS: ${CACHE_TTL_MS}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
+      JWT_REFRESH_EXPIRATION_MS: ${JWT_REFRESH_EXPIRATION_MS}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_AUDIENCE: ${JWT_AUDIENCE}
+      CORS_ALLOWED_ORIGINS: https://${DOMAIN}
+      APP_EXTERNAL_API_KEY: ${APP_EXTERNAL_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep UP || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+
+  frontend:
+    build: ./frontend
+    container_name: biopet-prod-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Proxy HTTPS valido (Let's Encrypt) + healthcheck publico.
+  caddy:
+    image: caddy:2-alpine
+    container_name: biopet-prod-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./docs/despliegue/Caddyfile:/etc/caddy/Caddyfile:ro
+      - prod_caddy_data:/data
+      - prod_caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
+volumes:
+  prod_postgres_data:
+  prod_caddy_data:
+  prod_caddy_config:
