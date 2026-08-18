@@ -250,10 +250,8 @@ se documentan aquí porque explican variaciones entre corridas.
 
 ### Resultados medidos actuales
 
-Fuente: `docs/mediciones/lighthouse/raw/manifest.json` y
-`docs/mediciones/lighthouse/raw/assertion-results.json` (6 corridas
-oficiales, 2026-08-01, perfil móvil simulado). Valores tomados
-directamente de los JSON crudos, sin editar.
+**Corrida original** (`docs/mediciones/lighthouse/raw/manifest.json` y
+`assertion-results.json`, 6 corridas, 2026-08-01, perfil móvil simulado):
 
 | Solicitud | Performance | Accessibility | Best Practices | SEO | Assertion SEO (`>= 0.90`) |
 |---|---:|---:|---:|---:|---|
@@ -261,14 +259,28 @@ directamente de los JSON crudos, sin editar.
 | `/mascotas` (3 corridas, redirige a `/login`) | 92 | 91 | 96 | 82 | FAIL (`actual: 0.82`) |
 
 **Causa raíz del FAIL de SEO** (auditorías con `score: 0` en
-`categories.seo.auditRefs`, extraídas del reporte JSON): `meta-description`
-(sin meta descripción en `frontend/src/index.html`) y `robots-txt`
-(`robots.txt` inválido/inexistente). Ambas se corrigieron en este cierre:
-meta descripción agregada a `index.html`; `frontend/public/robots.txt`
-creado y registrado como `assets` en `angular.json`. **Falta re-ejecutar**
-`make lighthouse` para confirmar el nuevo puntaje y archivar la evidencia
-actualizada (no se reporta un puntaje proyectado sin la corrida real, seria
-inventar datos).
+`categories.seo.auditRefs`): `meta-description` ausente en
+`frontend/src/index.html` y `robots-txt` inválido/inexistente.
+
+**Re-corrida tras el fix** (`docs/mediciones/lighthouse/lhci-20260818-0538-*.json`,
+12 archivos: perfil móvil y desktop, `/login` y `/mascotas`, 3 corridas
+cada uno). Valores tomados directamente de los JSON crudos:
+
+| Perfil | Solicitud | Performance | Accessibility | Best Practices | SEO | Assertion SEO |
+|---|---|---:|---:|---:|---:|---|
+| Móvil | `/login` (3 corridas) | 92–94 | 91 | 100 | **100** | PASS |
+| Móvil | `/mascotas` (3 corridas) | 90 | 91 | 96 | **100** | PASS |
+| Desktop | `/login` (3 corridas) | 100 | 91 | 100 | **100** | PASS |
+| Desktop | `/mascotas` (3 corridas) | 100 | 91 | 96 | **100** | PASS |
+
+Los dos fixes de `frontend/` (meta descripción en `index.html`; creación
+de `frontend/public/robots.txt` registrado como `assets` en
+`angular.json`) resolvieron el FAIL de SEO por completo: pasó de 82 a 100
+en las 12 corridas, en ambos perfiles y ambas rutas. Performance y
+Accessibility se mantienen sobre umbral (≥90 y 91 respectivamente) en
+todos los casos. Best Practices baja a 96 en `/mascotas` (ambos
+perfiles) — no auditado como umbral obligatorio en `lighthouserc.js`, sin
+acción requerida.
 
 ## Cobertura JaCoCo (`Backend/target/site/jacoco/`, resumida en `docs/mediciones/sec/jacoco-summary.md`) — responsable: Jaime
 
