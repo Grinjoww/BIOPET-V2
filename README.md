@@ -272,8 +272,8 @@ cree el tag Git `v1.0.0` (ver [Historial de entregas / tags](#historial-de-entre
 
 ## DOI / Zenodo
 
-- DOI de software: pendiente de publicación en Zenodo.
-- DOI del dataset: pendiente de publicación.
+- DOI de software: [10.5281/zenodo.21988746](https://doi.org/10.5281/zenodo.21988746)
+- DOI del dataset: [10.5281/zenodo.21988785](https://doi.org/10.5281/zenodo.21988785)
 
 ---
 
@@ -311,5 +311,6 @@ para poder ejecutarse también en Windows con Git Bash en el `PATH`.
 Este proyecto se distribuye bajo licencia **MIT** — ver [`LICENSE`](LICENSE).
 
 Para citar el software, usar los metadatos de [`CITATION.cff`](CITATION.cff).
-Su `date-released` y `doi` se completarán al publicar el tag `v1.0.0` y
-archivar en Zenodo (ver [DOI / Zenodo](#doi--zenodo)).
+El DOI del software y del dataset ya están archivados en Zenodo (ver
+[DOI / Zenodo](#doi--zenodo)); `date-released` se completará al publicar
+el tag `v1.0.0`.

@@ -65,7 +65,7 @@ recalculan ni se reinterpreta la rúbrica del docente.
 | OBS-07 | 1B, Semana 6 | Workflow CI ubicado en `./workflows/ci.yml` en vez de `.github/workflows/` | C6. Docker Compose e integración | Jaime Mariscal (CI/CD) | CERRADA | `eef268c` (PR #37) |
 | OBS-08 | 1B, Semana 6 | Tag `v0.1.0-entrega-1b` exigido no fue creado | C7. Repositorio Git | Jaime Mariscal (gestión del repositorio) | CERRADA | Tag anotado `v0.1.0-entrega-1b` → commit `058b1fe` |
 | OBS-09 | Entrega 3 | Tag `v0.9.0-rc` no creado (última etiqueta citada, `v0.7.1`, tampoco existía en el checkout original) | C7. Repositorio Git | Jaime Mariscal (gestión del repositorio) | CERRADA | Tag anotado `v0.9.0-rc` (publicado en `origin`) → commit `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3` |
-| OBS-10 | Entrega 3 | Software no archivado en Zenodo, DOI pendiente | E.2. Archivado/citabilidad | Equipo (por definir) | ABIERTA | PENDIENTE |
+| OBS-10 | Entrega 3 | Software no archivado en Zenodo, DOI pendiente | E.2. Archivado/citabilidad | Equipo (por definir) | CERRADA | DOI real: software `10.5281/zenodo.21988746`, dataset `10.5281/zenodo.21988785` |
 | OBS-11 | Entrega 3 | Evidencia/reporte Lighthouse faltante | Calidad web automatizada | Jaime Mariscal (mediciones) | CERRADA | `9ea0ccb0b3f2a86996d2aa047f385dff7e5c1675` (verificado con `git show`, 34 archivos añadidos) |
 | OBS-12 | Entrega 3 | Calidad del sistema no enmarcada en ISO/IEC 25010 | Marco de calidad del informe | Jaime Mariscal | CERRADA | `docs/arquitectura/ISO-25010.md` (nuevo); commit de esta corrección: PENDIENTE |
 | OBS-13 | Entrega 3 | `CONTRIBUTORS.md` sin roles CRediT individuales | E. Reconocimiento de autoría | Equipo completo | CERRADA | `CONTRIBUTORS.md` — matriz CRediT individualizada por persona con evidencia real |
@@ -483,7 +483,7 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
 - **Fuente:** Retroalimentación oficial de la Entrega 3 (ver 5.1)
 - **Texto de la observación:** "No se archivó el software en Zenodo y el DOI seguía pendiente."
 - **Criterio relacionado:** Bloque E.2 de la Guía de la Tercera Entrega (archivado permanente / citabilidad del software), referenciado también en `docs/VERSIONING.md` ("para eso se usa el DOI de Zenodo asociado al tag correspondiente").
-- **Verificación en este repositorio:**
+- **Verificación previa (Fase 1):**
   ```
   grep -rln "zenodo\|DOI" . --include="*.md"
   docs/adr/ADR-002-pila-tecnologica.md
@@ -491,14 +491,19 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
   docs/u4/informe/README.md
   docs/VERSIONING.md
   ```
-  Ningún archivo del repositorio declara un DOI real ni un registro de Zenodo existente; las menciones encontradas son referencias a la política/plan de uso de Zenodo, no evidencia de un archivado ya realizado.
-- **Decisión del equipo para esta fase:** No corresponde a Jaime publicar en Zenodo dentro de esta tarea (acción explícitamente fuera de alcance de la Fase 1). Se documenta el pendiente sin inventar un DOI.
-- **Corrección realizada:** Ninguna (fuera de alcance de esta fase, por instrucción explícita: "NO publiques en Zenodo", "NO inventes DOI").
-- **Archivos involucrados:** Ninguno modificado en esta fase.
-- **Commit o commits:** PENDIENTE.
-- **Responsable:** Por definir en el equipo (gestión de publicación/archivado).
-- **Estado:** ABIERTA
-- **Justificación del estado:** El propio repositorio confirma la ausencia de un DOI real; no se realizó ninguna acción de archivado ni se fabricó un identificador, conforme a la restricción explícita de esta tarea.
+  En ese momento ningún archivo del repositorio declaraba un DOI real ni un
+  registro de Zenodo existente; las menciones encontradas eran referencias a
+  la política/plan de uso de Zenodo, no evidencia de un archivado ya realizado.
+- **Corrección realizada (esta fase, DOI real ya asignado por el dueño del repositorio):** El software y el dataset de evidencias empíricas quedaron archivados en Zenodo, cada uno con su propio DOI real:
+  - **DOI de software:** [`10.5281/zenodo.21988746`](https://doi.org/10.5281/zenodo.21988746)
+  - **DOI de dataset:** [`10.5281/zenodo.21988785`](https://doi.org/10.5281/zenodo.21988785)
+
+  Ambos DOI quedaron registrados en `CITATION.cff` (bloque `identifiers`), `README.md` (sección "DOI / Zenodo") y `docs/checklists/fair.md` (ítems F1, F3, F4).
+- **Archivos involucrados:** `CITATION.cff`, `README.md`, `docs/checklists/fair.md`, `docs/publicacion/PAQUETE-V1.0.0.md`, `docs/observaciones/OBSERVACIONES.md` (este archivo).
+- **Commit o commits:** PENDIENTE (cambio realizado en el árbol de trabajo de esta fase; no se ejecutó ningún commit).
+- **Responsable:** Dueño del repositorio (publicación en Zenodo); Jaime Mariscal (verificación y actualización documental).
+- **Estado:** CERRADA
+- **Justificación del estado:** Los dos DOI (software y dataset) son reales, fueron provistos por quien realizó el archivado en Zenodo (no inventados por esta tarea) y ya quedaron propagados de forma consistente a `CITATION.cff`, `README.md` y el checklist FAIR. La observación pedía exactamente el archivado en Zenodo con DOI asignado, y eso ya existe.
 
 ---
 
@@ -752,7 +757,7 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
 | Código | Observación | Estado | Depende de |
 |---|---|---|---|
 | OBS-09 | Tag `v0.9.0-rc` no creado (ni `v0.7.1` existía en el checkout original) | CERRADA | Reconstruido y publicado en `origin` → commit `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3` |
-| OBS-10 | Software no archivado en Zenodo, DOI pendiente | ABIERTA | Publicación manual en Zenodo (fuera de alcance de esta tarea) |
+| OBS-10 | Software no archivado en Zenodo, DOI pendiente | CERRADA | DOI real: software `10.5281/zenodo.21988746`, dataset `10.5281/zenodo.21988785` |
 | OBS-11 | Evidencia Lighthouse faltante | CERRADA | Verificada con `git show` sobre `9ea0ccb`; ver nota independiente sobre corridas mobile/desktop y umbral SEO pendientes |
 | OBS-12 | Calidad no enmarcada en ISO/IEC 25010 | CERRADA | `docs/arquitectura/ISO-25010.md` (nuevo), rutas de evidencia verificadas |
 | OBS-13 | `CONTRIBUTORS.md` sin roles CRediT individuales | CERRADA | `CONTRIBUTORS.md` — matriz CRediT individualizada por persona con evidencia real |
@@ -784,9 +789,12 @@ independiente dentro de su propio bloque, sin condicionar su cierre.
 OBS-13 y OBS-14 (`CONTRIBUTORS.md` sin roles CRediT individuales /
 afirmación falsa sobre ausencia de historial Git) fueron cerradas en una
 fase posterior, una vez autorizada explícitamente la edición de
-`CONTRIBUTORS.md` — ver el detalle en sus propios bloques. Solo OBS-10
-permanece ABIERTA: requiere publicar en Zenodo, fuera de alcance de este
-repositorio (acción manual del dueño del repositorio).
+`CONTRIBUTORS.md` — ver el detalle en sus propios bloques. OBS-10 se
+cerró en una fase todavía posterior, una vez el dueño del repositorio
+archivó el software y el dataset en Zenodo y proveyó los DOI reales
+(`10.5281/zenodo.21988746` software, `10.5281/zenodo.21988785` dataset) —
+ver el detalle en su propio bloque. Las 15 observaciones de este
+documento quedan **CERRADAS**.
 
 ---
 
@@ -896,21 +904,20 @@ porcentaje de cierre = observaciones CERRADAS / 8 × 100
 ## Estado global — Entrega 3 (OBS-09 a OBS-15)
 
 - **Total de observaciones de Entrega 3:** 7
-- **CERRADAS:** 6 (OBS-09 — tag `v0.9.0-rc` reconstruido y publicado en `origin` sobre el commit histórico real `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`; OBS-11 — evidencia Lighthouse verificada con `git show` sobre `9ea0ccb`, ver nota independiente sobre corridas mobile/desktop y umbral SEO pendientes; OBS-12 — marco ISO/IEC 25010 documentado en `docs/arquitectura/ISO-25010.md`, evidencia real verificada; OBS-13 — `CONTRIBUTORS.md` con roles CRediT individualizados por persona con evidencia real; OBS-14 — afirmación falsa sobre ausencia de historial Git eliminada de `CONTRIBUTORS.md`; OBS-15 — commits reales con `jmariscalc@uteq.edu.ec` verificados con `git log`)
+- **CERRADAS:** 7 (OBS-09 — tag `v0.9.0-rc` reconstruido y publicado en `origin` sobre el commit histórico real `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`; OBS-10 — software y dataset archivados en Zenodo, DOI reales `10.5281/zenodo.21988746` (software) y `10.5281/zenodo.21988785` (dataset); OBS-11 — evidencia Lighthouse verificada con `git show` sobre `9ea0ccb`, ver nota independiente sobre corridas mobile/desktop y umbral SEO pendientes; OBS-12 — marco ISO/IEC 25010 documentado en `docs/arquitectura/ISO-25010.md`, evidencia real verificada; OBS-13 — `CONTRIBUTORS.md` con roles CRediT individualizados por persona con evidencia real; OBS-14 — afirmación falsa sobre ausencia de historial Git eliminada de `CONTRIBUTORS.md`; OBS-15 — commits reales con `jmariscalc@uteq.edu.ec` verificados con `git log`)
 - **CERRADAS PARCIALMENTE:** 0 (estado no utilizado en esta actualización)
-- **ABIERTAS:** 1 (OBS-10)
+- **ABIERTAS:** 0
 - **NO VERIFICABLES:** 0
 
-Solo OBS-10 queda sin cerrar: depende de publicar en Zenodo, una acción
-manual de archivado fuera del alcance de cambios en este repositorio. Ver
-Parte 5.2 para el detalle por observación.
+Las 7 observaciones de Entrega 3 quedan **CERRADAS**. Ver Parte 5.2 para
+el detalle por observación.
 
 ## Estado global combinado (OBS-01 a OBS-15)
 
 - **Total de observaciones registradas en este documento:** 15
-- **CERRADAS:** 14 (OBS-01 a OBS-08, Entregas 1A/1B; más OBS-09, OBS-11, OBS-12, OBS-13, OBS-14 y OBS-15, Entrega 3)
+- **CERRADAS:** 15 (OBS-01 a OBS-08, Entregas 1A/1B; más OBS-09 a OBS-15, Entrega 3)
 - **CERRADAS PARCIALMENTE:** 0
-- **ABIERTAS:** 1 (OBS-10)
+- **ABIERTAS:** 0
 
 ## Observaciones que aún bloquean `v0.7.1`
 
@@ -926,21 +933,19 @@ Ninguna acción pendiente derivada de las observaciones de las Entregas 1A y
 1B. El Bloque 0 de la Guía de la Tercera Entrega queda con evidencia
 completa (100 % de cierre).
 
-Pendientes derivados de la Entrega 3 (OBS-09 a OBS-15). OBS-09, OBS-12,
-OBS-13, OBS-14 y OBS-15 ya no aparecen en esta lista: el tag `v0.9.0-rc`
-fue reconstruido y publicado en `origin` (OBS-09, ver Parte 5); el marco
+Pendientes derivados de la Entrega 3 (OBS-09 a OBS-15): **ninguno**, las 7
+quedan **CERRADA**. El tag `v0.9.0-rc` fue reconstruido y publicado en
+`origin` (OBS-09, ver Parte 5); el software y el dataset quedaron
+archivados en Zenodo con DOI reales, `10.5281/zenodo.21988746` (software)
+y `10.5281/zenodo.21988785` (dataset) (OBS-10, ver su bloque); el marco
 ISO/IEC 25010 quedó documentado en `docs/arquitectura/ISO-25010.md`
 (OBS-12, ver Parte 5); `CONTRIBUTORS.md` ya asigna roles CRediT
 individualizados por persona con evidencia real y ya no afirma la
 ausencia de historial Git (OBS-13 y OBS-14, ver sus bloques arriba); y
 existen commits reales con el correo institucional, verificados con
-`git log` (OBS-15, ver Parte 5) — las cinco quedan **CERRADA**. Decidir si
-se reconstruye también `v0.7.1` sigue siendo una decisión de alcance del
-equipo, no una limitación de evidencia (ver Parte 8). El único pendiente
-de Entrega 3 que continúa explícitamente fuera del alcance de cambios en
-este repositorio:
-
-- Archivar el software en Zenodo y obtener el DOI — OBS-10 (acción manual del dueño del repositorio, no requiere ni admite cambios de código/documentación adicionales para cerrarse).
+`git log` (OBS-15, ver Parte 5). Decidir si se reconstruye también
+`v0.7.1` sigue siendo una decisión de alcance del equipo, no una
+limitación de evidencia (ver Parte 8).
 
 Nota de calidad independiente, no ligada a ninguna observación abierta:
 ejecutar las corridas Lighthouse definitivas en perfil mobile y desktop, y

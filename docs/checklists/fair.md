@@ -15,12 +15,12 @@ Barker et al. 2022) — mapeo sobre la guía de publicación del proyecto.
 ## F — Findable (Encontrable)
 
 ### F1. Identificador persistente único (PID)
-- **Estado: pendiente de publicación.**
-- Qué falta: un DOI asignado por **Zenodo** al archivar el tag `v1.0.0`.
-- Evidencia parcial: `CITATION.cff` (campo `doi:` comentado con la nota
-  "pendiente de asignación por Zenodo", línea 28).
-- Paso siguiente: crear tag `v1.0.0`, conectar el repo a Zenodo, archivar y
-  pegar el DOI en `CITATION.cff`, `README.md` y este checklist.
+- **Estado: cumplido.**
+- DOI real asignado por **Zenodo**:
+  - Software: [`10.5281/zenodo.21988746`](https://doi.org/10.5281/zenodo.21988746)
+  - Dataset (evidencias empíricas): [`10.5281/zenodo.21988785`](https://doi.org/10.5281/zenodo.21988785)
+- Evidencia: `CITATION.cff` (bloque `identifiers`), `README.md` (sección
+  "DOI / Zenodo"), `docs/observaciones/OBSERVACIONES.md` (cierre de OBS-10).
 
 ### F2. Metadatos ricos
 - **Estado: cumplido (parcialmente, ver F1 para DOI).**
@@ -34,12 +34,13 @@ Barker et al. 2022) — mapeo sobre la guía de publicación del proyecto.
   (pendiente de edición en F18/paquete de release).
 
 ### F3. Los metadatos incluyen el identificador del software
-- **Estado: pendiente de publicación** (depende de F1: el DOI se agregará a
-  `CITATION.cff`, `README.md` y portada del informe).
+- **Estado: cumplido** — el DOI (`10.5281/zenodo.21988746`) ya está en
+  `CITATION.cff` y `README.md`; pendiente únicamente reflejarlo en la
+  portada del informe final (fuera de alcance de este checklist).
 
 ### F4. Metadatos registrados/buscables en infraestructura indexable
-- **Estado: pendiente de publicación** (Zenodo indexa el DOI al archivar;
-  GitHub ya indexa el repo: búsqueda de "BIOPET" en github.com encuentra el
+- **Estado: cumplido** — Zenodo indexa el DOI ya asignado; GitHub ya
+  indexa el repo (búsqueda de "BIOPET" en github.com encuentra el
   repositorio actual).
 
 ---
@@ -68,9 +69,9 @@ Barker et al. 2022) — mapeo sobre la guía de publicación del proyecto.
   desplegar el sistema.
 
 ### A2. Los metadatos persisten más allá de la vida del software
-- **Estado: cumplido (git) / pendiente (DOI)** — el historial git del repo
-  persiste; la persistencia formal (Zenodo) queda cubierta al archivar el tag
-  (F1).
+- **Estado: cumplido** — el historial git del repo persiste; la
+  persistencia formal ya queda cubierta por el archivado real en Zenodo
+  (F1, DOI `10.5281/zenodo.21988746`).
 
 ---
 
@@ -142,14 +143,19 @@ Barker et al. 2022) — mapeo sobre la guía de publicación del proyecto.
 
 | Principio | Ítems cumplidos | Ítems pendientes de publicación |
 |---|---|---|
-| **F** Findable | F2 (parcial), F4 (GitHub) | F1 (DOI Zenodo), F3 |
-| **A** Accessible | A1 (código), A1.1, A1.2, A2 (git) | A1 (URL Render real) |
+| **F** Findable | F1 (DOI Zenodo), F2 (parcial), F3, F4 | — |
+| **A** Accessible | A1 (código), A1.1, A1.2, A2 (Zenodo) | A1 (URL Render real) |
 | **I** Interoperable | I1, I3 | I2 (parcial, consciente) |
 | **R** Reusable | R1, R1.1, R1.2 (parcial), R1.3, R2, R3 | — |
 
-**Único bloqueante real para publicar:** asignar el DOI en Zenodo (F1) y
-actualizar `CITATION.cff` a v1.0.0 con el `repository-code` correcto — todo
-detallado en `docs/publicacion/PAQUETE-V1.0.0.md` (F18).
+**DOI de Zenodo ya asignado** (F1): software
+`10.5281/zenodo.21988746`, dataset `10.5281/zenodo.21988785`. El único
+pendiente real que queda en F2 es puntual: `CITATION.cff` seguía
+declarándose ahí con `version: 0.9.0-rc` y el `repository-code` anterior
+en la fecha de esta evaluación (2026-08-18) — ya corregido por separado
+en `docs/publicacion/PAQUETE-V1.0.0.md` (F18); no se actualizó la
+redacción completa de F2 en esta pasada porque el alcance de este cambio
+fue exclusivamente el estado Zenodo/DOI.
 
 ## Referencias
 

@@ -13,7 +13,7 @@ Ninguna acción aquí se ejecuta en esta rama; todo es preparación verificable.
 | Versión | `0.9.0-rc` (`CITATION.cff`, `git describe`, k6 filenames) | **cambiar a `1.0.0`** |
 | `repository-code` | `https://github.com/JirachinG19Stdio/PFC-VET-ENTR3-v0.9.0-rc` (repo anterior) | **corregir a `https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET`** |
 | Licencia | MIT (`LICENSE`, `CITATION.cff`) | mantener |
-| DOI | ausente (comentado en `CITATION.cff:28`) | **asignar en Zenodo al archivar** |
+| DOI | software `10.5281/zenodo.21988746`, dataset `10.5281/zenodo.21988785` (`CITATION.cff`, bloque `identifiers`) | ya asignado — mantener |
 | Fecha de release | `date-released: 2026-07-24` (v0.9.0-rc) | actualizar a fecha del tag v1.0.0 |
 | Keywords | 8 keywords en `CITATION.cff` | mantener |
 
@@ -95,14 +95,24 @@ es la única etiqueta real y verificable.
   Settings → el paquete generado, visibility "Public" — la corrida
   exitosa reportada no incluyó esa confirmación explícita en esta tarea).
 
-## 5. Datos necesarios para Zenodo
+## 5. Zenodo — DOI PUBLICADOS
 
-- **Tag**: crear `v1.0.0` en git (el tag debe apuntar al commit publicado).
-- **Conexión**: conectar `Grinjoww/ENTREGA-FINAL-BIOPET` a Zenodo
-  (zenodo.org → GitHub → activar el repo). Lo hace el dueño del repo.
-- **Al archivar**, Zenodo toma `CITATION.cff` automáticamente y asigna el DOI.
-- **Después**: pegar el DOI en `CITATION.cff` (campo `doi:`), `README.md` y
-  `docs/checklists/fair.md` (ítem F1).
+Estado: el dueño del repositorio ya archivó el software y el dataset de
+evidencias empíricas en Zenodo, con DOI reales:
+
+| Campo | Valor |
+|---|---|
+| DOI de software | [`10.5281/zenodo.21988746`](https://doi.org/10.5281/zenodo.21988746) |
+| DOI de dataset | [`10.5281/zenodo.21988785`](https://doi.org/10.5281/zenodo.21988785) |
+
+Propagado a `CITATION.cff` (bloque `identifiers`), `README.md` (sección
+"DOI / Zenodo") y `docs/checklists/fair.md` (F1, F3, F4). Cierra OBS-10
+(`docs/observaciones/OBSERVACIONES.md`).
+
+**Pendiente real, no de Zenodo en sí:** el tag Git `v1.0.0` todavía no
+existe (fuera de alcance de esta tarea); crearlo y publicarlo sigue siendo
+necesario para el resto de la Entrega Final (CI verde sobre el tag,
+`date-released` real en `CITATION.cff`, etiquetas `1.0.0`/`latest` en GHCR).
 
 ## 6. Checklist final "listo para publicar manualmente"
 
@@ -123,12 +133,13 @@ Marcar TODOS antes de publicar (los 3 primeros son de esta rama y ya están):
       `sha256:ef1e857a95a307a115ebe01599a41506eab824808b70a3c8e317dcc55bef5163`
       (ver sección 4) — pendiente solo confirmar visibilidad "Public" del
       paquete en GitHub
+- [x] Repo conectado a Zenodo por el owner; release archivado; DOI obtenido:
+      software `10.5281/zenodo.21988746`, dataset `10.5281/zenodo.21988785`
+- [x] DOI pegado en `CITATION.cff`, `README.md`, `docs/checklists/fair.md`
 - [ ] Tag `v1.0.0` creado y pusheado (al crearse, el workflow GHCR
       publicará además `1.0.0` y `latest` automáticamente)
 - [ ] CI en verde sobre el tag (6 jobs: backend-test, frontend-build,
       traceability, sql-audit, security-static, zap-baseline)
-- [ ] Repo conectado a Zenodo por el owner; release archivado; DOI obtenido
-- [ ] DOI pegado en `CITATION.cff`, `README.md`, `docs/checklists/fair.md`
 - [ ] URL real de Render registrada en `docs/despliegue/DEPLOYMENT.md`
       (Paso 7: `curl -I https://<url-real>/actuator/health`) — la conecta el
       owner; evidencia final pendiente
