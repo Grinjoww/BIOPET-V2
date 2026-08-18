@@ -17,14 +17,14 @@
 % pudo verificarse contra una fuente ya citada en este repositorio, se deja
 % explicito en un comentario junto a la entrada, en vez de inventarlo.
 %
-% CIERRE 2026-08-17: se integran aqui las listas de referencias candidatas
-% de Jaime (docs/informe/borradores/jaime/referencias-candidatas.md, 12
-% entradas, 11 nuevas + 1 ya existente) y de Zaida
-% (docs/informe/borradores/zaida/estudios-primarios-zaida.md, 3 entradas,
-% 1 compartida con la de Jaime: Bangor, Kortum & Miller 2008, incluida una
-% sola vez). Fred (F20) no entrego su bloque de estudios; se cierra la
-% integracion sin el, dejando constancia explicita del hueco en
-% docs/checklists/prisma2020.md en vez de inventar su aporte.
+% CIERRE 2026-08-18: se integran ademas las 11 referencias del bloque Fred
+% (docs/investigacion/handoff-fred-referencias.bib, F20-F21), verificadas
+% por Fred con DOI real (2026-08-17) y recontrastadas aqui contra Crossref/
+% la pagina oficial del editor antes de esta integracion final. De estas,
+% 3 corresponden a estudios primarios ya incluidos en la sintesis PRISMA
+% (docs/checklists/prisma2020.md); las otras 8 respaldan afirmaciones
+% puntuales del informe (rendimiento, ORM vs SQL, caching Redis,
+% contenedores) y no forman parte de la sintesis de trabajos relacionados.
 
 @misc{owasp-top10,
   author       = {{OWASP Foundation}},
@@ -287,4 +287,133 @@
   year    = {2021},
   howpublished = {\url{https://journals.gdeon.org/index.php/esj/article/view/174}},
   note    = {Aporte de Zaida (E3); dominio y contexto pais mas cercano a BIOPET encontrado y verificado. Revista regional sin DOI publico verificado; se cita el enlace oficial de la revista.}
+}
+
+% ===========================================================================
+% Bloque Fred (F20-F21), integrado 2026-08-18
+% Fuente: docs/investigacion/handoff-fred-referencias.bib. Los 3 primeros
+% son estudios primarios incluidos en la sintesis PRISMA; los 8 restantes
+% respaldan afirmaciones puntuales del informe (no son parte de la
+% sintesis de trabajos relacionados).
+% ===========================================================================
+
+@article{bucao2023vetelgeuse,
+  author  = {W. Bucao and Ma. A. A. Quinones and R. A. Abong and C. Penuela and K. J. Sun},
+  title   = {{VETelgeuse}: A Mobile and Web-Based Management System for Small and Medium-Scale Veterinary Clinics},
+  journal = {Research Journal of Education, Science and Technology},
+  volume  = {3},
+  number  = {1},
+  year    = {2023},
+  doi     = {10.63179/rjest.v3i1.55},
+  note    = {Aporte de Fred (F20); dominio veterinario web+movil, validado con cuestionario USE (n=30). Verificado via DOI oficial.}
+}
+
+@inproceedings{llaneta2022terravet,
+  author    = {J. C. E. Llaneta and C. J. D. Guelas and R. M. Labanan and J. S. Mercado and R. L. Sasis},
+  title     = {{TerraVet}: A Mobile and Web Application Framework for Pet Owners and Veterinary Clinic},
+  booktitle = {Proceedings of the 4th International Conference on Intelligent Science and Technology (ICIST)},
+  pages     = {19--24},
+  year      = {2022},
+  doi       = {10.1145/3568923.3568927},
+  note      = {Aporte de Fred (F20); framework web+movil dueno-clinica. Verificado via DOI oficial (ACM).}
+}
+
+@article{zmaranda2020crud,
+  author  = {D. Zmaranda and L.-L. Pop-Fele and C. Gyor{\"o}di and R. Gyor{\"o}di and G. Pecherle},
+  title   = {Performance Comparison of {CRUD} Methods using {.NET} Object Relational Mappers: A Case Study},
+  journal = {International Journal of Advanced Computer Science and Applications},
+  volume  = {11},
+  number  = {1},
+  year    = {2020},
+  doi     = {10.14569/IJACSA.2020.0110107},
+  note    = {Aporte de Fred (F20); respalda el acceso hibrido JPA + SQL nativo de BIOPET. Verificado via DOI oficial.}
+}
+
+@article{nowicki2022comparative,
+  author  = {T. Nowicki and S. Tomczak and G. Koziel},
+  title   = {Comparative Analysis of the Time Performance of Database Queries in {C\#} Language},
+  journal = {Journal of Computer Sciences Institute},
+  volume  = {22},
+  pages   = {8--12},
+  year    = {2022},
+  doi     = {10.35784/jcsi.2772},
+  note    = {Aporte de Fred (F21); SQL nativo supera a ORM en tiempo de ejecucion.}
+}
+
+@article{zuchnik2021comparative,
+  author  = {M. \.{Z}uchnik and P. Kopniak},
+  title   = {Comparative Analysis of Connection Performance with Databases via {JDBC} Interface and {ORM} Programming Frameworks},
+  journal = {Journal of Computer Sciences Institute},
+  volume  = {21},
+  pages   = {309--315},
+  year    = {2021},
+  doi     = {10.35784/jcsi.2729},
+  note    = {Aporte de Fred (F21); JDBC/SQL directo mas rapido que ORM en Java, respalda mover consultas complejas a SQL nativo (procedimientos almacenados F01-F05).}
+}
+
+@article{siebyla2020impact,
+  author  = {K. Siebyla and M. Skublewska-Paszkowska},
+  title   = {Impact of the Persistence Layer Implementation Methods on Application Performance},
+  journal = {Journal of Computer Sciences Institute},
+  volume  = {17},
+  pages   = {326--331},
+  year    = {2020},
+  doi     = {10.35784/jcsi.2067},
+  note    = {Aporte de Fred (F21); la implementacion de la capa de persistencia impacta el rendimiento medido (docs/mediciones/perf/).}
+}
+
+@article{dhalla2021performance,
+  author  = {H. K. Dhalla},
+  title   = {A Performance Comparison of {RESTful} Applications Implemented in {Spring Boot Java} and {MS.NET Core}},
+  journal = {Journal of Physics: Conference Series},
+  volume  = {1933},
+  number  = {1},
+  pages   = {012041},
+  year    = {2021},
+  doi     = {10.1088/1742-6596/1933/1/012041},
+  note    = {Aporte de Fred (F21); metodologia de comparacion de rendimiento REST entre pilas, contexto de ADR-002.}
+}
+
+@article{godinho2024performance,
+  author  = {A. Godinho and J. Rosado and F. S{\'a} and F. Cardoso},
+  title   = {Performance Comparison of {RESTful} Web {APIs} using a Test Suite: {.NET} vs. {Java Spring Boot}},
+  journal = {Journal of Software and Systems Development},
+  volume  = {2024},
+  pages   = {1--32},
+  year    = {2024},
+  doi     = {10.5171/2024.478010},
+  note    = {Aporte de Fred (F21); metodologia de pruebas de carga (k6/JMeter) sobre APIs REST, respalda docs/mediciones/perf/REPORT.md.}
+}
+
+@article{zulfa2020caching,
+  author  = {M. I. Zulfa and A. Fadli and A. W. Wardhana},
+  title   = {Application Caching Strategy Based on In-Memory using {Redis} Server to Accelerate Relational Data Access},
+  journal = {Jurnal Teknologi dan Sistem Komputer},
+  volume  = {8},
+  number  = {2},
+  pages   = {157--163},
+  year    = {2020},
+  doi     = {10.14710/jtsiskom.8.2.2020.157-163},
+  note    = {Aporte de Fred (F21); respalda el uso de cache Redis en BIOPET (docs/mediciones/redis/).}
+}
+
+@article{yang2021large,
+  author  = {J. Yang and Y. Yue and K. V. Rashmi},
+  title   = {A Large-Scale Analysis of Hundreds of In-Memory Key-Value Cache Clusters at {Twitter}},
+  journal = {ACM Transactions on Storage},
+  volume  = {17},
+  number  = {3},
+  pages   = {1--35},
+  year    = {2021},
+  doi     = {10.1145/3468521},
+  note    = {Aporte de Fred (F21); respalda la configuracion de TTL en la cache Redis de BIOPET (REQ-NF-012). Nota: distinto de yang2026tokentimebomb (Jaime), mismo apellido, autores y trabajos distintos.}
+}
+
+@inproceedings{ghatrehsamani2020art,
+  author    = {D. Ghatrehsamani and C. Denninnart and M. Amini Salehi and J. Bacik},
+  title     = {The Art of {CPU}-Pinning: Evaluating and Improving the Performance of Virtualization and Containerization Platforms},
+  booktitle = {Proceedings of the 49th International Conference on Parallel Processing (ICPP '20)},
+  year      = {2020},
+  doi       = {10.1145/3404397.3404442},
+  note      = {Aporte de Fred (F21); respalda el overhead medible del despliegue contenerizado de BIOPET (docs/despliegue/).}
 }
