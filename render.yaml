@@ -112,9 +112,16 @@ services:
   # ------------------------------------------------------------------
   # Frontend Angular (docker + nginx). El proxy /api hacia el backend se
   # resuelve en runtime dentro del contenedor (frontend/docker-entrypoint.sh
-  # + nginx.conf.template), usando BACKEND_HOST/BACKEND_PORT inyectados
-  # abajo desde el servicio real biopet-backend -- no un hostname
-  # hardcodeado ("backend"), una IP ni una URL publica inventada.
+  # + nginx.conf.template), usando BACKEND_URL definido abajo.
+  #
+  # NO se usa el hostname privado de Render (fromService/property: host)
+  # aqui: verificado en un deploy real que el plan Free de Web Services
+  # de Render puede ENVIAR trafico por la red privada pero NO puede
+  # RECIBIRLO (el backend biopet-backend, tambien Free, no admite
+  # conexiones entrantes por esa red desde el frontend) -- el intento
+  # anterior fallo con "host not found in upstream 'biopet-backend-dh5e'".
+  # Se usa en su lugar la URL HTTPS publica real del backend, ya
+  # desplegado y verificado accesible.
   # ------------------------------------------------------------------
   - type: web
     name: biopet-frontend
@@ -124,16 +131,12 @@ services:
     plan: free
     healthCheckPath: /
     envVars:
-      - key: BACKEND_HOST
-        fromService:
-          type: web
-          name: biopet-backend
-          property: host
-      - key: BACKEND_PORT
-        fromService:
-          type: web
-          name: biopet-backend
-          property: port
+      # URL publica real y verificada del servicio biopet-backend en esta
+      # instancia de Render (no es un secreto: es la URL publica del
+      # propio backend, igual de visible que cualquier request HTTP a
+      # ella). Sin puerto (HTTPS publico de Render siempre en 443).
+      - key: BACKEND_URL
+        value: "https://biopet-backend-dh5e.onrender.com"
 
   # ------------------------------------------------------------------
   # Redis / Valkey gestionado (cache)

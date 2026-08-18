@@ -1,25 +1,31 @@
 # frontend/nginx.conf.template
 # Plantilla de configuracion de nginx del frontend. Se convierte en
 # /etc/nginx/conf.d/default.conf en tiempo de arranque del contenedor
-# (frontend/docker-entrypoint.sh), sustituyendo UNICAMENTE las variables
-# BACKEND_HOST y BACKEND_PORT que aparecen abajo en "proxy_pass" -- nunca
-# se hardcodea aqui un hostname fijo, para que el mismo archivo sirva
-# tanto para Docker Compose local (defaults BACKEND_HOST=backend,
-# BACKEND_PORT=8080, ver docker-entrypoint.sh) como para Render
-# (BACKEND_HOST/BACKEND_PORT inyectados por Blueprint desde el servicio
-# real biopet-backend, ver render.yaml). Un solo archivo fuente, sin
-# duplicar configuraciones por entorno.
+# (frontend/docker-entrypoint.sh), sustituyendo UNICAMENTE la variable
+# BACKEND_URL que aparece abajo en "proxy_pass" -- nunca se hardcodea aqui
+# una URL fija, para que el mismo archivo sirva tanto para Docker Compose
+# local (default BACKEND_URL=http://backend:8080, ver
+# docker-entrypoint.sh) como para Render (BACKEND_URL = URL HTTPS publica
+# real del servicio biopet-backend, inyectada por render.yaml). Un solo
+# archivo fuente, sin duplicar configuraciones por entorno.
+#
+# Por que una URL publica y no el hostname privado de Render: verificado
+# en un deploy real que el plan Free de Web Services de Render puede
+# ENVIAR trafico por la red privada pero NO puede RECIBIRLO -- el
+# frontend Free no puede consumir al backend Free por ese hostname
+# privado ("host not found in upstream" al intentarlo). La URL publica
+# HTTPS del backend, ya desplegado y accesible, evita ese limite.
 #
 # NOTA: como envsubst reemplaza texto de forma literal (tambien dentro de
 # comentarios), este encabezado evita a proposito escribir la sintaxis
-# real "dolar-llave-BACKEND_HOST-llave" para no verse alterado en el
+# real "dolar-llave-BACKEND_URL-llave" para no verse alterado en el
 # archivo final generado; la sintaxis real solo aparece, sin comentar, en
 # la linea "proxy_pass" de abajo.
 #
 # Las variables propias de nginx ($host, $remote_addr,
 # $proxy_add_x_forwarded_for, $scheme) NO se tocan: docker-entrypoint.sh
-# restringe envsubst exclusivamente a BACKEND_HOST y BACKEND_PORT, por lo
-# que estas quedan literalmente intactas en el archivo final.
+# restringe envsubst exclusivamente a BACKEND_URL, por lo que estas
+# quedan literalmente intactas en el archivo final.
 
 server {
     listen 80;
@@ -33,10 +39,16 @@ server {
     }
 
     location /api/ {
-        proxy_pass http://${BACKEND_HOST}:${BACKEND_PORT}/api/;
+        proxy_pass ${BACKEND_URL}/api/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        # Necesario cuando BACKEND_URL es un destino HTTPS por nombre
+        # (p.ej. Render, detras de un edge con SNI): sin esto, nginx no
+        # envia el SNI correcto en el handshake TLS hacia el backend y la
+        # conexion puede fallar. Sin efecto cuando BACKEND_URL es HTTP
+        # (Docker Compose local).
+        proxy_ssl_server_name on;
     }
 }
