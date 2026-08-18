@@ -15,11 +15,13 @@ un metaanálisis), por lo que varios ítems orientados a estadística clínica
 (19, 20b–d, 21b–c) se marcan **No aplica** de forma explícita en vez de
 forzarlos.
 
-**Estado de este documento:** es la **plantilla estructural** lista para
-recibir contenido. No contiene todavía los estudios de la revisión porque
-esta depende de tres insumos que aún no existen (F20 de Fred, J20 de Jaime,
-búsqueda propia de Zaida) — ver criterio D2 en el plan operativo, estado
-FALTA. Ningún ítem de este documento fue completado con datos inventados.
+**Estado de este documento:** es la **plantilla estructural**. El insumo de
+Zaida ya está listo (3 estudios verificados en
+`docs/informe/borradores/zaida/estudios-primarios-zaida.md`); siguen
+faltando F20 de Fred y J20 de Jaime para poder consolidar el diagrama de
+flujo y la tabla comparativa completa (mínimo 8-9 estudios incluidos entre
+los tres). Ningún ítem de este documento fue completado con datos
+inventados.
 
 ---
 
