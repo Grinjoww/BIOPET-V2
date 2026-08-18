@@ -84,7 +84,7 @@ datos que ya existen en el repositorio, verificado contra su origen real.
 | Transformación aplicada | **Única transformación declarada:** sustitución textual del identificador de usuario del sistema operativo en rutas locales embebidas por la herramienta (`C:\Users\<usuario>\...` → `USER_REDACTED`), documentada explícitamente en `README.md`. Puntajes, fechas, URLs y assertions **no fueron alterados** |
 | Verificación de integridad | `SHA256SUMS-ORIGINAL.txt` (hash del original antes de anonimizar) y `SHA256SUMS.txt` (hash de los archivos ya en el repositorio), permitiendo confirmar que la única diferencia es la sustitución declarada |
 | Archivos crudos | `raw/*.report.html`, `raw/*.report.json`, `raw/manifest.json`, `raw/assertion-results.json` (31 archivos totales, incluyendo 2 corridas adicionales de `/login` no incluidas en el resumen oficial de 3+3, y duplicados `lhr-<timestamp>.*` con el mismo contenido) |
-| Cambios posteriores no cubiertos | Esta evidencia **no** cubre los dos fixes de SEO aplicados en el cierre 2026-08-17 (`meta description`, `robots.txt`) — requiere una corrida nueva para quedar reflejada |
+| Cambios posteriores no cubiertos | Ninguno — la re-corrida del 2026-08-18 (`lhci-20260818-0538-*.json`, 12 archivos, perfil móvil y desktop) ya captura el efecto de los dos fixes de SEO (`meta description`, `robots.txt`) aplicados el 2026-08-17. SEO pasó de 82 a 100 en las 12 corridas. |
 
 ## 7. Diccionario de datos vs. procedencia — relación entre ambos documentos
 
@@ -97,17 +97,30 @@ documentada, o anonimización textual puntual en el caso de Lighthouse);
 editar un crudo sin declararlo invalidaría la evidencia, siguiendo el
 mismo criterio ya aplicado en `docs/mediciones/lighthouse/README.md`.
 
-## 8. Pendientes de procedencia (no se inventa lo que falta)
+## 8. Procedencia de la re-corrida Lighthouse (2026-08-18)
+
+| Campo | Detalle |
+|---|---|
+| Generado por | `scripts/run-lighthouse.sh` + `lighthouserc.desktop.js` (nuevo, perfil desktop agregado junto al móvil existente) |
+| Responsable | Equipo (corrida ejecutada tras los fixes de `frontend/src/index.html` y `frontend/public/robots.txt`) |
+| Fecha de generación | 2026-08-18, lote `lhci-20260818-0538-*` |
+| Entrada | Mismo contenedor Docker real (`http://localhost:4200`), rutas `/login` y `/mascotas`, ahora en dos perfiles (móvil simulado y desktop) × 2 rutas × 3 corridas = 12 archivos JSON |
+| Transformación aplicada | Ninguna — JSON crudo de `@lhci/cli` sin editar |
+| Resultado | SEO 100/100 en las 12 corridas (antes 82/100); confirma que la causa raíz identificada en la corrida del 2026-08-01 (meta description + robots.txt) era correcta y completa |
+| Archivo de configuración nuevo | `lighthouserc.desktop.js` — no existía en la corrida anterior; se agregó junto con la re-ejecución |
+
+## 9. Pendientes de procedencia (no se inventa lo que falta)
 
 - **Hit ratio de Redis:** no hay todavía una captura de `INFO stats`
   (`keyspace_hits`/`keyspace_misses`) con procedencia documentada; solo
-  existe evidencia de TTL y `DBSIZE`.
-- **Lighthouse desktop:** no hay ninguna corrida en perfil de escritorio;
-  toda la evidencia actual es perfil móvil simulado.
-- **Lighthouse post-fix SEO:** pendiente de una corrida nueva que capture
-  el efecto de los cambios en `index.html`/`robots.txt` del 2026-08-17.
-- **PRISMA (trabajos relacionados):** los tres estudios primarios de Zaida
-  ya tienen procedencia documentada en
-  `docs/informe/borradores/zaida/estudios-primarios-zaida.md` (DOI/enlace
-  verificable por estudio); los insumos F20 (Fred) y J20 (Jaime) siguen
-  sin documentar procedencia propia.
+  existe evidencia de TTL y `DBSIZE`. Sigue siendo la única brecha real
+  de procedencia de datos de medición en este documento.
+- **PRISMA (trabajos relacionados):** CERRADO. Los 10 estudios primarios
+  (3 de Zaida, 4 de Jaime, 3 de Fred) tienen procedencia documentada:
+  Zaida en `docs/informe/borradores/zaida/estudios-primarios-zaida.md`,
+  Jaime en `docs/informe/borradores/jaime/trabajos-relacionados.md` y
+  `referencias-candidatas.md`, Fred en
+  `docs/investigacion/handoff-fred-trabajos-relacionados.md` y
+  `handoff-fred-referencias.bib` (11 DOI verificados uno a uno,
+  2026-08-17). Las 24 referencias nuevas de los tres bloques ya están
+  integradas en `docs/informe/referencias.bib` (39 entradas totales).

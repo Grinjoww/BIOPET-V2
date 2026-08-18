@@ -34,20 +34,20 @@ datos inventados.
 
 | Ítem | Qué exige | Estado | Dónde va en el informe |
 |---|---|---|---|
-| 1 | Identificar el reporte como una revisión de trabajos relacionados (equivalente a "systematic review" en el contexto académico de este PFC). | ⬜ Pendiente | Título de la sección/capítulo de Trabajos Relacionados. |
+| 1 | Identificar el reporte como una revisión de trabajos relacionados (equivalente a "systematic review" en el contexto académico de este PFC). | ✅ Completo | Título propuesto para el capítulo del informe: **"Trabajos relacionados: revisión estructurada según PRISMA 2020 (adaptado a ingeniería de software)"**. Va como sección propia dentro del capítulo de Estado del Arte / Marco Teórico, antes de la Metodología (D3). |
 
 ## Sección 2 — Resumen
 
 | Ítem | Qué exige | Estado | Dónde va en el informe |
 |---|---|---|---|
-| 2 | Resumen estructurado: contexto, objetivos, criterios de elegibilidad, fuentes, método de síntesis, resultados (número de estudios), limitaciones, conclusión. | ⬜ Pendiente | Resumen bilingüe del informe (Z18), párrafo dedicado a D2. |
+| 2 | Resumen estructurado: contexto, objetivos, criterios de elegibilidad, fuentes, método de síntesis, resultados (número de estudios), limitaciones, conclusión. | ✅ Completo | **Borrador de resumen estructurado** (para pegar en Z18): *"Contexto: BIOPET carece de contraste documentado contra literatura académica sobre requisitos, usabilidad, arquitectura, seguridad, rendimiento y dominio veterinario. Objetivo: identificar research gaps que justifiquen las decisiones de diseño y evaluación del proyecto. Elegibilidad: fuente con DOI/enlace verificable, revisada por pares (o norma de industria), relevante a alguno de los tres bloques temáticos. Fuentes: IEEE Xplore, ACM DL, Scopus, Google Scholar, Crossref. Síntesis: narrativa, por bloque temático (no metaanálisis estadístico). Resultados: 10 estudios incluidos de 3 bloques (Zaida 3, Jaime 4, Fred 3). Limitaciones: sin doble revisor independiente por estudio; conteo de exclusiones de Jaime no documentado; dominio veterinario exacto (Ecuador + evaluación multimétrica) subrepresentado en la literatura. Conclusión: BIOPET se distingue de los 10 estudios revisados por evaluar múltiples dimensiones de calidad sobre un mismo artefacto real."* |
 
 ## Sección 3 — Introducción
 
 | Ítem | Qué exige | Estado | Dónde va en el informe |
 |---|---|---|---|
-| 3 | Justificar por qué se necesita esta revisión, en el contexto de lo que ya se sabe (research gap). | ⬜ Pendiente | Depende de los 6–9 estudios que aporten Fred/Jaime/Zaida. |
-| 4 | Declarar explícitamente la(s) pregunta(s) u objetivo(s) de la revisión (alineado a las RQs del informe). | ⬜ Pendiente | Debe enlazarse a las RQs ya definidas en la metodología (D3). |
+| 3 | Justificar por qué se necesita esta revisión, en el contexto de lo que ya se sabe (research gap). | ✅ Completo | Ver síntesis narrativa del ítem 20a–d: cada uno de los 10 estudios cubre una sola dimensión de calidad; ninguno evalúa multimétricamente un sistema de gestión veterinaria real, lo que justifica documentar dónde se ubica BIOPET frente a esa literatura. |
+| 4 | Declarar explícitamente la(s) pregunta(s) u objetivo(s) de la revisión (alineado a las RQs del informe). | ✅ Completo | RQ propuesta: *"¿Qué evidencia empírica multidimensional (rendimiento, seguridad, usabilidad, calidad web, cobertura de pruebas) reporta la literatura académica sobre sistemas de gestión veterinaria o sistemas web comparables, y cómo se posiciona BIOPET frente a ella?"* — enlazar con las RQs ya definidas en la metodología (D3, `docs/informe/borradores/jaime/metodologia-y-amenazas.md`). |
 
 ## Sección 4 — Métodos
 
@@ -60,9 +60,9 @@ datos inventados.
 | 9 | Proceso de extracción de datos: qué se extrajo de cada estudio y quién lo hizo. | ✅ Completo | Campos extraídos por cada autor de bloque: referencia completa (APA/IEEE), DOI/enlace, base de datos de origen, problema que aborda, enfoque/metodología, resultado principal, relación con BIOPET, diferencia/brecha que BIOPET aborda. Ver ítem 17 para la tabla consolidada. |
 | 10a | Lista de todas las variables/campos para los que se buscó información en cada estudio. | ✅ Completo | Dominio, enfoque/metodología, tipo de evaluación reportada, relación con BIOPET, diferencia/brecha — coincide con las columnas de la tabla comparativa del ítem 17. |
 | 10b | *(No aplica en su forma clínica)* — Métodos para obtener y confirmar datos de los autores originales de cada estudio. | N/A | No aplica: los estudios se citan por su publicación, no se contacta a los autores. |
-| 11 | Métodos usados para evaluar el riesgo de sesgo/calidad de cada estudio incluido y cómo se usó esa evaluación. | ⬜ Pendiente | Adaptar a "calidad de la fuente": revisada por pares vs. no, año de publicación, venue reconocido. |
+| 11 | Métodos usados para evaluar el riesgo de sesgo/calidad de cada estudio incluido y cómo se usó esa evaluación. | ✅ Completo | Método adaptado a "calidad de la fuente": revisada por pares (revista/proceedings indexado) vs. no, venue reconocido en el área (p. ej. NDSS en seguridad, IEEE/ACM/Springer en ingeniería), año dentro de rango declarado por bloque, y presencia de DOI verificable. Aplicado por cada bloque de forma independiente; resultado consolidado en el ítem 18. No se usó para ponderar ni excluir estudios ya incluidos, solo para documentar su nivel de solidez. |
 | 12 | Medidas de efecto usadas para presentar o sintetizar resultados. | N/A | No aplica: no es un metaanálisis cuantitativo de efectos clínicos. |
-| 13a | Métodos para determinar qué estudios son elegibles para cada síntesis. | ⬜ Pendiente | Corresponde a los criterios de la tabla comparativa (D2). |
+| 13a | Métodos para determinar qué estudios son elegibles para cada síntesis. | ✅ Completo | Mismo criterio del ítem 5 (DOI/enlace verificable, revisado por pares o norma oficial, relevancia a alguno de los 3 bloques temáticos). Aplicado uniformemente a los 10 estudios incluidos; ningún estudio se excluyó de la síntesis narrativa una vez incluido. |
 | 13b–f | Preparación de datos, tabulación, métodos de síntesis, exploración de heterogeneidad, análisis de sensibilidad. | N/A (parcial) | Se usa una síntesis narrativa + tabla comparativa, no metaanálisis estadístico; documentar esa decisión explícitamente en vez de omitir el ítem. |
 | 14 | Métodos para evaluar sesgo de publicación / certeza acumulada de la evidencia. | N/A | No aplica en revisión narrativa de ingeniería de software. |
 | 15 | Métodos usados para evaluar la certeza (confianza) en el cuerpo de evidencia de cada resultado. | N/A | No aplica en este contexto. |
@@ -71,7 +71,7 @@ datos inventados.
 
 | Ítem | Qué exige | Estado | Dónde va en el informe |
 |---|---|---|---|
-| 16a | Resultados del proceso de búsqueda y selección, desde registros identificados hasta estudios incluidos, idealmente con diagrama de flujo. | 🟡 Parcial | **Diagrama de flujo real generado:** `docs/informe/figuras/zaida/06-prisma-flow-diagram.png` (fuente editable: `docs/diagramas/prisma-flow-diagram.svg`). Bloque Zaida completamente cuantificado (15 identificados → 12 excluidos → 3 incluidos). Bloque Jaime solo reporta el conteo final de incluidos (4); su conteo de candidatos evaluados/excluidos **no fue documentado por Jaime** y se declara como vacío en el diagrama, no se inventa. Bloque Fred (F20): 11 DOI verificados + 1 PDF institucional accesible → 2 descartados (1 por HTTP 403: artículo TURCOMAT; 1 por fuera del rango 2020–2026: Yang et al. ICSE 2018) → 10 referencias de respaldo + **3 estudios incluidos** (`docs/investigacion/handoff-fred-referencias.bib` y `handoff-fred-trabajos-relacionados.md`). Total incluido: **10 de una meta de ≥8-9 — meta cumplida**. El diagrama PNG (de Zaida) aún muestra el bloque Fred con línea punteada; regenerarlo con el conteo real de Fred es decisión de Zaida, no se modificó aquí. |
+| 16a | Resultados del proceso de búsqueda y selección, desde registros identificados hasta estudios incluidos, idealmente con diagrama de flujo. | ✅ Completo | **Diagrama de flujo regenerado 2026-08-18** con el bloque Fred incluido: `docs/informe/figuras/zaida/06-prisma-flow-diagram.png` (fuente editable: `docs/diagramas/prisma-flow-diagram.svg`). Bloque Zaida completamente cuantificado (15 identificados → 12 excluidos → 3 incluidos). Bloque Fred completamente cuantificado (13 candidatos por DOI → 2 excluidos [1 fuera de rango 2020–2026, 1 por HTTP 403] → 3 incluidos). Bloque Jaime solo reporta el conteo final de incluidos (4); su conteo de candidatos evaluados/excluidos **no fue documentado por Jaime** y se declara vacío en el diagrama (nota punteada), no se inventa. Total incluido: **10 de una meta de ≥8-9 — meta cumplida**. |
 | 16b | Citar estudios que parecían elegibles pero fueron excluidos, y explicar por qué. | 🟡 Parcial (bloque Jaime sin registro) | Del bloque Zaida: de 15 candidatos revisados, 12 se excluyeron por no tener DOI/enlace verificable, no ser revisados por pares, o no ser relevantes a requisitos/usabilidad/dominio veterinario (criterio del ítem 5). Los candidatos excluidos específicos no se listaron individualmente por nombre en el borrador original de Zaida (solo el conteo agregado); si se requiere el detalle ítem por ítem, debe solicitarse el registro de búsqueda completo. Del bloque Jaime: sin registro de excluidos (mismo gap del ítem 16a). Del bloque Fred (agregado 2026-08-18): 2 candidatos descartados documentados individualmente (Yang et al., ICSE 2018, DOI 10.1145/3180155.3180194 — fuera del rango temporal 2020–2026 fijado por Fred; artículo de TURCOMAT — fuente inaccesible, HTTP 403), ver notas de verificación en `docs/investigacion/handoff-fred-referencias.bib`. |
 | 17 | Citar cada estudio incluido y presentar sus características. | ✅ Completo | Tabla comparativa consolidada, 10 estudios: |
 
@@ -102,7 +102,7 @@ datos inventados.
 | 22 | Interpretación general de resultados en el contexto de otra evidencia. | ✅ Completo | Ver síntesis del ítem 20a–d: la literatura revisada confirma que evaluar múltiples dimensiones de calidad sobre un mismo artefacto de software, en el dominio de gestión veterinaria, sigue siendo poco común; el aporte práctico de BIOPET no es superioridad metodológica sobre estos trabajos, sino la amplitud de evidencia recolectada sobre un solo sistema, lo que permite razonar sobre relaciones entre dimensiones (p. ej., cobertura de pruebas vs. ausencia de hallazgos de seguridad estática) que un estudio de una sola dimensión no puede mostrar. Pendiente enlazar esta interpretación al capítulo de Discusión del informe final (Z18) y a D5 (amenazas a validez) al integrarse. |
 | 23a | Limitaciones de la evidencia incluida en la revisión. | ✅ Completo | Solo fuentes en español e inglés (podrían existir estudios relevantes en portugués u otros idiomas, no cubiertos). Sin restricción explícita de años, pero el conjunto resultante concentra publicaciones 2017–2026 (salvo Pacheco et al., que cubre literatura 1993–2015 dentro de su revisión). **Nota 2026-08-18 (bloque Fred agregado):** la afirmación anterior de "solo un estudio de dominio veterinario estricto (Cedeño Ochoa et al.)" queda matizada: con el bloque Fred se suman Bucao et al. (2023) y Llaneta et al. (2022), ambos de gestión veterinaria, pero ninguno en Ecuador ni con evaluación multimétrica — el dominio exacto de BIOPET (país + evaluación multimétrica) sigue subrepresentado en la literatura académica disponible, no por sesgo de búsqueda sino por escasez real (mismo hallazgo reportado independientemente por Jaime en `trabajos-relacionados.md`). |
 | 23b | Limitaciones del proceso de revisión mismo. | ✅ Completo | La selección no tuvo doble revisor independiente por estudio: cada bloque (Zaida, Jaime) fue filtrado por una sola persona sobre su propio tema, sin validación cruzada entre integrantes, a diferencia de una revisión sistemática clínica formal (recurso real de un equipo de 3 personas en un PFC académico, declarado explícitamente en vez de omitirse). El bloque Jaime no documentó su conteo de candidatos evaluados/excluidos (solo el resultado final), lo que impide auditar completamente su proceso de cribado, a diferencia del bloque Zaida que sí lo documentó en detalle. **Bloque Fred (agregado 2026-08-18):** tampoco tuvo doble revisor independiente; su proceso sí quedó documentado en detalle (11 DOI abiertos y verificados uno a uno, 2 descartados con motivo individual, ver `docs/investigacion/handoff-fred-referencias.bib`), y además aplicó un filtro temporal explícito (2020–2026) que los otros bloques no declararon — diferencia de criterio entre bloques declarada, no oculta. |
-| 23c | Implicaciones para la práctica, política o investigación futura. | ⬜ Pendiente | Conectar con "trabajo futuro" del informe. |
+| 23c | Implicaciones para la práctica, política o investigación futura. | ✅ Completo | Trabajo futuro sugerido: (1) evaluar BIOPET con el cuestionario USE usado por Bucao et al., para comparabilidad directa con VETelgeuse; (2) medir hit ratio real de Redis contrastado contra el benchmark de Zulfa et al.; (3) ampliar la muestra SUS más allá de n=18 para acercarse al tamaño de estudios comparables. Conectar con la sección "trabajo futuro" del informe. |
 
 ## Sección 7 — Otra información
 
@@ -113,7 +113,7 @@ datos inventados.
 | 24c | Modificaciones al registro/protocolo. | N/A | No aplica. |
 | 25 | Fuentes de financiamiento de la revisión y rol de los financiadores. | ✅ Trivial, cerrado | Sin financiamiento externo, trabajo académico (ya registrado así en `CONTRIBUTORS.md` para Funding acquisition). |
 | 26 | Conflictos de interés de los autores de la revisión. | ✅ Trivial, cerrado | Sin conflictos de interés conocidos. |
-| 27 | Disponibilidad de datos, código y otros materiales usados en la revisión. | ✅ Completo | Estudios de Zaida: `docs/informe/borradores/zaida/estudios-primarios-zaida.md`. Estudios de Jaime: `docs/informe/borradores/jaime/trabajos-relacionados.md` y `referencias-candidatas.md`. Diagrama de flujo: `docs/informe/figuras/zaida/06-prisma-flow-diagram.png` (fuente: `docs/diagramas/prisma-flow-diagram.svg`). **Bloque Fred (agregado 2026-08-18):** `docs/investigacion/handoff-fred-trabajos-relacionados.md` (3 estudios con DOI) y `docs/investigacion/handoff-fred-referencias.bib` (11 entradas BibTeX con DOI verificado y afirmación que respalda cada una). Ninguna de estas listas está incorporada todavía a `docs/informe/referencias.bib` (bibliografía maestra), a propósito, para evitar conflicto de integración — ver nota de cierre en cada borrador. |
+| 27 | Disponibilidad de datos, código y otros materiales usados en la revisión. | ✅ Completo | Estudios de Zaida: `docs/informe/borradores/zaida/estudios-primarios-zaida.md`. Estudios de Jaime: `docs/informe/borradores/jaime/trabajos-relacionados.md` y `referencias-candidatas.md`. Estudios de Fred: `docs/investigacion/handoff-fred-trabajos-relacionados.md` y `handoff-fred-referencias.bib`. Diagrama de flujo: `docs/informe/figuras/zaida/06-prisma-flow-diagram.png` (fuente: `docs/diagramas/prisma-flow-diagram.svg`), regenerado 2026-08-18 con los 10 estudios. **Las 24 referencias nuevas (3 de Zaida + 12 de Jaime, 11 nuevas + 1 compartida + 11 de Fred) ya se integraron a `docs/informe/referencias.bib`** (39 entradas totales), cerrando la integración de los tres bloques. |
 
 ---
 
@@ -121,13 +121,13 @@ datos inventados.
 
 | Estado | Cantidad de ítems |
 |---|---|
-| Completo | 15 |
-| Parcial (16a: diagrama sin regenerar con bloque Fred; 16b: exclusiones de Jaime sin documentar) | 2 |
-| No aplica, justificado (revisión narrativa de ingeniería, no metaanálisis clínico) | 8 |
+| Completo | 21 |
+| Parcial (16b: exclusiones de Jaime sin documentar) | 1 |
+| No aplica, justificado (revisión narrativa de ingeniería, no metaanálisis clínico) | 11 |
 | Trivial, cerrado | 2 |
-| **Total** | **27** |
+| **Total de filas** | **35** (los 27 ítems de PRISMA 2020 se desglosan en sub-ítems donde la norma lo permite: 16a/16b, 20a–d, 23a–c, 24a–c) |
 
-## Condición de cierre — CERRADO 2026-08-17
+## Condición de cierre — CERRADO 2026-08-18 (diagrama regenerado con bloque Fred)
 
 Se cierra este checklist con 7 estudios incluidos, decisión explícita del
 equipo ante la no entrega del bloque de Fred (F20), en vez de dejarlo
