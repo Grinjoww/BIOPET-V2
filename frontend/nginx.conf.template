@@ -1,0 +1,42 @@
+# frontend/nginx.conf.template
+# Plantilla de configuracion de nginx del frontend. Se convierte en
+# /etc/nginx/conf.d/default.conf en tiempo de arranque del contenedor
+# (frontend/docker-entrypoint.sh), sustituyendo UNICAMENTE las variables
+# BACKEND_HOST y BACKEND_PORT que aparecen abajo en "proxy_pass" -- nunca
+# se hardcodea aqui un hostname fijo, para que el mismo archivo sirva
+# tanto para Docker Compose local (defaults BACKEND_HOST=backend,
+# BACKEND_PORT=8080, ver docker-entrypoint.sh) como para Render
+# (BACKEND_HOST/BACKEND_PORT inyectados por Blueprint desde el servicio
+# real biopet-backend, ver render.yaml). Un solo archivo fuente, sin
+# duplicar configuraciones por entorno.
+#
+# NOTA: como envsubst reemplaza texto de forma literal (tambien dentro de
+# comentarios), este encabezado evita a proposito escribir la sintaxis
+# real "dolar-llave-BACKEND_HOST-llave" para no verse alterado en el
+# archivo final generado; la sintaxis real solo aparece, sin comentar, en
+# la linea "proxy_pass" de abajo.
+#
+# Las variables propias de nginx ($host, $remote_addr,
+# $proxy_add_x_forwarded_for, $scheme) NO se tocan: docker-entrypoint.sh
+# restringe envsubst exclusivamente a BACKEND_HOST y BACKEND_PORT, por lo
+# que estas quedan literalmente intactas en el archivo final.
+
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://${BACKEND_HOST}:${BACKEND_PORT}/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

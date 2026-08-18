@@ -98,16 +98,21 @@ mismo rol gestionado).
 
 ## 5. Pasos exactos del despliegue
 
-### 5.1 Preparar el frontend para Render
+### 5.1 Frontend en Render: proxy `/api` hacia el backend
 
-El nginx local (`frontend/nginx.conf`) apunta al servicio docker-compose
-`backend`. En Render el servicio se llama `biopet-backend`:
+**Ya no requiere ningun paso manual.** El proxy `/api` del frontend se
+resuelve automaticamente en tiempo de arranque del contenedor
+(`frontend/docker-entrypoint.sh` + `frontend/nginx.conf.template`), usando
+las variables `BACKEND_HOST`/`BACKEND_PORT` que `render.yaml` ya inyecta
+en el servicio `biopet-frontend` (Blueprint `fromService` sobre el
+servicio real `biopet-backend`) -- no hay que copiar ningun archivo ni
+commitear un cambio de configuracion antes del deploy. En Docker Compose
+local, el mismo mecanismo usa los defaults `BACKEND_HOST=backend`,
+`BACKEND_PORT=8080` (el nombre del servicio `backend` de
+`docker-compose.yml`), sin necesidad de configuracion adicional.
 
-```bash
-cp docs/despliegue/nginx-render.conf frontend/nginx.conf
-```
-
-Commitear ese cambio (es parte de esta rama de despliegue).
+`docs/despliegue/nginx-render.conf` queda como documentacion historica del
+enfoque anterior (copia manual de archivo); ya no se usa.
 
 ### 5.2 Crear el Blueprint
 

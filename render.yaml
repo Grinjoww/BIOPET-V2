@@ -110,9 +110,11 @@ services:
         value: "300000"
 
   # ------------------------------------------------------------------
-  # Frontend Angular (docker + nginx). Requiere el ajuste documentado en
-  # DEPLOYMENT.md: el proxy /api apunta al nombre interno del backend
-  # (docs/despliegue/nginx-render.conf).
+  # Frontend Angular (docker + nginx). El proxy /api hacia el backend se
+  # resuelve en runtime dentro del contenedor (frontend/docker-entrypoint.sh
+  # + nginx.conf.template), usando BACKEND_HOST/BACKEND_PORT inyectados
+  # abajo desde el servicio real biopet-backend -- no un hostname
+  # hardcodeado ("backend"), una IP ni una URL publica inventada.
   # ------------------------------------------------------------------
   - type: web
     name: biopet-frontend
@@ -121,6 +123,17 @@ services:
     rootDir: frontend
     plan: free
     healthCheckPath: /
+    envVars:
+      - key: BACKEND_HOST
+        fromService:
+          type: web
+          name: biopet-backend
+          property: host
+      - key: BACKEND_PORT
+        fromService:
+          type: web
+          name: biopet-backend
+          property: port
 
   # ------------------------------------------------------------------
   # Redis / Valkey gestionado (cache)
