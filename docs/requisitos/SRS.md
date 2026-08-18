@@ -635,17 +635,16 @@ Correos, RF-07 recuperado)**
 - **Enunciado:** La interfaz deberá adaptarse correctamente a resoluciones
   entre 320px y 1440px (móvil, tablet, escritorio).
 - **Rationale:** heredado de RNF-04/RNF-WEB-01.
-- **Verificación:** Lighthouse (perfil móvil, Slow 4G) + inspección manual en
-  Chrome DevTools a 320px, 768px y 1440px.
+- **Verificación:** Lighthouse (perfil móvil Slow 4G + perfil desktop) +
+  inspección manual en Chrome DevTools a 320px, 768px y 1440px.
 - **Trazabilidad:** `frontend/src/app/features/mascotas.component.ts`
   (`.grid-mascotas` con `@media (max-width: 600px)`).
-- **Estado:** verificado parcialmente. `docs/mediciones/lighthouse/` contiene
-  6 corridas oficiales (2026-08-01, perfil móvil simulado, Slow 4G) con
-  Performance 92–94 y Accessibility 91, sobre `/login` (`/mascotas` redirige
-  a `/login` sin sesión, ver `docs/mediciones/lighthouse/README.md`). **No
-  se auditó todavía un perfil de escritorio** ni la vista autenticada de
-  Mascotas; ambas cosas quedan pendientes de una corrida adicional (ver
-  Observaciones, sección 7).
+- **Estado:** verificado. `docs/mediciones/lighthouse/` contiene 6 corridas
+  originales (2026-08-01, perfil móvil) más 12 corridas de re-ejecución
+  (2026-08-18, perfiles móvil y desktop, `/login` y `/mascotas`,
+  `lhci-20260818-0538-*.json`). Performance ≥90 en todos los casos (100 en
+  desktop, 90–94 en móvil), Accessibility 91 en todos los casos, en ambos
+  perfiles y ambas rutas (incluida la vista autenticada de Mascotas).
 
 **REQ-NF-006 — Compatibilidad de navegadores**
 - **Categoría:** Compatibilidad · **Prioridad:** Should
@@ -897,38 +896,42 @@ cerrar un pendiente.
   quedaron cerradas al corregirse `CONTRIBUTORS.md` con acuerdo del equipo
   completo.
 
-**Cierre 2026-08-17 — decisión del equipo de cerrar sin el bloque de Fred.**
-Fred tenía asignada la ejecución de varios de los pendientes de abajo
-(corridas Lighthouse, hit ratio de Redis) y no los va a completar. El
-equipo decide cerrar la Entrega Final con la evidencia ya disponible en el
-repositorio, dejando estos puntos como **limitación declarada**, no como
-bloqueo indefinido:
+**Cierre 2026-08-18 — actualización tras la re-ejecución real de Lighthouse.**
+Contrario a lo previsto en el cierre del 2026-08-17 (que asumía que Fred no
+completaría sus pendientes), el equipo sí ejecutó la re-corrida de
+Lighthouse y Fred sí entregó su bloque de trabajos relacionados. Se
+actualiza el estado real:
 
-- **Lighthouse — perfil de escritorio y re-ejecución tras el fix de SEO.**
-  Las 6 corridas oficiales (2026-08-01) siguen siendo la única evidencia
-  archivada: perfil móvil, SEO en 82/100 (umbral 90). Los dos fixes de
-  causa raíz (`meta description` en `frontend/src/index.html`,
-  `robots.txt` + `angular.json`) ya están aplicados en el código, pero
-  **no existe una corrida posterior que confirme el nuevo puntaje**, ni
-  ninguna corrida en perfil desktop. Requiere levantar el stack Docker
-  (`make up && make lighthouse`), algo que no se pudo ejecutar en esta
-  fase de cierre por no contar con ese entorno disponible. Se documenta
-  como limitación del REQ-NF-005, no se reporta un puntaje sin corrida
-  real.
+- **Lighthouse — perfil de escritorio y re-ejecución tras el fix de SEO —
+  CERRADO.** Re-corrida real del 2026-08-18
+  (`docs/mediciones/lighthouse/lhci-20260818-0538-*.json`, 12 archivos:
+  perfil móvil y desktop, `/login` y `/mascotas`, 3 corridas cada uno).
+  **SEO pasó de 82/100 a 100/100 en las 12 corridas**, confirmando que los
+  dos fixes aplicados (`meta description` en `index.html`, `robots.txt` +
+  `angular.json`) resolvían la causa raíz por completo. Performance ≥90 en
+  todos los casos (100 en desktop, 90–94 en móvil); Accessibility 91 en
+  todos. REQ-NF-005 queda verificado en ambos perfiles.
+- **PRISMA (trabajos relacionados) — CERRADO con 10 estudios.** Fred
+  entregó su bloque (F20-F21) el 2026-08-18: 3 estudios incluidos
+  (`docs/investigacion/handoff-fred-trabajos-relacionados.md`) + 11
+  referencias BibTeX con DOI verificado
+  (`handoff-fred-referencias.bib`). Total: 3 (Zaida) + 4 (Jaime) + 3
+  (Fred) = **10 estudios, meta de ≥8-9 cumplida**. Las 24 referencias
+  nuevas de los tres bloques ya están integradas en
+  `docs/informe/referencias.bib` (39 entradas totales).
+
+**Sigue como limitación declarada, no bloqueante para el cierre de esta
+entrega:**
+
 - **Hit ratio de caché Redis (REQ-NF-012).** Sigue sin una medición de
   `keyspace_hits`/`keyspace_misses`; solo hay evidencia de TTL y
-  existencia de clave bajo carga. Limitación declarada, no cerrada.
+  existencia de clave bajo carga.
 - **REQ-NF-006 (compatibilidad de navegadores).** Sin evidencia archivada
-  de ejecución manual en Chrome/Firefox/Edge. Limitación declarada.
+  de ejecución manual en Chrome/Firefox/Edge.
 - **Wireframes de la pantalla de Mascotas y de los módulos pendientes**
   (historial clínico, citas, facturación): siguen siendo los de la
-  Entrega 1A. Limitación declarada, no bloqueante para el cierre de esta
-  entrega (el producto real y su documentación de arquitectura — C4, DER,
-  SRS — sí reflejan el sistema implementado).
-- **PRISMA (trabajos relacionados):** cerrado con 7 estudios (3 de Zaida +
-  4 de Jaime) en `docs/checklists/prisma2020.md`; Fred (F20) no entregó su
-  bloque. Bibliografía candidata de Zaida y Jaime ya integrada a
-  `docs/informe/referencias.bib` (28 entradas).
+  Entrega 1A. El producto real y su documentación de arquitectura (C4,
+  DER, SRS) sí reflejan el sistema implementado.
 
 Ninguno de estos puntos se cierra con datos inventados. Quedan como
 limitaciones explícitas de la Entrega Final, consistentes con el criterio
