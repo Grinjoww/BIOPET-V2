@@ -10,11 +10,32 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/schema.sql:/docker-entrypoint-initdb.d/00-schema.sql:ro
-      - ./db/seed.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
-      - ./db/roles.sql:/docker-entrypoint-initdb.d/02-roles.sql:ro
-      - ./db/procs:/docker-entrypoint-initdb.d/03-procs:ro
-      - ./db/init-procs.sh:/docker-entrypoint-initdb.d/03-procs.sh:ro
+      # Unico script de inicializacion automatica: bootstrap MINIMO del
+      # rol biopet_app (CREATE ROLE + CONNECT + USAGE ON SCHEMA), sin
+      # ninguna dependencia de tablas/secuencias/funciones/procedimientos.
+      # Ver db/roles-bootstrap.sql para el porque.
+      - ./db/roles-bootstrap.sql:/docker-entrypoint-initdb.d/01-roles-bootstrap.sql:ro
+      # NO montar aqui, deliberadamente:
+      #   - db/schema.sql (duplicaba V1; enmascaraba V1 detras de
+      #     "baseline-on-migrate: true" en un volumen que parecia nuevo);
+      #   - db/seed.sql (redundante: Backend/.../config/DataInitializer.java,
+      #     CommandLineRunner "seedAdmin", crea el mismo admin de forma
+      #     idempotente DESPUES de que Flyway corre, sin depender de
+      #     docker-entrypoint-initdb.d);
+      #   - db/procs/ y db/init-procs.sh (db/procs/*.sql ya representa el
+      #     estado FINAL v1.0.0 de las 6 rutinas -- todas PROCEDURE --;
+      #     precargarlas en un volumen nuevo hace que la migracion V5
+      #     -que crea las 4 fn_* como FUNCTION, estado historico- falle
+      #     con "cannot change routine kind" al chocar con las PROCEDURE
+      #     ya existentes).
+      # Flyway (V1->V6, ejecutado por Spring Boot al arrancar el backend)
+      # es la UNICA fuente de evolucion automatica del esquema. Los
+      # privilegios de biopet_app sobre tablas/secuencias/funciones/
+      # procedimientos se otorgan DESPUES de Flyway, desde el callback
+      # Backend/src/main/resources/db/migration/afterMigrate.sql (misma
+      # conexion que ejecuta las migraciones). db/schema.sql, db/seed.sql,
+      # db/procs/ y db/init-procs.sh se conservan como catalogo/evidencia/
+      # historial, sin ejecutarse automaticamente al inicializar Postgres.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-biopet_user} -d ${DB_NAME:-biopet_db}"]
       interval: 10s

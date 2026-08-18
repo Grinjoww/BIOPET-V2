@@ -1,4 +1,17 @@
 -- db/roles.sql
+-- HISTORICO / NO se monta automaticamente en docker-entrypoint-initdb.d
+-- (ver docker-compose.yml). Su contenido se dividio en dos archivos que
+-- SI se ejecutan, en el orden correcto:
+--   - db/roles-bootstrap.sql: la parte sin dependencia de tablas
+--     (CREATE ROLE, GRANT CONNECT, GRANT USAGE ON SCHEMA), montada en
+--     docker-entrypoint-initdb.d, ANTES de Flyway.
+--   - Backend/src/main/resources/db/migration/afterMigrate.sql: los
+--     GRANT sobre tablas/secuencias/funciones/procedimientos y los
+--     ALTER DEFAULT PRIVILEGES, que dependen de que Flyway ya haya
+--     creado esos objetos (V1-V6) -- imposible de garantizar para este
+--     archivo cuando corria antes de Flyway sobre un volumen nuevo.
+-- Se conserva aqui como documentacion del diseño original.
+--
 -- Crea la cuenta de aplicacion con privilegios minimos.
 -- Se ejecuta ultimo (prefijo 02-), despues de que existan tablas (00-) y datos (01-).
 -- Requiere: la variable de entorno DB_APP_PASSWORD debe existir si se desea un valor

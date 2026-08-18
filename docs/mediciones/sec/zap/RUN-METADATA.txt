@@ -1,6 +1,6 @@
-fecha_utc=2026-08-17T03:20:27Z
+fecha_utc=2026-08-18T02:53:21Z
 imagen_zap=ghcr.io/zaproxy/zaproxy:stable
 target=http://backend:8080
 red_docker=entrega-final-biopet_default
-comando=docker run --rm --network entrega-final-biopet_default -v "/c/Users/jaime/Desktop/ENTREGA-FINAL/ENTREGA-FINAL-BIOPET/docs/mediciones/sec/zap:/zap/wrk/:rw" -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://backend:8080 -r zap-baseline-report.html -x zap-baseline-report.xml -J zap-baseline-report.json -I
+comando=docker run --rm --network entrega-final-biopet_default -v "/c/Users/jaime/Desktop/ENTREGA-FINAL/ENTREGA-FINAL-BIOPET/docs/mediciones/sec/zap:/zap/wrk/:rw" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://backend:8080 -r zap-baseline-report.html -x zap-baseline-report.xml -J zap-baseline-report.json -I
 codigo_salida=0
