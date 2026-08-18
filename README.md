@@ -2,10 +2,10 @@
 
 **Universidad Técnica Estatal de Quevedo**
 Proyecto Fin de Curso — Aplicaciones Web
-**Entrega Final — versión objetivo `v1.0.0`**
+**Entrega Final — `v1.0.0`**
 
-> Estado: preparación final de `v1.0.0`. El tag `v1.0.0` todavía no ha sido
-> publicado (ver [Historial de entregas / tags](#historial-de-entregas--tags)).
+> Estado: Entrega Final publicada. El tag `v1.0.0` fue creado y publicado
+> (commit `ba41e11`, ver [Historial de entregas / tags](#historial-de-entregas--tags)).
 
 ---
 
@@ -49,8 +49,8 @@ y en la configuración real del proyecto (`Backend/pom.xml`,
 | Spring Boot | 3.2.12 |
 | Angular | 17.3.x (CLI 17.3.17, core 17.3.12) |
 | TypeScript | 5.4.5 |
-| PostgreSQL | 16-alpine |
-| Redis | 7-alpine |
+| PostgreSQL (local/Docker) | 16-alpine |
+| Redis (local/Docker) | 7-alpine |
 | Docker / Docker Compose | 29.6.x / v5.3.0 |
 | Maven | 3.9 (imagen de build `maven:3.9-eclipse-temurin-21`) |
 | Node / npm | 20-alpine (imagen de build), local 24.18.0 / 11.16.0 |
@@ -60,11 +60,21 @@ y en la configuración real del proyecto (`Backend/pom.xml`,
 | OWASP ZAP | 2.17.0 (`ghcr.io/zaproxy/zaproxy:stable`) |
 | k6 (rendimiento) | v2.1.0 |
 
+**Producción (Render)** usa versiones distintas a las de desarrollo local,
+gestionadas por el propio proveedor — no se reemplazan las de arriba, se
+documentan aparte:
+
+| Componente (producción) | Versión |
+|---|---|
+| PostgreSQL | 18 |
+| Redis (compatible) | Valkey 8 |
+| HTTPS | Activo (gestionado por Render) |
+
 ---
 
 ## Funcionalidades principales
 
-- **Autenticación y autorización**: JWT, cookies `HttpOnly`/`Secure`/`SameSite`, control de acceso por roles (`ROLE_ADMIN`, `ROLE_VETERINARIO`, `ROLE_DUENO`).
+- **Autenticación y autorización**: JWT, cookies `HttpOnly`/`Secure`/`SameSite`, control de acceso por roles (`ROLE_ADMIN`, `ROLE_VETERINARIO`, `ROLE_AUXILIAR`, `ROLE_DUENO`).
 - **Usuarios**: alta, consulta y administración de cuentas.
 - **Mascotas**: registro, edición, baja lógica, resumen agregado por especie.
 - **Citas**: programación y actualización de estado (individual y masiva).
@@ -150,12 +160,14 @@ Ejecuta, en orden y con parada inmediata ante el primer fallo:
 | Frontend production build | OK |
 | `make all` | OK |
 | SUS (usabilidad, n=18) | media 74.44 / 100, IC95 % [63.33, 85.56] |
+| Lighthouse (mobile+desktop) | 4/4 categorías cumplen, SEO 100 |
 
 Fuentes: ejecución real de `make all` sobre este repositorio;
 [`docs/trazabilidad/matriz.csv`](docs/trazabilidad/matriz.csv);
 [`docs/mediciones/sec/static-analysis/README.md`](docs/mediciones/sec/static-analysis/README.md);
 [`docs/mediciones/sec/zap/README.md`](docs/mediciones/sec/zap/README.md);
-[`docs/mediciones/sus/REPORT.md`](docs/mediciones/sus/REPORT.md).
+[`docs/mediciones/sus/REPORT.md`](docs/mediciones/sus/REPORT.md);
+[`docs/mediciones/lighthouse/`](docs/mediciones/lighthouse/) (`lhci-20260818-0538-*.json`).
 
 ---
 
@@ -236,17 +248,37 @@ Lighthouse **no** forma parte de CI todavía (ver [Lighthouse](#lighthouse)).
 | `v0.7.0` | Entrega previa |
 | `v0.7.1` | Entrega previa |
 | `v0.9.0-rc` | Tercera Entrega (release candidate) |
-| `v1.0.0` | **Versión final objetivo, pendiente de publicación** |
+| `v1.0.0` | **Entrega Final publicada** (commit `ba41e11`) |
 
 ---
 
 ## Despliegue
 
-Pendiente de incorporar/verificar URL pública HTTPS final. No existe en
-esta rama evidencia verificable de un despliegue activo y accesible; no se
-publica ninguna URL como si estuviera en producción. La estrategia de
-reproducibilidad local (Docker, digests fijados por imagen) está
-documentada en [`docs/adr/ADR-005-despliegue.md`](docs/adr/ADR-005-despliegue.md).
+BIOPET está desplegado en producción sobre **Render**:
+
+| Servicio | URL |
+|---|---|
+| Frontend | [https://biopet-frontend.onrender.com](https://biopet-frontend.onrender.com) |
+| Backend | [https://biopet-backend-dh5e.onrender.com](https://biopet-backend-dh5e.onrender.com) |
+
+Healthcheck verificado:
+
+```bash
+curl https://biopet-backend-dh5e.onrender.com/actuator/health
+```
+
+Respuesta real:
+
+```json
+{"status":"UP","groups":["liveness","readiness"]}
+```
+
+Infraestructura: Render, PostgreSQL 18, Valkey 8, HTTPS activo. Detalle
+completo del despliegue (variables de entorno, Blueprint `render.yaml`,
+pasos de verificación) en
+[`docs/despliegue/DEPLOYMENT.md`](docs/despliegue/DEPLOYMENT.md). La
+estrategia de reproducibilidad local (Docker, digests fijados por imagen)
+está documentada en [`docs/adr/ADR-005-despliegue.md`](docs/adr/ADR-005-despliegue.md).
 
 ---
 
@@ -264,9 +296,13 @@ Imagen del backend publicada en GitHub Container Registry:
 docker pull ghcr.io/grinjoww/entregafinal-biopet-backend@sha256:ef1e857a95a307a115ebe01599a41506eab824808b70a3c8e317dcc55bef5163
 ```
 
-Las etiquetas `1.0.0` y `latest` todavía no existen: se publican
-automáticamente (`.github/workflows/ghcr-publish.yml`) recién cuando se
-cree el tag Git `v1.0.0` (ver [Historial de entregas / tags](#historial-de-entregas--tags)).
+El tag Git `v1.0.0` ya fue publicado (commit `ba41e11`), lo que dispara
+automáticamente (`.github/workflows/ghcr-publish.yml`, disparador
+`push: tags: v*`) la publicación de las etiquetas `1.0.0` y `latest` en
+GHCR. No hay evidencia local de que esa corrida de GitHub Actions ya haya
+terminado: **publicación automática disparada por el tag `v1.0.0`**, sin
+afirmar que las etiquetas `1.0.0`/`latest` ya estén visibles en el
+registro hasta confirmarlo directamente en GHCR.
 
 ---
 
@@ -279,15 +315,24 @@ cree el tag Git `v1.0.0` (ver [Historial de entregas / tags](#historial-de-entre
 
 ## Lighthouse
 
-Existe evidencia histórica en
-[`docs/mediciones/lighthouse/README.md`](docs/mediciones/lighthouse/README.md),
-correspondiente a una única corrida en perfil móvil simulado (SEO = 82,
-por debajo del umbral configurado de 90). La evaluación final en los
-perfiles móvil **y** desktop, exigida para el cierre de esta entrega,
-todavía está en proceso; no se presenta la evidencia histórica como
-cumplimiento final de los umbrales. `make lighthouse` reproduce la
-auditoría (requiere `make up` previo) pero no está integrado en
-`make all` ni en CI mientras esa evaluación no se cierre.
+Corrida final: **2026-08-18**, 12 corridas (perfiles móvil **y** desktop,
+3 corridas por ruta/perfil), fuente
+[`docs/mediciones/lighthouse/lhci-20260818-0538-*.json`](docs/mediciones/lighthouse/).
+Las cuatro categorías cumplen su umbral:
+
+| Categoría | Resultado |
+|---|---|
+| Performance | Cumple (100 en desktop, 90–94 en móvil) |
+| Accessibility | Cumple (91) |
+| Best Practices | Cumple (96–100) |
+| SEO | Cumple (**100**) |
+
+Nota histórica: la corrida inicial del 2026-08-01 (solo perfil móvil)
+había registrado SEO = 82, por debajo del umbral de 90; los fixes
+aplicados (`meta description`, `robots.txt`) se confirmaron efectivos en
+la corrida final del 2026-08-18. `make lighthouse` reproduce la auditoría
+(requiere `make up` previo); Lighthouse no está integrado en `make all` ni
+en CI.
 
 ---
 
@@ -310,7 +355,8 @@ para poder ejecutarse también en Windows con Git Bash en el `PATH`.
 
 Este proyecto se distribuye bajo licencia **MIT** — ver [`LICENSE`](LICENSE).
 
-Para citar el software, usar los metadatos de [`CITATION.cff`](CITATION.cff).
-El DOI del software y del dataset ya están archivados en Zenodo (ver
-[DOI / Zenodo](#doi--zenodo)); `date-released` se completará al publicar
-el tag `v1.0.0`.
+El tag `v1.0.0` fue publicado; [`CITATION.cff`](CITATION.cff) contiene los
+metadatos de citación del software (versión, autores, licencia, DOI). El
+DOI del software y del dataset ya están archivados en Zenodo (ver
+[DOI / Zenodo](#doi--zenodo)). El campo `date-released` de `CITATION.cff`
+todavía no tiene valor asignado; no se afirma aquí que ya esté completado.
