@@ -13,6 +13,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,8 +23,15 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * F02/F03: fn_resumen_mascotas_por_especie es ahora PROCEDURE con OUT
+ * refcursor (ver ProcedimientoBiopetRepository); el cursor solo es legible
+ * dentro de la misma transaccion en la que se abre, por eso esta clase
+ * lleva @Transactional.
+ */
 @Testcontainers
 @SpringBootTest
+@Transactional
 class ResumenEspeciesIntegrationTest {
 
     @SuppressWarnings("resource")

@@ -8,7 +8,7 @@
 -- Parametros:
 --   IN  p_desde DATE - inicio del rango (inclusive).
 --   IN  p_hasta DATE - fin del rango (inclusive).
--- Salida (RETURNS TABLE), una sola fila:
+-- Salida: OUT p_cursor refcursor, una sola fila, con columnas
 --   mascotasActivas BIGINT, citasProgramadas BIGINT,
 --   consultasEnRango BIGINT, vacunasEnRango BIGINT,
 --   mascotasSinConsulta BIGINT.
@@ -18,39 +18,40 @@
 -- proyeccion JPA ReporteDashboard.
 -- Sin SQL dinamico ni concatenacion.
 -- Ejemplo de invocacion:
---   SELECT * FROM fn_reporte_dashboard('2026-08-01', '2026-08-31');
+--   BEGIN;
+--   CALL fn_reporte_dashboard('2026-08-01', '2026-08-31', NULL);
+--   COMMIT;
+--
+-- Reclasificada de FUNCTION a PROCEDURE con OUT refcursor (F02, cierre de
+-- acceso JPA formal): ver la nota completa en
+-- fn_resumen_mascotas_por_especie.sql.
 
-CREATE OR REPLACE FUNCTION fn_reporte_dashboard(
-    p_desde DATE,
-    p_hasta DATE
+CREATE OR REPLACE PROCEDURE fn_reporte_dashboard(
+    IN p_desde DATE,
+    IN p_hasta DATE,
+    OUT p_cursor refcursor
 )
-RETURNS TABLE (
-    mascotasActivas BIGINT,
-    citasProgramadas BIGINT,
-    consultasEnRango BIGINT,
-    vacunasEnRango BIGINT,
-    mascotasSinConsulta BIGINT
-)
+LANGUAGE plpgsql
 AS $$
 BEGIN
-    RETURN QUERY
-    SELECT
-        (SELECT COUNT(*)::BIGINT FROM mascotas m WHERE m.activo = TRUE) AS mascotasActivas,
-        (SELECT COUNT(*)::BIGINT FROM citas ci
-         WHERE ci.activo = TRUE AND ci.estado = 'PROGRAMADA') AS citasProgramadas,
-        (SELECT COUNT(*)::BIGINT FROM consultas c
-         WHERE c.activo = TRUE
-           AND c.fecha_consulta >= p_desde
-           AND c.fecha_consulta < (p_hasta + INTERVAL '1 day')) AS consultasEnRango,
-        (SELECT COUNT(*)::BIGINT FROM vacunas v
-         WHERE v.activo = TRUE
-           AND v.fecha_aplicacion >= p_desde
-           AND v.fecha_aplicacion <= p_hasta) AS vacunasEnRango,
-        (SELECT COUNT(*)::BIGINT FROM mascotas m
-         WHERE m.activo = TRUE
-           AND NOT EXISTS (
-               SELECT 1 FROM consultas c
-               WHERE c.mascota_id = m.id AND c.activo = TRUE
-           )) AS mascotasSinConsulta;
+    OPEN p_cursor FOR
+        SELECT
+            (SELECT COUNT(*)::BIGINT FROM mascotas m WHERE m.activo = TRUE) AS mascotasActivas,
+            (SELECT COUNT(*)::BIGINT FROM citas ci
+             WHERE ci.activo = TRUE AND ci.estado = 'PROGRAMADA') AS citasProgramadas,
+            (SELECT COUNT(*)::BIGINT FROM consultas c
+             WHERE c.activo = TRUE
+               AND c.fecha_consulta >= p_desde
+               AND c.fecha_consulta < (p_hasta + INTERVAL '1 day')) AS consultasEnRango,
+            (SELECT COUNT(*)::BIGINT FROM vacunas v
+             WHERE v.activo = TRUE
+               AND v.fecha_aplicacion >= p_desde
+               AND v.fecha_aplicacion <= p_hasta) AS vacunasEnRango,
+            (SELECT COUNT(*)::BIGINT FROM mascotas m
+             WHERE m.activo = TRUE
+               AND NOT EXISTS (
+                   SELECT 1 FROM consultas c
+                   WHERE c.mascota_id = m.id AND c.activo = TRUE
+               )) AS mascotasSinConsulta;
 END;
-$$ LANGUAGE plpgsql;
+$$;

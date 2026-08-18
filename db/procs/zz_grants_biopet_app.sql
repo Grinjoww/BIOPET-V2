@@ -13,19 +13,19 @@ BEGIN
     IF EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'biopet_app') THEN
 
         IF EXISTS (SELECT 1 FROM pg_catalog.pg_proc WHERE proname = 'fn_resumen_mascotas_por_especie') THEN
-            GRANT EXECUTE ON FUNCTION fn_resumen_mascotas_por_especie(BIGINT) TO biopet_app;
+            GRANT EXECUTE ON PROCEDURE fn_resumen_mascotas_por_especie(BIGINT) TO biopet_app;
         END IF;
 
         IF EXISTS (SELECT 1 FROM pg_catalog.pg_proc WHERE proname = 'fn_historial_clinico_mascota') THEN
-            GRANT EXECUTE ON FUNCTION fn_historial_clinico_mascota(BIGINT) TO biopet_app;
+            GRANT EXECUTE ON PROCEDURE fn_historial_clinico_mascota(BIGINT) TO biopet_app;
         END IF;
 
         IF EXISTS (SELECT 1 FROM pg_catalog.pg_proc WHERE proname = 'fn_reporte_dashboard') THEN
-            GRANT EXECUTE ON FUNCTION fn_reporte_dashboard(DATE, DATE) TO biopet_app;
+            GRANT EXECUTE ON PROCEDURE fn_reporte_dashboard(DATE, DATE) TO biopet_app;
         END IF;
 
         IF EXISTS (SELECT 1 FROM pg_catalog.pg_proc WHERE proname = 'fn_siguiente_numero_ficha') THEN
-            GRANT EXECUTE ON FUNCTION fn_siguiente_numero_ficha(VARCHAR) TO biopet_app;
+            GRANT EXECUTE ON PROCEDURE fn_siguiente_numero_ficha(VARCHAR) TO biopet_app;
         END IF;
 
         IF EXISTS (SELECT 1 FROM pg_catalog.pg_proc WHERE proname = 'sp_actualizar_estado_citas_masivas') THEN
