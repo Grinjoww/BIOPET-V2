@@ -1,0 +1,148 @@
+# Referencias verificadas para BIOPET (F21) — bloques de Fred
+
+> **Para Zaida (Z12)**: referencias BibTeX reales (2020–2026) con DOI
+> verificado por Fred el 2026-08-17. NO modifico `refs.bib`: estas entradas
+> quedan aquí listas para que Zaida las consolide donde corresponda.
+> Rama: `fred/f20-f21-investigacion-refs`.
+
+## Lista de claves y afirmaciones que respaldan
+
+| Clave | Afirmación que respalda en el informe |
+|---|---|
+| `bucao2023vetelgeuse` | Existen sistemas de gestión veterinaria web+móvil enfocados en clínicas pequeñas/medianas; la validación típica es de usabilidad (cuestionario USE) |
+| `llaneta2022terravet` | El dominio veterinario tiene propuestas de framework web+móvil para conectar dueños y clínicas |
+| `zmaranda2020crud` | El rendimiento de la capa de acceso a datos depende de la elección ORM vs SQL directo → justifica el acceso híbrido de BIOPET |
+| `nowicki2022comparative` | Las consultas SQL nativas superan en tiempo de ejecución a las generadas por ORM en C# → mismo resultado esperado en BIOPET |
+| `zuchnik2021comparative` | JDBC (SQL directo) es más rápido que los frameworks ORM en Java → respalda mover consultas complejas a SQL nativo |
+| `siebyla2020impact` | La implementación de la capa de persistencia impacta el rendimiento de la aplicación |
+| `dhalla2021performance` | Spring Boot y .NET Core difieren en rendimiento para REST CRUD; se evalúan con JMeter (cargas de usuarios concurrentes) |
+| `godinho2024performance` | Las APIs REST se comparan con pruebas de carga (k6) y stress; el consumo de recursos (CPU/RAM) varía por pila → metodología usada en F06–F07 |
+| `zulfa2020caching` | El caché en memoria con Redis acelera el acceso a datos relacionales → respalda el uso de Redis en BIOPET |
+| `yang2021large` | El análisis a gran escala de cachés en clústeres reales (Twitter) muestra que la configuración (TTL, políticas) es clave → respalda TTL configurable en Redis |
+| `ghatrehsamani2020art` | El despliegue en contenedores tiene overhead medible según la configuración (CPU pinning) → respalda el despliegue contenerizado de BIOPET (F08–F11) |
+
+## Entradas BibTeX
+
+```bibtex
+@article{bucao2023vetelgeuse,
+  author  = {Bucao, W. and Quinones, Ma. A. A. and Abong, R. A. and Penuela, C. and Sun, K. J.},
+  title   = {VETelgeuse: A Mobile and Web-Based Management System for Small and Medium-Scale Veterinary Clinics},
+  journal = {Research Journal of Education, Science and Technology},
+  volume  = {3},
+  number  = {1},
+  year    = {2023},
+  doi     = {10.63179/rjest.v3i1.55}
+}
+
+@inproceedings{llaneta2022terravet,
+  author    = {Llaneta, J. C. E. and Guelas, C. J. D. and Labanan, R. M. and Mercado, J. S. and Sasis, R. L.},
+  title     = {TerraVet: A Mobile and Web Application Framework for Pet Owners and Veterinary Clinic},
+  booktitle = {Proceedings of the 4th International Conference on Intelligent Science and Technology (ICIST)},
+  pages     = {19--24},
+  year      = {2022},
+  doi       = {10.1145/3568923.3568927}
+}
+
+@article{zmaranda2020crud,
+  author  = {Zmaranda, D. and Pop-Fele, L.-L. and Gyorödi, C. and Gyorödi, R. and Pecherle, G.},
+  title   = {Performance Comparison of CRUD Methods using NET Object Relational Mappers: A Case Study},
+  journal = {International Journal of Advanced Computer Science and Applications},
+  volume  = {11},
+  number  = {1},
+  year    = {2020},
+  doi     = {10.14569/IJACSA.2020.0110107}
+}
+
+@article{nowicki2022comparative,
+  author  = {Nowicki, T. and Tomczak, S. and Kozieł, G.},
+  title   = {Comparative analysis of the time performance of database queries in C# language},
+  journal = {Journal of Computer Sciences Institute},
+  volume  = {22},
+  pages   = {8--12},
+  year    = {2022},
+  doi     = {10.35784/jcsi.2772}
+}
+
+@article{zuchnik2021comparative,
+  author  = {Żuchnik, M. and Kopniak, P.},
+  title   = {Comparative analysis of connection performance with databases via JDBC interface and ORM programming frameworks},
+  journal = {Journal of Computer Sciences Institute},
+  volume  = {21},
+  pages   = {309--315},
+  year    = {2021},
+  doi     = {10.35784/jcsi.2729}
+}
+
+@article{siebyla2020impact,
+  author  = {Siebyła, K. and Skublewska-Paszkowska, M.},
+  title   = {Impact of the persistence layer implementation methods on application performance},
+  journal = {Journal of Computer Sciences Institute},
+  volume  = {17},
+  pages   = {326--331},
+  year    = {2020},
+  doi     = {10.35784/jcsi.2067}
+}
+
+@article{dhalla2021performance,
+  author  = {Dhalla, H. K.},
+  title   = {A Performance Comparison of RESTful Applications Implemented in Spring Boot Java and MS.NET Core},
+  journal = {Journal of Physics: Conference Series},
+  volume  = {1933},
+  number  = {1},
+  pages   = {012041},
+  year    = {2021},
+  doi     = {10.1088/1742-6596/1933/1/012041}
+}
+
+@article{godinho2024performance,
+  author  = {Godinho, A. and Rosado, J. and Sá, F. and Cardoso, F.},
+  title   = {Performance Comparison of RESTful Web APIs using a Test Suite: .NET vs. Java Spring Boot},
+  journal = {Journal of Software and Systems Development},
+  volume  = {2024},
+  pages   = {1--32},
+  year    = {2024},
+  doi     = {10.5171/2024.478010}
+}
+
+@article{zulfa2020caching,
+  author  = {Zulfa, M. I. and Fadli, A. and Wardhana, A. W.},
+  title   = {Application caching strategy based on in-memory using Redis server to accelerate relational data access},
+  journal = {Jurnal Teknologi dan Sistem Komputer},
+  volume  = {8},
+  number  = {2},
+  pages   = {157--163},
+  year    = {2020},
+  doi     = {10.14710/jtsiskom.8.2.2020.157-163}
+}
+
+@article{yang2021large,
+  author  = {Yang, J. and Yue, Y. and Rashmi, K. V.},
+  title   = {A Large-scale Analysis of Hundreds of In-memory Key-value Cache Clusters at Twitter},
+  journal = {ACM Transactions on Storage},
+  volume  = {17},
+  number  = {3},
+  pages   = {1--35},
+  year    = {2021},
+  doi     = {10.1145/3468521}
+}
+
+@inproceedings{ghatrehsamani2020art,
+  author    = {Ghatrehsamani, D. and Denninnart, C. and Amini Salehi, M. and Bacik, J.},
+  title     = {The Art of CPU-Pinning: Evaluating and Improving the Performance of Virtualization and Containerization Platforms},
+  booktitle = {Proceedings of the 49th International Conference on Parallel Processing (ICPP '20)},
+  year      = {2020},
+  doi       = {10.1145/3404397.3404442}
+}
+```
+
+## Notas de verificación (2026-08-17)
+
+- Las 11 entradas tienen DOI real: se abrió `https://doi.org/<DOI>` y se
+  confirmó título, autores, año y datos de publicación.
+- Rango temporal 2020–2026 según el criterio de Fred (máx. 5–6 años).
+- Descartada por antigüedad: Yang et al., "How not to Structure Your
+  Database-Backed Web Applications" (ICSE, 2018, doi 10.1145/3180155.3180194)
+  — fuera del rango.
+- Descartada por inaccesible: artículo de TURCOMAT (respuesta 403).
+- Los detalles de cada afirmación están en la tabla de claves de arriba;
+  Zaida debe revisar cada afirmación contra la fuente antes de citar.
