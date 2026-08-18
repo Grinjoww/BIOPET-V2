@@ -60,35 +60,40 @@ Verificación usada: `git ls-files` + `.gitignore` (los excluidos no están
 versionados, por lo que un `git archive` del tag v1.0.0 los excluye
 automáticamente).
 
-## 4. Datos necesarios para GHCR (contenedor backend)
+## 4. GHCR (contenedor backend) — PUBLICADO
 
-- **Imagen**: construir `Backend/Dockerfile` (multi-stage Maven 3.9 →
-  Temurin 21 JRE Alpine; jar `biopet-backend-0.1.0.jar`, EXPOSE 8080).
-- **Nombre real**: `ghcr.io/grinjoww/entregafinal-biopet-backend` (sin
-  guion entre "entrega" y "final" — nombre ya fijado en este documento
-  antes de automatizar la publicación; no se cambió).
-- **Publicación automatizada (ya lista, workflow nuevo, `.github/workflows/ghcr-publish.yml`)**:
-  - **Antes del release** (mientras el tag `v1.0.0` no existe): disparo
-    manual desde GitHub → pestaña *Actions* → "Publicar imagen backend en
-    GHCR" → *Run workflow*. Publica solo una etiqueta técnica
-    `sha-<7 caracteres del commit>` (nunca `latest` ni un número de
-    versión, para no poder confundirse con un release real).
-  - **Release final** (cuando exista y se publique el tag `v1.0.0`, fuera
-    de alcance de esta tarea): el propio `git push --tags` dispara el
-    workflow automáticamente y publica además `1.0.0` y `latest`.
-  - El workflow usa `GITHUB_TOKEN` (automático, sin secretos que
-    configurar) con permisos `contents: read` + `packages: write`, ya
-    declarados en el propio archivo del workflow.
-  - **No se ejecutó todavía ninguna corrida real de este workflow ni
-    existe hoy ningún digest real** — ejecutarlo y copiar aquí el digest
-    real (`sha256:...`, visible en el resumen de la corrida o con
-    `docker buildx imagetools inspect`) es la acción manual pendiente,
-    descrita en la sección 6.
+Estado: **imagen publicada realmente** en GitHub Container Registry, vía
+`.github/workflows/ghcr-publish.yml` (disparo manual, modo "antes del
+release" — ver el propio workflow). Datos reales, no placeholders:
+
+| Campo | Valor |
+|---|---|
+| Imagen | `ghcr.io/grinjoww/entregafinal-biopet-backend` |
+| Tag publicado | `sha-fe2f033` |
+| Digest (sha256, inmutable) | `sha256:ef1e857a95a307a115ebe01599a41506eab824808b70a3c8e317dcc55bef5163` |
+| Referencia inmutable completa | `ghcr.io/grinjoww/entregafinal-biopet-backend@sha256:ef1e857a95a307a115ebe01599a41506eab824808b70a3c8e317dcc55bef5163` |
+| Commit asociado | `fe2f033138e3ec1fad07bf1038e10b8bb140449f` |
+
+Reproducir/verificar:
+
+```bash
+docker pull ghcr.io/grinjoww/entregafinal-biopet-backend@sha256:ef1e857a95a307a115ebe01599a41506eab824808b70a3c8e317dcc55bef5163
+docker buildx imagetools inspect ghcr.io/grinjoww/entregafinal-biopet-backend@sha256:ef1e857a95a307a115ebe01599a41506eab824808b70a3c8e317dcc55bef5163
+```
+
+**Pendiente real, no de GHCR en sí:** las etiquetas `1.0.0` y `latest`
+**todavía no existen** — el tag Git `v1.0.0` no se ha creado (fuera de
+alcance de esta tarea). Cuando se cree y se haga `git push --tags`, el
+mismo workflow se dispara automáticamente (`on: push: tags: v*`) y las
+publica sin intervención manual adicional. Hasta entonces, `sha-fe2f033`
+es la única etiqueta real y verificable.
+
 - **Requisitos ya cubiertos por el workflow**: `GITHUB_TOKEN` con scope
   equivalente a `write:packages` (vía el bloque `permissions:` del propio
   YAML, no un PAT manual); repositorio/paquete público para que terceros
-  puedan hacer `docker pull` sin autenticarse (a verificar en GitHub →
-  Settings → el paquete generado, visibility "Public").
+  puedan hacer `docker pull` sin autenticarse (confirmar en GitHub →
+  Settings → el paquete generado, visibility "Public" — la corrida
+  exitosa reportada no incluyó esa confirmación explícita en esta tarea).
 
 ## 5. Datos necesarios para Zenodo
 
@@ -111,16 +116,19 @@ Marcar TODOS antes de publicar (los 3 primeros son de esta rama y ya están):
       `https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET`, 3 autores reales
       con correo institucional (`date-released` deliberadamente sin valor
       hasta que exista el tag real, ver el propio archivo)
-- [x] Workflow de publicación GHCR listo
-      (`.github/workflows/ghcr-publish.yml`) — falta EJECUTARLO
-      (disparo manual, ver sección 4) y copiar aquí el digest real
-- [ ] Tag `v1.0.0` creado y pusheado
+- [x] Workflow de publicación GHCR ejecutado con éxito
+      (`.github/workflows/ghcr-publish.yml`)
+- [x] Imagen backend publicada en GHCR: `ghcr.io/grinjoww/entregafinal-biopet-backend`,
+      tag `sha-fe2f033`, digest real
+      `sha256:ef1e857a95a307a115ebe01599a41506eab824808b70a3c8e317dcc55bef5163`
+      (ver sección 4) — pendiente solo confirmar visibilidad "Public" del
+      paquete en GitHub
+- [ ] Tag `v1.0.0` creado y pusheado (al crearse, el workflow GHCR
+      publicará además `1.0.0` y `latest` automáticamente)
 - [ ] CI en verde sobre el tag (6 jobs: backend-test, frontend-build,
       traceability, sql-audit, security-static, zap-baseline)
 - [ ] Repo conectado a Zenodo por el owner; release archivado; DOI obtenido
 - [ ] DOI pegado en `CITATION.cff`, `README.md`, `docs/checklists/fair.md`
-- [ ] Imagen backend publicada en GHCR (workflow ejecutado con éxito) y
-      verificada con `docker pull` usando el digest real
 - [ ] URL real de Render registrada en `docs/despliegue/DEPLOYMENT.md`
       (Paso 7: `curl -I https://<url-real>/actuator/health`) — la conecta el
       owner; evidencia final pendiente

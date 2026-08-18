@@ -252,7 +252,21 @@ documentada en [`docs/adr/ADR-005-despliegue.md`](docs/adr/ADR-005-despliegue.md
 
 ## GHCR
 
-Pendiente de publicación de imagen final y digest GHCR.
+Imagen del backend publicada en GitHub Container Registry:
+
+| Campo | Valor |
+|---|---|
+| Imagen | `ghcr.io/grinjoww/entregafinal-biopet-backend` |
+| Tag publicado | `sha-fe2f033` |
+| Digest (sha256) | `sha256:ef1e857a95a307a115ebe01599a41506eab824808b70a3c8e317dcc55bef5163` |
+
+```bash
+docker pull ghcr.io/grinjoww/entregafinal-biopet-backend@sha256:ef1e857a95a307a115ebe01599a41506eab824808b70a3c8e317dcc55bef5163
+```
+
+Las etiquetas `1.0.0` y `latest` todavía no existen: se publican
+automáticamente (`.github/workflows/ghcr-publish.yml`) recién cuando se
+cree el tag Git `v1.0.0` (ver [Historial de entregas / tags](#historial-de-entregas--tags)).
 
 ---
 
@@ -297,6 +311,5 @@ para poder ejecutarse también en Windows con Git Bash en el `PATH`.
 Este proyecto se distribuye bajo licencia **MIT** — ver [`LICENSE`](LICENSE).
 
 Para citar el software, usar los metadatos de [`CITATION.cff`](CITATION.cff).
-Sus metadatos (versión, DOI) se actualizarán antes de publicar el tag
-`v1.0.0`, conforme a lo que quede pendiente en las secciones
-[GHCR](#ghcr) y [DOI / Zenodo](#doi--zenodo) de este README.
+Su `date-released` y `doi` se completarán al publicar el tag `v1.0.0` y
+archivar en Zenodo (ver [DOI / Zenodo](#doi--zenodo)).
