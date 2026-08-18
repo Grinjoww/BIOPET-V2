@@ -28,8 +28,18 @@ y sin secretos versionados. Es el punto de entrada de la rama
 - HTTPS valido: Render emite y renueva certificados automaticamente para el
   subdominio `<servicio>.onrender.com` (sin configuracion TLS en la app).
 - Healthcheck: `GET /actuator/health` -> `{"status":"UP"}` (HTTP 200).
-- Red interna: los servicios se comunican por sus nombres internos de Render
-  (`biopet-backend`, `biopet-frontend`) en la misma region.
+- Red interna: biopet-backend usa la red privada de Render para conectarse
+  a Postgres y Key Value (biopet-db, biopet-cache), que si aceptan trafico
+  entrante privado en cualquier plan.
+- **Frontend -> backend: HTTPS publico, NO red privada.** Verificado en un
+  deploy real: con **Web Services en plan Free**, un servicio Free puede
+  *enviar* trafico por la red privada de Render pero NO puede *recibirlo*
+  -- biopet-frontend (Free) intentando llamar a biopet-backend (Free) por
+  su hostname privado (`biopet-backend-dh5e`) fallo con
+  `host not found in upstream`. Por eso el frontend usa la **URL HTTPS
+  publica real** del backend (`BACKEND_URL` en `render.yaml`), no el
+  hostname interno. Si en el futuro ambos servicios se mueven a un plan de
+  pago, la red privada si seria viable entre ellos.
 
 ## 1. Requisitos
 
@@ -98,16 +108,31 @@ mismo rol gestionado).
 
 ## 5. Pasos exactos del despliegue
 
-### 5.1 Preparar el frontend para Render
+### 5.1 Frontend en Render: proxy `/api` hacia el backend
 
-El nginx local (`frontend/nginx.conf`) apunta al servicio docker-compose
-`backend`. En Render el servicio se llama `biopet-backend`:
+**No requiere ningun paso manual.** El proxy `/api` del frontend se
+resuelve automaticamente en tiempo de arranque del contenedor
+(`frontend/docker-entrypoint.sh` + `frontend/nginx.conf.template`), usando
+la variable `BACKEND_URL` que `render.yaml` ya define para el servicio
+`biopet-frontend` -- no hay que copiar ningun archivo ni commitear un
+cambio de configuracion antes del deploy.
 
-```bash
-cp docs/despliegue/nginx-render.conf frontend/nginx.conf
+`BACKEND_URL` es la **URL HTTPS publica** del backend, no su hostname
+privado (ver seccion 0, "Frontend -> backend: HTTPS publico, NO red
+privada" -- Web Services Free de Render no pueden recibir trafico por la
+red privada). Para esta instancia, la URL publica real y verificada del
+backend ya desplegado es:
+
+```
+https://biopet-backend-dh5e.onrender.com
 ```
 
-Commitear ese cambio (es parte de esta rama de despliegue).
+En Docker Compose local, el mismo mecanismo usa el default
+`BACKEND_URL=http://backend:8080` (el nombre del servicio `backend` de
+`docker-compose.yml`), sin necesidad de configuracion adicional.
+
+`docs/despliegue/nginx-render.conf` queda como documentacion historica de
+un enfoque anterior (copia manual de archivo); ya no se usa.
 
 ### 5.2 Crear el Blueprint
 
@@ -124,16 +149,25 @@ Commitear ese cambio (es parte de esta rama de despliegue).
 ### 5.3 Verificar el despliegue
 
 ```bash
-# Healthcheck real del backend (URL real de tu servicio)
-curl -I https://biopet-backend.onrender.com/actuator/health
+# Healthcheck del backend (sustituir por la URL real de tu servicio;
+# para esta instancia: https://biopet-backend-dh5e.onrender.com)
+curl -I https://<tu-servicio-backend>.onrender.com/actuator/health
 # esperado: HTTP/1.1 200  y  body {"status":"UP"}
 
 # Login real de humo
-curl -X POST https://biopet-backend.onrender.com/api/auth/login \
+curl -X POST https://<tu-servicio-backend>.onrender.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@biopet.ec","password":"<password real>"}'
 # esperado: 200 + cookie access_token
 ```
+
+> Nota: `https://biopet-backend-dh5e.onrender.com` es la URL publica real
+> de esta instancia confirmada por el equipo al desplegar `biopet-backend`
+> (estado `DEPLOYED` en el dashboard de Render); esta tarea no ejecuto los
+> `curl` de arriba contra esa URL (sin acceso a Internet saliente desde
+> este entorno) -- la validacion aqui se hizo simulando localmente el
+> mismo `BACKEND_URL` contra un contenedor `frontend` real (ver seccion
+> de validacion del fix del proxy).
 
 ### 5.4 CORS del frontend
 

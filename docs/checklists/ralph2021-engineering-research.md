@@ -219,9 +219,10 @@ Pendientes reales, clasificados sin asignarlos a ninguna persona:
   entorno de *staging* o producción equivalente; ya documentado
   explícitamente como amenaza a la validez externa, pero sigue siendo una
   brecha real, no resuelta.
-- **DOI/Zenodo pendiente** (ya registrado como observación abierta,
-  OBS-10, fuera del alcance de esta fase): sin archivado permanente
-  citable del software.
+- ~~DOI/Zenodo pendiente~~ — **cerrado**: software y dataset archivados en
+  Zenodo con DOI reales (`10.5281/zenodo.21988746` software,
+  `10.5281/zenodo.21988785` dataset); ver cierre de OBS-10 en
+  `docs/observaciones/OBSERVACIONES.md`.
 - **Evaluación fuera de contexto industrial** (ítem D6): ninguna
   evaluación se realizó con desarrolladores profesionales externos ni en
   un proyecto de código abierto de uso amplio; es una limitación inherente
