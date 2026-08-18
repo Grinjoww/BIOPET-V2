@@ -1,8 +1,8 @@
 {
 	"@programName": "ZAP",
 	"@version": "2.17.0",
-	"@generated": "Tue, 18 Aug 2026 01:43:29",
-	"created": "2026-08-18T01:43:29.096113862Z",
+	"@generated": "Tue, 18 Aug 2026 02:16:35",
+	"created": "2026-08-18T02:16:35.635160458Z",
 	"insights":[
 		{
 			"level": "Info",
@@ -55,7 +55,7 @@
 					"desc": "<p>The response contents are not storable by caching components such as proxy servers. If the response does not contain sensitive, personal or user-specific information, it may benefit from being stored and cached, to improve performance.</p>",
 					"instances":[ 
 						{
-							"id": "3",
+							"id": "1",
 							"uri": "http://backend:8080",
 							"nodeName": "http:\/\/backend:8080",
 							"method": "GET",
@@ -65,7 +65,7 @@
 							"otherinfo": ""
 						},
 						{
-							"id": "1",
+							"id": "3",
 							"uri": "http://backend:8080/robots.txt",
 							"nodeName": "http:\/\/backend:8080\/robots.txt",
 							"method": "GET",
@@ -82,7 +82,7 @@
 					"reference": "<p>https://datatracker.ietf.org/doc/html/rfc7234</p><p>https://datatracker.ietf.org/doc/html/rfc7231</p><p>https://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html</p>",
 					"cweid": "524",
 					"wascid": "13",
-					"sourceid": "7"
+					"sourceid": "6"
 				}
 			]
 		}
