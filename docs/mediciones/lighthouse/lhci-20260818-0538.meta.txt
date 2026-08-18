@@ -1,0 +1,7 @@
+fecha_iso8601: 2026-08-18T05:38:06Z
+commit_hash_corto: e94bb72
+node_version: v24.18.0
+lighthouse_cli_version: 0.14.0
+urls_auditadas: http://localhost:4200/login, http://localhost:4200/mascotas
+perfiles: mobile (throttlingMethod=simulate, Slow 4G equivalente, lighthouserc.js), desktop (formFactor=desktop, throttling devtools preset, lighthouserc.desktop.js)
+corridas_por_url: 3 por perfil (6 total por URL, 12 total)
