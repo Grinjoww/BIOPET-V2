@@ -62,17 +62,33 @@ automáticamente).
 
 ## 4. Datos necesarios para GHCR (contenedor backend)
 
-- **Imagen**: construir `Backend/` (multi-stage Maven 3.9 → Temurin 21 JRE
-  Alpine; jar `biopet-backend-0.1.0.jar`, EXPOSE 8080).
-- **Target propuesto**: `ghcr.io/grinjoww/entregafinal-biopet-backend:1.0.0`
-  (usar el namespace del owner del repo — confirmar con Grinjoww).
-- **Comandos de publicación (los ejecuta el humano, NO esta rama):**
-  ```bash
-  docker build -t ghcr.io/grinjoww/entregafinal-biopet-backend:1.0.0 Backend/
-  docker push ghcr.io/grinjoww/entregafinal-biopet-backend:1.0.0
-  ```
-- **Requisitos**: token de GitHub con scope `write:packages`; repo público o
-  package público para que el CI y terceros puedan hacer pull sin auth.
+- **Imagen**: construir `Backend/Dockerfile` (multi-stage Maven 3.9 →
+  Temurin 21 JRE Alpine; jar `biopet-backend-0.1.0.jar`, EXPOSE 8080).
+- **Nombre real**: `ghcr.io/grinjoww/entregafinal-biopet-backend` (sin
+  guion entre "entrega" y "final" — nombre ya fijado en este documento
+  antes de automatizar la publicación; no se cambió).
+- **Publicación automatizada (ya lista, workflow nuevo, `.github/workflows/ghcr-publish.yml`)**:
+  - **Antes del release** (mientras el tag `v1.0.0` no existe): disparo
+    manual desde GitHub → pestaña *Actions* → "Publicar imagen backend en
+    GHCR" → *Run workflow*. Publica solo una etiqueta técnica
+    `sha-<7 caracteres del commit>` (nunca `latest` ni un número de
+    versión, para no poder confundirse con un release real).
+  - **Release final** (cuando exista y se publique el tag `v1.0.0`, fuera
+    de alcance de esta tarea): el propio `git push --tags` dispara el
+    workflow automáticamente y publica además `1.0.0` y `latest`.
+  - El workflow usa `GITHUB_TOKEN` (automático, sin secretos que
+    configurar) con permisos `contents: read` + `packages: write`, ya
+    declarados en el propio archivo del workflow.
+  - **No se ejecutó todavía ninguna corrida real de este workflow ni
+    existe hoy ningún digest real** — ejecutarlo y copiar aquí el digest
+    real (`sha256:...`, visible en el resumen de la corrida o con
+    `docker buildx imagetools inspect`) es la acción manual pendiente,
+    descrita en la sección 6.
+- **Requisitos ya cubiertos por el workflow**: `GITHUB_TOKEN` con scope
+  equivalente a `write:packages` (vía el bloque `permissions:` del propio
+  YAML, no un PAT manual); repositorio/paquete público para que terceros
+  puedan hacer `docker pull` sin autenticarse (a verificar en GitHub →
+  Settings → el paquete generado, visibility "Public").
 
 ## 5. Datos necesarios para Zenodo
 
@@ -91,15 +107,20 @@ Marcar TODOS antes de publicar (los 3 primeros son de esta rama y ya están):
       (`docs/checklists/fair.md`, F17)
 - [x] Provenance handoff para Zaida (`docs/mediciones/handoff-fred-provenance.md`, F19)
 - [x] Paquete de release preparado (este documento, F18)
-- [ ] `CITATION.cff` corregido: `version: 1.0.0`, `repository-code` =
-      `https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET`, `date-released` actualizado
+- [x] `CITATION.cff` corregido: `version: 1.0.0`, `repository-code` =
+      `https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET`, 3 autores reales
+      con correo institucional (`date-released` deliberadamente sin valor
+      hasta que exista el tag real, ver el propio archivo)
+- [x] Workflow de publicación GHCR listo
+      (`.github/workflows/ghcr-publish.yml`) — falta EJECUTARLO
+      (disparo manual, ver sección 4) y copiar aquí el digest real
 - [ ] Tag `v1.0.0` creado y pusheado
 - [ ] CI en verde sobre el tag (6 jobs: backend-test, frontend-build,
       traceability, sql-audit, security-static, zap-baseline)
 - [ ] Repo conectado a Zenodo por el owner; release archivado; DOI obtenido
 - [ ] DOI pegado en `CITATION.cff`, `README.md`, `docs/checklists/fair.md`
-- [ ] Imagen backend publicada en GHCR (`ghcr.io/grinjoww/...:1.0.0`) y
-      verificada con `docker pull`
+- [ ] Imagen backend publicada en GHCR (workflow ejecutado con éxito) y
+      verificada con `docker pull` usando el digest real
 - [ ] URL real de Render registrada en `docs/despliegue/DEPLOYMENT.md`
       (Paso 7: `curl -I https://<url-real>/actuator/health`) — la conecta el
       owner; evidencia final pendiente
