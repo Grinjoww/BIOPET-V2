@@ -74,11 +74,14 @@ archive_profile() {
     echo "ERROR: no se encontró $raw_dir; ¿lhci autorun (perfil $profile) falló antes de generar reportes?"
     exit 1
   fi
+  # lhci nombra los reportes de una corrida como "localhost-_<ruta>-<fecha>.report.json"
+  # (mismo contenido que los "lhr-<timestamp>.json" duplicados que tambien deja en el
+  # directorio crudo); usamos el patron "*.report.json" porque es estable entre perfiles.
   local i=0
-  for f in "$raw_dir"/lhr-*.json; do
+  for f in "$raw_dir"/*.report.json; do
     [[ -e "$f" ]] || continue
     local url slug
-    url=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['requestedUrl'])" "$f")
+    url=$(node -e "console.log(require(process.argv[1]).requestedUrl)" "$f")
     slug=$(echo "$url" | sed -E 's#https?://[^/]+/##; s#[^a-zA-Z0-9]+#-#g')
     cp "$f" "$OUT_DIR/lhci-${STAMP}-${profile}-${slug:-root}-run${i}.json"
     i=$((i+1))

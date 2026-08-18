@@ -21,3 +21,7 @@ Backend/certs/*
 .DS_Store
 Thumbs.db
 cookies.txt
+
+# Salida cruda de lhci autorun (se archiva ya procesada en docs/mediciones/lighthouse/)
+.lighthouseci/
+.lighthouseci-desktop/
