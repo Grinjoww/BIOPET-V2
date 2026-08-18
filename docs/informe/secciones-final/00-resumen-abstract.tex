@@ -1,0 +1,105 @@
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+\label{cap:resumen}
+
+\textbf{Problema.} La mayor\'ia de cl\'inicas veterinarias, en particular en
+contextos como Ecuador, siguen operando con registros manuales o en papel,
+lo que provoca p\'erdida y duplicidad de expedientes, dificultad para
+consultar el historial de una mascota y ausencia de indicadores de gesti\'on
+b\'asicos~\cite{cedeno2021veterinaria}. \textbf{Soluci\'on.} BIOPET es un
+sistema web de gesti\'on veterinaria (backend Spring~Boot~3.2 / Java~21,
+frontend Angular~17, PostgreSQL~18 en producci\'on, cach\'e Redis/Valkey~8)
+que cubre autenticaci\'on y autorizaci\'on por rol y por propiedad, un CRUD
+completo de mascotas, y los m\'odulos de citas, consultas y vacunas
+incorporados durante la Unidad~IV, respaldados por seis rutinas
+almacenadas de PostgreSQL con acceso JPA formal
+(\texttt{@Procedure}/\texttt{@NamedStoredProcedureQuery}).
+\textbf{Metodolog\'ia.} El proyecto se enmarca como \emph{Engineering
+Research}/\emph{Design Science}, siguiendo las seis actividades de Peffers
+et al.~\cite{peffers2007dsrm} y un marco Goal--Question--Metric~\cite{vansolingen2002gqm}
+para vincular cada afirmaci\'on cuantitativa con una m\'etrica y una fuente de
+evidencia real, sin dise\~no experimental controlado ni afirmaci\'on de
+validaci\'on industrial. \textbf{Principales validaciones.} 205 pruebas
+automatizadas del backend (0 fallos, 0 errores); cobertura JaCoCo de
+91{,}80\,\% en l\'ineas y 79{,}39\,\% en ramas sobre un umbral autom\'atico
+del 70\,\%; diez corridas de rendimiento con k6 (cinco en fr\'io, cinco en
+caliente) con 0{,}0\,\% de tasa de error; usabilidad medida con el
+instrumento System Usability Scale (SUS) sobre 18 participantes reales
+(media 74{,}44/100, IC~95\,\% $[63{,}33, 85{,}56]$); auditor\'ia de
+seguridad OWASP Top~10 con evidencia real, escaneo din\'amico OWASP~ZAP
+Baseline (0 alertas de severidad alta) y an\'alisis est\'atico
+SpotBugs/Find~Security~Bugs (0 hallazgos relacionados con inyecci\'on SQL);
+y despliegue real en producci\'on (Render, HTTPS activo,
+\texttt{/actuator/health} en estado \texttt{UP}). El software y el conjunto
+de datos de evidencias emp\'iricas est\'an archivados de forma permanente en
+Zenodo con DOI reales (\texttt{\doisoftware} y \texttt{\doidataset}
+respectivamente), y la imagen del backend est\'a publicada en GitHub
+Container Registry con una referencia inmutable por \emph{digest}
+\texttt{sha256}. \textbf{Conclusi\'on principal.} BIOPET demuestra, con
+evidencia reproducible y trazable en todas sus dimensiones de calidad
+(funcionalidad, seguridad, rendimiento, usabilidad, mantenibilidad y
+portabilidad, enmarcadas en ISO/IEC~25010~\cite{iso25010-2011}), que es
+posible construir y evaluar emp\'iricamente, dentro del alcance de un
+Proyecto Fin de Curso, un artefacto de software funcional, seguro seg\'un
+los controles auditados y reproducible de punta a punta; las limitaciones
+de alcance (entorno acad\'emico, tama\~no muestral, ausencia de
+comparaci\'on con sistemas veterinarios alternativos) se documentan sin
+ocultarlas en el cap\'itulo de amenazas a la validez.
+
+\textbf{Palabras clave:} gesti\'on veterinaria; aplicaciones web;
+Spring~Boot; Angular; JWT; PostgreSQL; ISO/IEC~25010; usabilidad (SUS);
+seguridad OWASP; reproducibilidad.
+
+\bigskip
+\hrule
+\bigskip
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\label{cap:abstract}
+
+\textbf{Problem.} Most veterinary clinics, particularly in contexts such as
+Ecuador, still rely on manual or paper-based records, causing lost and
+duplicated files, difficulty retrieving a pet's clinical history, and the
+absence of basic management indicators~\cite{cedeno2021veterinaria}.
+\textbf{Solution.} BIOPET is a web-based veterinary management system
+(Spring~Boot~3.2/Java~21 backend, Angular~17 frontend, PostgreSQL~18 in
+production, Redis/Valkey~8 cache) covering role- and ownership-based
+authentication and authorization, a complete pet CRUD, and the
+appointments, consultations and vaccines modules added during Unit~IV,
+backed by six PostgreSQL stored routines with formal JPA access
+(\texttt{@Procedure}/\texttt{@NamedStoredProcedureQuery}).
+\textbf{Methodology.} The project follows an Engineering
+Research/Design Science approach, mapped onto the six Peffers et
+al.~\cite{peffers2007dsrm} activities, using a
+Goal--Question--Metric~\cite{vansolingen2002gqm} framework so every
+quantitative claim is tied to a metric and a verifiable evidence source, with
+no controlled experimental design and no claim of industrial validation.
+\textbf{Main validations.} 205 automated backend tests (0 failures, 0
+errors); JaCoCo coverage of 91.80\,\% lines and 79.39\,\% branches against
+an automatic 70\,\% gate; ten k6 performance runs (five cold, five warm)
+with 0.0\,\% error rate; usability measured with the System Usability Scale
+(SUS) on 18 real participants (mean 74.44/100, 95\,\% CI $[63.33, 85.56]$);
+an OWASP Top~10 security audit with real evidence, a dynamic OWASP~ZAP
+Baseline scan (0 high-severity alerts) and a SpotBugs/Find~Security~Bugs
+static analysis (0 SQL-injection-related findings); and a real production
+deployment (Render, HTTPS enabled, \texttt{/actuator/health} reporting
+\texttt{UP}). The software and the empirical evidence dataset are
+permanently archived on Zenodo with real DOIs
+(\texttt{\doisoftware} and \texttt{\doidataset} respectively), and the
+backend image is published on the GitHub Container Registry with an
+immutable \texttt{sha256} digest reference. \textbf{Main conclusion.}
+BIOPET shows, with reproducible and traceable evidence across every quality
+dimension (functionality, security, performance, usability,
+maintainability and portability, framed under
+ISO/IEC~25010~\cite{iso25010-2011}), that it is possible to build and
+empirically evaluate, within the scope of a capstone course project, a
+functional software artifact that is secure with respect to the audited
+controls and reproducible end to end; scope limitations (academic
+environment, sample size, absence of comparison against alternative
+veterinary systems) are documented without concealment in the threats-to-validity
+chapter.
+
+\textbf{Keywords:} veterinary management; web applications;
+Spring~Boot; Angular; JWT; PostgreSQL; ISO/IEC~25010; usability (SUS);
+OWASP security; reproducibility.

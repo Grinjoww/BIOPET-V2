@@ -1,0 +1,188 @@
+\chapter{Despliegue y reproducibilidad}
+\label{cap:despliegue}
+
+\section{Despliegue real en producci\'on}
+
+BIOPET est\'a desplegado en \textbf{Render} (\texttt{render.com}), definido
+declarativamente mediante \texttt{render.yaml} (patr\'on \emph{Blueprint}),
+con HTTPS autom\'atico sobre subdominios \texttt{*.onrender.com}.
+
+\begin{table}[H]
+  \centering
+  \caption{Servicios reales de producci\'on (fuente: \texttt{docs/despliegue/DEPLOYMENT.md}).}
+  \label{tab:produccion-final}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Servicio & URL / valor \\
+    \midrule
+    Frontend & \texttt{https://biopet-frontend.onrender.com} \\
+    Backend & \texttt{https://biopet-backend-dh5e.onrender.com} \\
+    \emph{Healthcheck} & \texttt{GET /actuator/health} $\to$ \texttt{\{"status":"UP","groups":["liveness","readiness"]\}} \\
+    Base de datos & PostgreSQL~18 (gestionado por Render) \\
+    Cach\'e & Valkey~8 (compatible con Redis, gestionado por Render) \\
+    HTTPS & Activo, autom\'atico, sin configuraci\'on TLS manual en la app \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+El backend distingue expl\'icitamente la variable \texttt{CORS\_ALLOWED\_ORIGINS}
+(fijada al origen real del frontend) de la URL p\'ublica del propio backend,
+evitando una configuraci\'on de CORS permisiva por omisi\'on. Las
+credenciales de base de datos de producci\'on se inyectan por variables de
+entorno gestionadas en el panel de Render, nunca versionadas en el
+repositorio.
+
+\section{Continuous Integration}
+\label{sec:ci-jobs}
+
+\texttt{.github/workflows/ci.yml} define seis \emph{jobs}, todos en verde a
+la fecha de cierre de esta entrega:
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Jobs del pipeline de CI.}
+  \label{tab:ci-jobs}
+  \begin{tabular}{@{}p{2.8cm}p{9.4cm}@{}}
+    \toprule
+    Job & Prop\'osito \\
+    \midrule
+    \texttt{backend-test} & \texttt{mvn clean verify}: 205 pruebas + \texttt{jacoco:check} (umbral 70\,\%) \\
+    \texttt{frontend-build} & Build de producci\'on del frontend Angular \\
+    \texttt{traceability} & \texttt{scripts/validate-traceability.sh}: consistencia SRS $\leftrightarrow$ matriz \\
+    \texttt{sql-audit} & \texttt{scripts/audit-sql-dynamic.sh}: SQL din\'amico inseguro en \texttt{db/procs/*.sql} \\
+    \texttt{security-static} & SpotBugs + Find Security Bugs; falla solo ante hallazgos \texttt{SQL\_*} (secci\'on~\ref{sec:csrf}) \\
+    \texttt{zap-baseline} & \texttt{scripts/run-zap-baseline.sh}: escaneo din\'amico contra el backend real en Docker \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\texttt{ghcr-publish.yml} publica la imagen del backend en GHCR ante un
+disparo manual o un \emph{push} de tag \texttt{v*}. \texttt{Makefile}
+expone un objetivo \texttt{make all} que encadena las verificaciones
+locales equivalentes a los \emph{jobs} de CI, para reproducibilidad fuera
+de GitHub Actions.
+
+\section{GHCR (imagen de contenedor del backend)}
+
+La imagen del backend est\'a publicada realmente en GitHub Container
+Registry:
+
+\begin{table}[H]
+  \centering
+  \caption{Publicaci\'on GHCR (fuente: \texttt{docs/publicacion/PAQUETE-V1.0.0.md}).}
+  \label{tab:ghcr-final}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Campo & Valor \\
+    \midrule
+    Imagen & \texttt{ghcr.io/grinjoww/entregafinal-biopet-backend} \\
+    Tag publicado & \texttt{sha-fe2f033} \\
+    Digest (\texttt{sha256}, inmutable) & \texttt{sha256:ef1e857a95a307a1\allowbreak15ebe01599a41506eab824808b70a3c8e317dcc55bef5163} \\
+    Commit asociado & \texttt{fe2f033138e3ec1fad07bf1038e10b8bb140449f} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{verbatim}
+docker pull ghcr.io/grinjoww/entregafinal-biopet-backend@sha256:ef1e857a95a307a1
+15ebe01599a41506eab824808b70a3c8e317dcc55bef5163
+\end{verbatim}
+
+Las etiquetas \texttt{1.0.0} y \texttt{latest} se publicar\'an
+autom\'aticamente por el mismo workflow cuando se cree y publique el tag
+Git \texttt{v1.0.0} (fuera del alcance de esta fase de redacci\'on del
+informe, secci\'on~\ref{sec:pendientes-honestos-publicacion}); hasta
+entonces, \texttt{sha-fe2f033} es la \'unica etiqueta real y verificable.
+
+\section{Archivado permanente en Zenodo}
+
+El software y el conjunto de datos de evidencias emp\'iricas de BIOPET
+est\'an archivados en Zenodo con DOI reales, propagados a
+\texttt{CITATION.cff}, \texttt{README.md} y \texttt{docs/checklists/fair.md}:
+
+\begin{table}[H]
+  \centering
+  \caption{DOI publicados en Zenodo.}
+  \label{tab:zenodo-final}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Elemento & DOI \\
+    \midrule
+    Software & \texttt{\doisoftware} \\
+    \emph{Dataset} de evidencias emp\'iricas & \texttt{\doidataset} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Esto cierra la observaci\'on OBS-10 (archivado en Zenodo pendiente,
+Tercera Entrega), registrada como CERRADA en
+\texttt{docs/observaciones/OBSERVACIONES.md}.
+
+\section{Pendientes honestos de publicaci\'on}
+\label{sec:pendientes-honestos-publicacion}
+
+Conforme al alcance expl\'icito de esta tarea de redacci\'on del informe,
+\textbf{no se crea aqu\'i el tag \texttt{v1.0.0} ni un GitHub Release}. A
+la fecha de cierre de este documento:
+
+\begin{itemize}[nosep]
+  \item El tag Git \texttt{v1.0.0} todav\'ia no existe en el repositorio.
+  \item Al crearse y publicarse (\texttt{git push --tags}), el workflow
+    \texttt{ghcr-publish.yml} publicar\'a autom\'aticamente las etiquetas
+    \texttt{1.0.0} y \texttt{latest} en GHCR, sin intervenci\'on manual
+    adicional.
+  \item \texttt{CITATION.cff} declara \texttt{version: 1.0.0} pero
+    deliberadamente sin \texttt{date-released}, para no afirmar un release
+    que a\'un no ha ocurrido.
+  \item La visibilidad p\'ublica del paquete GHCR (para que terceros puedan
+    hacer \texttt{docker pull} sin autenticarse) qued\'o documentada como
+    pendiente de confirmaci\'on expl\'icita en
+    \texttt{docs/publicacion/PAQUETE-V1.0.0.md}.
+\end{itemize}
+
+Ninguno de estos pendientes afecta la validez de la evidencia emp\'irica ya
+reportada en los cap\'itulos~\ref{cap:pruebas-calidad} y
+\ref{cap:seguridad}: todas las mediciones se ejecutaron contra el sistema
+real, ya sea en el entorno de desarrollo local o en el despliegue de
+producci\'on ya activo.
+
+% EVIDENCIA-FRED-BD-REPRODUCIBLE
+% Ruta esperada: figuras/fred/Bd-reproducible-Flyaway.png
+\evidencia{figuras/fred/Bd-reproducible-Flyaway.png}%
+{Migraciones Flyway (V1--V6) aplicadas en orden desde una base vac\'ia.}%
+{fig:bd-reproducible-final}
+
+% EVIDENCIA-FRED-DOCKER-HEALTHY
+% Ruta esperada: figuras/fred/Docker-compose-servicios-healthy.png
+\evidencia{figuras/fred/Docker-compose-servicios-healthy.png}%
+{Servicios de \texttt{docker compose} en estado \texttt{healthy} tras \texttt{make up}.}%
+{fig:docker-healthy-final}
+
+% EVIDENCIA-FRED-DOCKER-DIGEST
+% Ruta esperada: figuras/fred/Docker-compose-diges-sha.png
+\evidencia{figuras/fred/Docker-compose-diges-sha.png}%
+{Im\'agenes de terceros fijadas por \emph{digest} \texttt{sha256} en \texttt{docker-compose.yml}.}%
+{fig:docker-digest-final}
+
+\section{Reproducibilidad de punta a punta}
+
+\begin{itemize}[nosep]
+  \item \textbf{Arranque completo:} \texttt{make up} (o \texttt{docker
+    compose up --build -d}), sin pasos manuales adicionales.
+  \item \textbf{Im\'agenes de terceros fijadas por \emph{digest}
+    \texttt{sha256}} (no solo \emph{tag}), para evitar derivas silenciosas
+    entre reconstrucciones.
+  \item \textbf{Base de datos reproducible desde vac\'ia:} Flyway aplica
+    \texttt{V1} a \texttt{V6} en orden en un checkout nuevo, verificado
+    expl\'icitamente para esta entrega.
+  \item \textbf{Configuraci\'on externalizada:} \texttt{.env.example}
+    documenta todas las variables de entorno necesarias, sin secretos
+    reales.
+  \item \textbf{Migraciones verificadas desde base vac\'ia:} evidencia real
+    de \texttt{V1} a \texttt{V6} aplicadas en orden por Flyway
+    (figura~\ref{fig:bd-reproducible-final}).
+  \item \textbf{Scripts de evidencia versionados y regenerables:} ver
+    listado completo en el cap\'itulo~\ref{cap:metodologia},
+    secci\'on~\ref{sec:diseno-evaluacion}.
+\end{itemize}

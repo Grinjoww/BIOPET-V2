@@ -1,0 +1,276 @@
+% informe-final-v1.0.0.tex
+%
+% Documento maestro del Informe Academico Final de la Entrega Final (v1.0.0)
+% de BIOPET. Clase: report. Idioma: espanol (babel). Codificacion: UTF-8.
+%
+% Compilacion (desde docs/informe/):
+%   pdflatex -interaction=nonstopmode informe-final-v1.0.0.tex
+%   bibtex informe-final-v1.0.0
+%   pdflatex -interaction=nonstopmode informe-final-v1.0.0.tex
+%   pdflatex -interaction=nonstopmode informe-final-v1.0.0.tex
+% o, si esta disponible:
+%   latexmk -pdf -interaction=nonstopmode -halt-on-error informe-final-v1.0.0.tex
+%
+% Este documento es la evolucion del informe de la Tercera Entrega
+% (informe-entrega-3.tex, que se conserva sin modificar como registro
+% historico de esa entrega). No reescribe la historia: donde una cifra
+% cambio entre la Tercera Entrega y la Entrega Final (numero de pruebas,
+% umbral de cobertura, SUS, Lighthouse, seguridad dinamica/estatica,
+% despliegue, DOI), este documento reporta el valor REAL vigente a la
+% fecha de cierre de la Entrega Final, citando su fuente en el propio
+% repositorio.
+%
+% Las figuras de evidencia siguen protegidas con \IfFileExists (comando
+% \evidencia, definido abajo): la ausencia de una captura no deja huecos
+% visibles ni texto de marcador en el PDF.
+
+\documentclass[12pt,a4paper]{report}
+
+% --- Idioma y codificacion --------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[spanish]{babel}
+
+% --- Geometria de pagina -------------------------------------------------
+\usepackage[a4paper,margin=2.5cm]{geometry}
+
+% --- Manejo seguro de guion bajo en modo texto --------------------------
+\usepackage{underscore}
+
+% --- Tablas, figuras, listados --------------------------------------------
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{pdflscape}
+\usepackage{xcolor}
+% microtype: mejora la justificacion (expansion/compresion de fuente,
+% protrusion de margen) y reduce sustancialmente los "Overfull \hbox"
+% causados por rutas de archivo largas en \texttt{} dentro de parrafos y
+% captions, sin cambiar el contenido visible del texto.
+\usepackage{microtype}
+% listings: para los listados de codigo cortos exigidos por la Guia Final
+% (seccion Implementacion), con indice de listados en la materia
+% preliminar (\lstlistoflistings).
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  captionpos=b,
+  language=Java,
+  showstringspaces=false,
+  tabsize=2
+}
+% \flushbottom (por defecto en la clase report) fuerza que cada pagina
+% llene exactamente el alto de texto, estirando el espacio entre
+% parrafos/tablas; con contenido denso (tablas, listas) eso puede producir
+% un "Overfull \vbox" puntual y, como efecto colateral del algoritmo de
+% salida, una pagina practicamente en blanco justo antes del capitulo
+% siguiente. \raggedbottom permite que cada pagina termine a una altura
+% natural en vez de estirarse, eliminando ese efecto.
+\raggedbottom
+% \rutalarga{a/b/c.ext}: version de \texttt{} para rutas de archivo largas,
+% que inserta puntos de corte de linea (\allowbreak) despues de cada "/",
+% en vez de dejar que "/" (que TeX no trata como punto de corte por
+% defecto) produzca una sola palabra indivisible que desborda el margen.
+\newcommand{\rutalarga}[1]{\texttt{\rutalargaimpl#1/\relax}}
+\def\rutalargaimpl#1/#2\relax{%
+  \ifx\relax#2\relax #1%
+  \else #1/\allowbreak\rutalargaimpl#2\relax\fi
+}
+
+% --- Encabezados/pies de pagina -------------------------------------------
+\usepackage{fancyhdr}
+\setlength{\headheight}{15.4pt}
+% Encabezado de capitulo mas corto (solo numero + titulo, sin la palabra
+% "Capitulo" en mayusculas ni el nombre del proyecto repetido), para que
+% quepa con margen frente al bloque izquierdo sin que ambos campos se
+% peguen visualmente en una sola linea de texto corrido.
+\renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small BIOPET v1.0.0}
+\fancyhead[R]{\small\leftmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Enlaces internos ------------------------------------------------------
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  pdftitle={BIOPET -- Sistema web de gestion veterinaria: Informe academico final v1.0.0},
+  pdfauthor={Mariscal Cabrera Jaime Josue; Beltran Montiel Fred Adrian; Taipe Mora Zaida Melissa},
+  pdfsubject={Informe academico final -- Entrega Final v1.0.0},
+  bookmarksnumbered=true,
+  breaklinks=true,
+  colorlinks=false
+}
+
+% --- Bibliografia estilo IEEE (numerico), via BibTeX clasico -------------
+% (usa la misma referencias.bib de docs/informe/, sin duplicarla)
+
+% --- Comando auxiliar para evidencias condicionales -----------------------
+\newcommand{\evidencia}[3]{%
+  \IfFileExists{#1}{%
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.82\textwidth]{#1}
+      \caption{#2}
+      \label{#3}
+    \end{figure}
+  }{}%
+}
+
+% --- Metadatos institucionales (usados en la portada) ---------------------
+\newcommand{\universidad}{Universidad T\'ecnica Estatal de Quevedo}
+\newcommand{\facultad}{Facultad de Ciencias de la Computaci\'on}
+\newcommand{\carrera}{Carrera de Software}
+\newcommand{\asignatura}{Aplicaciones Web}
+\newcommand{\docente}{Dr.\ Gleiston Cicer\'on Guerrero Ulloa, Ph.D.}
+\newcommand{\correodocente}{gguerrero@uteq.edu.ec}
+\newcommand{\periodoacademico}{Presencial 2026 -- 2027}
+\newcommand{\cursoparalelo}{A}
+\newcommand{\equipo}{BMT}
+\newcommand{\tituloinforme}{BIOPET --- Sistema web de gesti\'on veterinaria:\\ Informe acad\'emico final --- Entrega Final v1.0.0}
+\newcommand{\ciudadfecha}{Quevedo, 18 de agosto de 2026}
+\newcommand{\doisoftware}{10.5281/zenodo.21988746}
+\newcommand{\doidataset}{10.5281/zenodo.21988785}
+\newcommand{\urlfrontend}{https://biopet-frontend.onrender.com}
+\newcommand{\urlbackend}{https://biopet-backend-dh5e.onrender.com}
+% \commithashcorto: hash corto del commit de cierre del tag v1.0.0.
+% Deliberadamente SIN valor todavia -- el tag no existe (ver informe,
+% capitulo de despliegue). Mecanismo listo: en cuanto exista el commit de
+% cierre, basta con escribir el hash de 7-8 caracteres aqui adentro (por
+% ejemplo \renewcommand{\commithashcorto}{a1b2c3d}) y la fila de la
+% portada aparece automaticamente en la siguiente compilacion, sin tocar
+% el resto del documento. Mientras este vacio, la fila completa se omite
+% (sin mostrar ningun texto de marcador tipo "PENDIENTE").
+\newcommand{\commithashcorto}{}
+
+\begin{document}
+% Desactiva el atajo "-shorthand" del modulo spanish de babel (usa """
+% como caracter activo para digrafos tipograficos): el informe usa comillas
+% dobles literales dentro de \texttt{} (JSON, atributos HTML) que de otro
+% modo se interpretarian como ese atajo y romperian la compilacion.
+\shorthandoff{"}
+
+% ===========================================================================
+% PORTADA
+% ===========================================================================
+\begin{titlepage}
+  \centering
+  \vspace*{0.3cm}
+
+  {\large \universidad \par}
+  {\large \facultad \par}
+  \vspace{0.3cm}
+  {\normalsize \carrera \par}
+  {\normalsize Asignatura: \asignatura \par}
+
+  \vspace{1.6cm}
+  {\Huge \bfseries BIOPET \par}
+  \vspace{0.4cm}
+  {\Large Sistema web de gesti\'on veterinaria \par}
+  \vspace{0.6cm}
+  {\Large\itshape Informe acad\'emico final --- Entrega Final v1.0.0 \par}
+
+  \vspace{1.6cm}
+  {\large Equipo \textbf{\equipo} \par}
+  \vspace{0.6cm}
+
+  {\normalsize
+    \begin{tabular}{c}
+      Mariscal Cabrera Jaime Josu\'e \quad --- \quad jmariscalc@uteq.edu.ec \\
+      Beltr\'an Montiel Fred Adri\'an \quad --- \quad fbeltranm@uteq.edu.ec \\
+      Taipe Mora Zaida Melissa \quad --- \quad ztaipem@uteq.edu.ec \\
+    \end{tabular}
+    \par
+  }
+
+  \vspace{1.4cm}
+  {\normalsize Docente: \docente \par}
+  {\normalsize \texttt{\correodocente} \par}
+  \vspace{0.3cm}
+  {\normalsize Per\'iodo acad\'emico: \periodoacademico \quad --- \quad Curso/paralelo: \cursoparalelo \par}
+
+  \vspace{1.1cm}
+  {\small
+    \begin{tabular}{ll}
+      DOI del software (Zenodo) & \texttt{\doisoftware} \\
+      DOI del \emph{dataset} de evidencias (Zenodo) & \texttt{\doidataset} \\
+      Repositorio & \texttt{github.com/Grinjoww/ENTREGA-FINAL-BIOPET} \\
+      Imagen de contenedor (GHCR, digest inmutable) & \texttt{sha256:ef1e857a\ldots6bef5163} \\
+      Frontend (producci\'on) & \texttt{\urlfrontend} \\
+      Backend (producci\'on) & \texttt{\urlbackend} \\
+      \ifx\commithashcorto\empty\else
+      Commit de cierre (v1.0.0) & \texttt{\commithashcorto} \\
+      \fi
+    \end{tabular}
+    \par
+  }
+
+  \vfill
+
+  {\normalsize \ciudadfecha \par}
+  \vspace{0.5cm}
+
+\end{titlepage}
+
+% ===========================================================================
+% MATERIA PRELIMINAR
+% ===========================================================================
+\pagenumbering{roman}
+
+\tableofcontents
+\clearpage
+\listoffigures
+\clearpage
+\listoftables
+\clearpage
+\renewcommand{\lstlistlistingname}{\'Indice de listados}
+\lstlistoflistings
+\clearpage
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+% ===========================================================================
+% CAPITULOS
+% ===========================================================================
+\input{secciones-final/00-resumen-abstract}
+\input{secciones-final/01-introduccion}
+\input{secciones-final/01b-marco-teorico}
+\input{secciones-final/02-trabajos-relacionados}
+\input{secciones-final/03-metodologia}
+\input{secciones-final/04-requisitos}
+\input{secciones-final/05-arquitectura}
+\input{secciones-final/06-implementacion}
+\input{secciones-final/07-pruebas-calidad}
+\input{secciones-final/08-seguridad}
+\input{secciones-final/09-despliegue-reproducibilidad}
+\input{secciones-final/10-trazabilidad}
+\input{secciones-final/11-resultados}
+\input{secciones-final/12-discusion}
+\input{secciones-final/13-amenazas-limitaciones}
+\input{secciones-final/14-conclusiones}
+\input{secciones-final/15-declaraciones}
+\input{secciones-final/16-anexos}
+
+% ===========================================================================
+% BIBLIOGRAFIA (IEEE, BibTeX clasico) --- reutiliza referencias.bib
+% ===========================================================================
+\bibliographystyle{ieeetr}
+\bibliography{referencias}
+
+\end{document}

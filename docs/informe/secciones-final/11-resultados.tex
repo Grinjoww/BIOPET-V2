@@ -1,0 +1,76 @@
+\chapter{Resultados}
+\label{cap:resultados-final}
+
+Este cap\'itulo integra, sin repetir el detalle metodol\'ogico ya
+presentado, qu\'e se construy\'o, qu\'e se valid\'o, qu\'e m\'etricas se
+alcanzaron y qu\'e evidencia respalda cada resultado.
+
+\section{Qu\'e se construy\'o}
+
+Un sistema web de gesti\'on veterinaria con autenticaci\'on y autorizaci\'on
+por rol/propiedad, CRUD de mascotas, y los m\'odulos de citas, consultas y
+vacunas, respaldados por seis rutinas almacenadas de PostgreSQL con acceso
+JPA formal, desplegado realmente en producci\'on (Render) y publicado como
+imagen de contenedor inmutable en GHCR.
+
+\section{Qu\'e se valid\'o y con qu\'e resultado}
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{S\'intesis de resultados cuantitativos de BIOPET v1.0.0.}
+  \label{tab:sintesis-resultados}
+  \begin{tabular}{@{}p{3.4cm}p{5.4cm}p{4.0cm}@{}}
+    \toprule
+    Dimensi\'on & Resultado & Fuente \\
+    \midrule
+    Pruebas automatizadas & 205 pruebas, 0 fallos, 0 errores & \texttt{surefire-reports/} \\
+    Cobertura (JaCoCo) & LINE 91{,}80\,\%, BRANCH 79{,}39\,\%, umbral 70\,\% & \rutalarga{docs/mediciones/jacoco/METRICS.md} \\
+    Rendimiento (k6) & 10 corridas (5 fr\'io + 5 caliente), error 0{,}0\,\% & \texttt{docs/mediciones/perf/REPORT.md} \\
+    Usabilidad (SUS) & Media 74{,}44/100, IC95\,\% $[63{,}33,85{,}56]$, n=18 & \texttt{docs/mediciones/sus/REPORT.md} \\
+    Calidad web (Lighthouse) & 4/4 categor\'ias cumplen umbral (SEO 100/100, mobile+desktop) & \texttt{docs/mediciones/lighthouse/} \\
+    Seguridad OWASP (manual) & 6 controles auditados, todos \texttt{PASS} & \texttt{docs/mediciones/sec/REPORT.md} \\
+    Seguridad din\'amica (ZAP) & 0 alertas altas, 1 informativa & \rutalarga{docs/mediciones/sec/zap/README.md} \\
+    Seguridad est\'atica (SpotBugs) & 66 hallazgos, 0 de tipo \texttt{SQL\_*}, 1 alto (CSRF, mitigado por arquitectura) & \rutalarga{docs/mediciones/sec/static-analysis/README.md} \\
+    Auditor\'ia SQL din\'amico & 0 hallazgos en \texttt{db/procs/} & \texttt{scripts/audit-sql-dynamic.sh} \\
+    CI & 6 jobs verdes & \texttt{.github/workflows/ci.yml} \\
+    Despliegue & Frontend y backend en Render, HTTPS activo, \texttt{/actuator/health} \texttt{UP} & \texttt{docs/despliegue/DEPLOYMENT.md} \\
+    Empaquetado & GHCR con digest inmutable; DOI Zenodo (software y dataset) & \rutalarga{docs/publicacion/PAQUETE-V1.0.0.md} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Qu\'e requisitos fueron satisfechos}
+
+El n\'ucleo \emph{Must Have} (autenticaci\'on, autorizaci\'on, CRUD de
+mascotas) est\'a completamente verificado. Los m\'odulos de Unidad~IV
+(vacunas, integraci\'on de API externa) est\'an verificados o
+implementados seg\'un el caso; citas y consultas tienen CRUD b\'asico
+funcional pero sus extensiones originales (calendario interactivo,
+historial cl\'inico longitudinal completo) permanecen pendientes, tal como
+lo declara el SRS (cap\'itulo~\ref{cap:requisitos}). Los requisitos
+\emph{Should}/\emph{Could} de facturaci\'on, reportes exportables,
+integraci\'on IoT y recomendaciones por IA permanecen fuera del alcance
+implementado.
+
+\section{Evidencia que respalda cada resultado}
+
+Cada cifra de la tabla~\ref{tab:sintesis-resultados} tiene una ruta de
+archivo real y verificable en el repositorio como fuente, sin excepci\'on;
+los cap\'itulos~\ref{cap:pruebas-calidad}, \ref{cap:seguridad} y
+\ref{cap:despliegue} desarrollan el detalle completo de c\'omo se
+recolect\'o cada una.
+
+\section{Consistencia num\'erica frente a entregas previas}
+
+Este informe corrige expl\'icitamente, respecto a la Tercera Entrega,
+las cifras que cambiaron con evidencia real: 109~$\to$~\textbf{205} pruebas
+del backend; umbral de cobertura 60\,\%~$\to$~\textbf{70\,\%} (LINE
+95{,}87\,\%~$\to$~91{,}80\,\%, BRANCH 76{,}87\,\%~$\to$~79{,}39\,\%); SUS
+sin ejecutar~$\to$~\textbf{ejecutado} ($n=18$, media 74{,}44); Lighthouse
+sin ejecutar~$\to$~\textbf{ejecutado, mobile+desktop} (SEO
+82/100~$\to$~100/100 tras la corrida del 2026-08-18); DOI pendiente~$\to$~\textbf{DOI publicado}; GHCR
+pendiente~$\to$~\textbf{imagen publicada}; producci\'on pendiente~$\to$~\textbf{desplegada
+y con \emph{healthcheck} \texttt{UP}}. Los documentos hist\'oricos de la
+Tercera Entrega (\texttt{informe-entrega-3.tex}/\texttt{.pdf}) se conservan
+sin modificar, como registro de esa evaluaci\'on espec\'ifica.

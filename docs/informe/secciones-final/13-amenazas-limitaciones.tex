@@ -1,0 +1,144 @@
+\chapter{Amenazas a la validez y limitaciones}
+\label{cap:amenazas-limitaciones-final}
+
+Este cap\'itulo integra y actualiza, con la evidencia real de v1.0.0, el
+borrador de Jaime (\texttt{docs/informe/borradores/jaime/metodologia-y-amenazas.md}),
+sin minimizar ninguna amenaza.
+
+\section{Validez interna}
+
+\begin{itemize}[nosep]
+  \item Todas las mediciones de rendimiento y seguridad locales se
+    ejecutaron en una sola m\'aquina de desarrollo, sin control de
+    interferencia de otros procesos del sistema operativo.
+  \item El certificado TLS del entorno de desarrollo es autofirmado; en
+    producci\'on, HTTPS lo gestiona Render autom\'aticamente, fuera del
+    control directo del equipo.
+  \item El hit ratio de cach\'e se puede medir con dos m\'etodos que
+    producen cifras distintas (global vs. aislado por clave); se document\'o
+    expl\'icitamente cu\'al se us\'o y por qu\'e.
+  \item El an\'alisis Wilcoxon/Rosenthal muestra tama\~nos de efecto no
+    uniformes entre corridas ($r$ de $-0{,}07$ a $-0{,}84$), lo que indica
+    variabilidad de entorno no completamente controlada entre corridas
+    consecutivas.
+\end{itemize}
+
+\section{Validez externa}
+
+\begin{itemize}[nosep]
+  \item Todas las mediciones locales se realizaron en un entorno
+    acad\'emico; el \'unico entorno equivalente a producci\'on es el
+    despliegue real en el plan gratuito de Render, que tiene sus propias
+    limitaciones (secci\'on~\ref{sec:limitacion-30-dias}).
+  \item La muestra SUS ($n=18$, reclutada por conveniencia) no es
+    necesariamente representativa de usuarios finales de una cl\'inica
+    veterinaria real; un tama\~no muestral mayor reduce el margen del
+    intervalo de confianza pero no cambia el m\'etodo de reclutamiento.
+  \item Lighthouse depende del entorno de ejecuci\'on (hardware, red,
+    versi\'on del navegador); sus puntajes no son un valor absoluto
+    reproducible en cualquier m\'aquina.
+  \item Los usuarios de prueba del backend (cuentas acad\'emicas, admin
+    sembrado) no son usuarios reales de una cl\'inica veterinaria.
+\end{itemize}
+
+\section{Validez de constructo}
+
+\begin{itemize}[nosep]
+  \item JaCoCo mide cobertura de ejecuci\'on, no ausencia de defectos.
+  \item Lighthouse no representa toda la experiencia de usuario real; se
+    complementa con SUS como medici\'on independiente, pero ninguna
+    sustituye una evaluaci\'on de UX cualitativa dedicada.
+  \item SUS mide percepci\'on de usabilidad, no eficacia cl\'inica ni
+    operacional real en un contexto veterinario.
+  \item ZAP y SpotBugs no prueban la ausencia total de vulnerabilidades,
+    solo la ausencia de los patrones que sus reglas configuradas detectan.
+  \item Las pruebas de integraci\'on con Testcontainers verifican
+    comportamiento real de PostgreSQL para las rutinas nativas; la mayor\'ia
+    del resto de la suite usa H2 en memoria, cuyo comportamiento no es
+    id\'entico al de PostgreSQL real.
+\end{itemize}
+
+\section{Validez de conclusi\'on}
+
+\begin{itemize}[nosep]
+  \item Cada corrida de k6 ($\sim$3\,200 peticiones) corresponde a una
+    ventana de tiempo corta ($\sim$30--35~s); no se midieron tendencias en
+    periodos prolongados.
+  \item El tama\~no muestral de SUS ($n=18$) sigue siendo insuficiente para
+    an\'alisis de subgrupos demogr\'aficos con potencia estad\'istica
+    adecuada.
+  \item Ninguna medici\'on de este informe implica dise\~no experimental
+    con grupos de control; ninguna mejora observada entre versiones se
+    atribuye causalmente a un cambio espec\'ifico.
+  \item Las 205 pruebas y la cobertura JaCoCo se ejecutan en un ambiente
+    de prueba mixto (H2 + Testcontainers/PostgreSQL para las rutinas
+    nativas), no en un \'unico motor de base de datos consistente en toda
+    la suite.
+\end{itemize}
+
+\section{Limitaci\'on temporal expl\'icita: operaci\'on sostenida no verificable hoy}
+\label{sec:limitacion-30-dias}
+
+El plan gratuito de PostgreSQL en Render \textbf{elimina los datos a los 30
+d\'ias} de creado el recurso, documentado expl\'icitamente en
+\texttt{docs/despliegue/DEPLOYMENT.md} y en la pol\'itica de retenci\'on de
+respaldos de \texttt{docs/despliegue/BACKUP.md} (retenci\'on de 30 d\'ias,
+purgado autom\'atico de respaldos con m\'as de 31 d\'ias). Esto significa
+que, a la fecha de cierre de este informe, \textbf{no es posible verificar
+emp\'iricamente una condici\'on de operaci\'on sostenida del sistema en
+producci\'on durante 30 d\'ias o m\'as}: el despliegue actual es real y
+verificable (\emph{healthcheck} \texttt{UP}, HTTPS activo), pero su
+horizonte temporal de evidencia continua est\'a acotado por la propia
+pol\'itica del plan gratuito usado. Este informe documenta esta condici\'on
+como una \textbf{limitaci\'on temporal genuina}, no como un requisito
+cumplido ni como uno incumplido por negligencia: verificarla exigir\'ia
+migrar a un plan pago de base de datos persistente (o instrumentar un
+respaldo/restauraci\'on autom\'atico verificado en producci\'on real durante
+ese periodo), decisi\'on que excede el alcance de esta entrega acad\'emica.
+
+\section{Otras limitaciones del estudio}
+
+\begin{itemize}[nosep]
+  \item \textbf{Contexto exclusivamente acad\'emico:} ninguna medici\'on
+    proviene de un despliegue operativo con usuarios reales de una
+    cl\'inica veterinaria.
+  \item \textbf{Sin evaluaci\'on industrial ni con desarrolladores
+    profesionales externos.}
+  \item \textbf{Sin comparaci\'on emp\'irica directa con sistemas de
+    gesti\'on veterinaria alternativos:} toda comparaci\'on es contra
+    umbrales t\'ecnicos propios o contra la literatura, no contra artefactos
+    competidores evaluados en las mismas condiciones.
+  \item \textbf{Lighthouse: mecanismo de sesi\'on no documentado en
+    prosa.} La corrida real del 2026-08-18 (mobile+desktop, 12 corridas,
+    4/4 categor\'ias cumplidas, incluido SEO~100/100) audit\'o
+    \texttt{/mascotas} directamente (\texttt{finalUrl} sin redirecci\'on a
+    \texttt{/login} en los seis reportes de esa ruta, a diferencia de la
+    corrida de agosto); sin embargo, el equipo no document\'o
+    expl\'icitamente en \texttt{docs/mediciones/lighthouse/README.md} qu\'e
+    mecanismo permiti\'o evitar la redirecci\'on del \emph{guard} de
+    autenticaci\'on. Este informe reporta el dato num\'erico real
+    (verificado en los JSON crudos) sin afirmar un mecanismo de sesi\'on no
+    documentado por el equipo. La narrativa completa del
+    \texttt{README.md} de esa carpeta a\'un no fue actualizada para
+    describir la corrida del 2026-08-18 en prosa.
+  \item \textbf{Rate limiting de login no distribuido:} en memoria, por
+    instancia \'unica del backend.
+  \item \textbf{Sin integraci\'on con SIEM} para los logs de auditor\'ia.
+  \item \textbf{Requisitos heredados de la Entrega~1A a\'un pendientes:}
+    historial cl\'inico longitudinal completo, calendario interactivo de
+    citas, IoT, facturaci\'on digital, reportes exportables y
+    recomendaciones por IA (cap\'itulo~\ref{cap:requisitos}).
+  \item \textbf{Bloque Jaime de PRISMA sin conteo de exclusiones:} los 10
+    estudios incluidos (meta de $\geq$8--9 cumplida) est\'an documentados y
+    el diagrama de flujo ya fue regenerado con los tres bloques
+    cuantificados; el \'unico gap que persiste es que Jaime no document\'o
+    su conteo de candidatos evaluados/excluidos, se\~nalado con l\'inea
+    punteada en el propio diagrama (cap\'itulo~\ref{cap:trabajos-relacionados}).
+  \item \textbf{Tag \texttt{v1.0.0} y GitHub Release todav\'ia no creados}
+    (secci\'on~\ref{sec:pendientes-honestos-publicacion}), fuera del
+    alcance expl\'icito de esta tarea de redacci\'on del informe.
+\end{itemize}
+
+Ninguna de estas limitaciones se presenta como resuelta; todas condicionan
+expl\'icitamente el alcance de las conclusiones del
+cap\'itulo~\ref{cap:conclusiones-final}.

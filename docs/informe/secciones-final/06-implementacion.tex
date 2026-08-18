@@ -1,0 +1,241 @@
+\chapter{Implementaci\'on}
+\label{cap:implementacion}
+
+Este cap\'itulo describe, a nivel de dise\~no y sin degenerar en un listado
+de c\'odigo fuente, las implementaciones principales de BIOPET v1.0.0.
+
+\section{Autenticaci\'on y autorizaci\'on}
+
+El backend emite JWT firmados con HMAC-SHA256 (\texttt{jjwt}~0.12.6),
+transportados en cookies \texttt{access\_token}/\texttt{refresh\_token}
+(\texttt{HttpOnly}+\texttt{Secure}+\texttt{SameSite=Strict}). Cada token
+contiene diez \emph{claims}: los siete est\'andar de RFC~7519~\cite{rfc7519}
+(\texttt{iss}, \texttt{sub}, \texttt{aud}, \texttt{iat}, \texttt{nbf},
+\texttt{exp}, \texttt{jti}) y tres personalizados (\texttt{email},
+\texttt{rol}, \texttt{typ}). La autorizaci\'on combina rol
+(\texttt{@PreAuthorize}) y propiedad (verificaci\'on expl\'icita de que un
+\texttt{ROLE\_DUENO} solo accede a sus propias mascotas). El logout es
+idempotente y revoca el token en Redis mediante su \texttt{jti}. Detalle
+completo en el cap\'itulo~\ref{cap:seguridad}.
+
+\section{Gesti\'on de usuarios}
+
+\texttt{UsuarioController} expone el perfil del usuario autenticado
+(\texttt{GET /api/usuarios/me}). El registro (\texttt{POST
+/api/auth/registro}) crea siempre un usuario con \texttt{ROLE\_DUENO}; los
+dem\'as roles (\texttt{ADMIN}, \texttt{VETERINARIO}, \texttt{AUXILIAR}) se
+asignan mediante el usuario administrador sembrado o por un administrador
+ya autenticado, no de forma autoasignada por el registro p\'ublico.
+
+\section{Gesti\'on de mascotas}
+
+CRUD completo (\texttt{GET}/\texttt{POST}/\texttt{PUT}/\texttt{DELETE}
+sobre \texttt{/api/mascotas} y \texttt{/api/mascotas/\{id\}}), con
+eliminaci\'on l\'ogica (\texttt{activo=false}), no f\'isica, y un endpoint
+de resumen por especie respaldado por \texttt{fn\_resumen\_mascotas\_por\_especie}.
+
+\section{Citas}
+
+\texttt{CitaController} gestiona la programaci\'on de citas veterinarias
+(alta, consulta, cambio de estado). La actualizaci\'on masiva del estado de
+citas vencidas de un veterinario se resuelve con la rutina
+\texttt{sp\_actualizar\_estado\_citas\_masivas} (transacci\'on \'unica en
+PostgreSQL, no un bucle de actualizaciones individuales desde el backend).
+
+\section{Consultas}
+
+\texttt{ConsultaController} registra atenciones veterinarias. El registro
+usa la rutina \texttt{sp\_registrar\_consulta\_validada}, que valida en la
+propia base de datos --- antes de insertar --- que la mascota exista y
+est\'e activa, y que el veterinario referenciado tenga rol
+\texttt{VETERINARIO} o \texttt{ADMIN} y est\'e activo, lanzando
+\texttt{RAISE EXCEPTION} si no, en vez de delegar esa validaci\'on
+\'unicamente a la capa de servicio de Java.
+
+\section{Vacunas}
+
+\texttt{VacunaController} registra y consulta vacunas aplicadas a una
+mascota, insumo de \texttt{fn\_historial\_clinico\_mascota} para mostrar la
+\'ultima y la pr\'oxima vacuna de una mascota en el resumen consolidado.
+
+\section{Integraci\'on con API externa}
+
+\texttt{ExternalApiController} consume un servicio externo desde el
+backend. Se documenta como \textbf{implementado}, no \textbf{verificado}:
+no cuenta con una prueba automatizada dedicada a la fecha de este informe
+(secci\'on~\ref{sec:req-unidad4}).
+
+\section{Cach\'e (patr\'on cache-aside)}
+
+\texttt{MascotaService} usa la abstracci\'on de cach\'e de Spring
+(\texttt{@Cacheable} para lecturas, \texttt{@CacheEvict} para
+invalidaci\'on tras escritura) contra Redis/Valkey. El TTL de cach\'e se
+externaliza por variable de entorno, no est\'a codificado en el fuente.
+El listado~\ref{lst:cache-aside} muestra el fragmento real de
+\texttt{MascotaService} que implementa este patr\'on: el listado paginado
+se cachea con una clave compuesta (correo, p\'agina, tama\~no, orden) para
+que cada combinaci\'on de par\'ametros tenga su propia entrada, y toda
+operaci\'on de escritura invalida el cach\'e completo del listado.
+
+\begin{lstlisting}[language=Java,caption={Patr\'on \emph{cache-aside} declarativo en \texttt{MascotaService.java} (fragmento real).},label={lst:cache-aside}]
+@Cacheable(value = "mascotas",
+    key = "#email + '-' + #pageable.pageNumber + '-' +
+           #pageable.pageSize + '-' + #pageable.sort.toString()")
+@Transactional(readOnly = true)
+public Page<MascotaResponse> listar(Pageable pageable, String email) {
+    Usuario usuario = usuarioRepository
+        .findByEmailAndActivoTrue(email)
+        .orElseThrow(() -> new RecursoNoEncontradoException(
+            "Usuario no encontrado"));
+
+    if (usuario.getRol() == Rol.ROLE_DUENO) {
+        return mascotaRepository
+            .findAllByDuenioIdAndActivoTrue(usuario.getId(), pageable)
+            .map(this::toResponse);
+    }
+    return mascotaRepository.findAllByActivoTrue(pageable)
+        .map(this::toResponse);
+}
+
+@CacheEvict(value = "mascotas", allEntries = true)
+@Transactional
+public MascotaResponse crear(MascotaRequest request) {
+    // ... validacion y persistencia (omitida por brevedad)
+}
+\end{lstlisting}
+
+\section{Procedimientos almacenados}
+
+Ver cap\'itulo~\ref{cap:arquitectura}, secci\'on~\ref{sec:acceso-jpa-formal},
+para el cat\'alogo completo y la estrategia de migraci\'on que preserva
+compatibilidad con bases ya migradas. El listado~\ref{lst:procedure-jpa}
+muestra el repositorio dedicado a la invocaci\'on formal de las seis
+rutinas almacenadas: cada m\'etodo usa \texttt{@Procedure}, sin ning\'un
+CRUD gen\'erico expuesto (el repositorio extiende \texttt{Repository}, no
+\texttt{JpaRepository}, deliberadamente).
+
+\begin{lstlisting}[language=Java,caption={Acceso JPA formal a procedimientos almacenados en \texttt{ProcedimientoBiopetRepository.java} (fragmento real).},label={lst:procedure-jpa}]
+public interface ProcedimientoBiopetRepository
+        extends Repository<Mascota, Long> {
+
+    @Procedure(name = "fn_resumen_mascotas_por_especie")
+    List<ResumenEspecie> resumenPorEspecie(Long duenioId);
+
+    @Procedure(procedureName = "sp_registrar_consulta_validada",
+               outputParameterName = "p_consulta_id")
+    Long registrarConsultaValidada(
+        @Param("p_mascota_id") Long mascotaId,
+        @Param("p_veterinario_id") Long veterinarioId,
+        @Param("p_motivo") String motivo,
+        @Param("p_diagnostico") String diagnostico,
+        @Param("p_tratamiento") String tratamiento,
+        @Param("p_observaciones") String observaciones);
+}
+\end{lstlisting}
+
+\section{Migraciones Flyway}
+\label{sec:migraciones-flyway}
+
+El esquema se gestiona \textbf{exclusivamente} con Flyway como \'unica
+fuente de verdad, aplicando en orden \texttt{V1\_\_schema\_inicial.sql},
+\texttt{V2\_\_citas.sql}, \texttt{V3\_\_consultas.sql},
+\texttt{V4\_\_vacunas.sql}, \texttt{V5\_\_procedimientos\_biopet.sql} y
+\texttt{V6\_\_formalizar\_procedimientos\_jpa.sql}, verificado desde un
+volumen de PostgreSQL completamente vac\'io. La arquitectura de arranque
+reproducible en Docker es, en su versi\'on final v1.0.0:
+
+\begin{enumerate}[nosep]
+  \item PostgreSQL inicia desde un volumen vac\'io.
+  \item \texttt{docker-entrypoint-initdb.d} ejecuta \'unicamente
+    \texttt{db/roles-bootstrap.sql}: un \emph{bootstrap} m\'inimo que crea
+    el rol \texttt{biopet\_app} \textbf{sin ninguna dependencia de objetos
+    de esquema} (sin tablas, secuencias, funciones ni procedimientos),
+    porque \texttt{application.yml} configura ese rol como el usuario del
+    \emph{pool} principal de Spring (Hikari/JPA) y debe existir antes de
+    que el contenedor del backend intente conectarse, independientemente
+    del estado de Flyway.
+  \item Flyway ejecuta realmente las migraciones \texttt{V1} a \texttt{V6}
+    en orden, sobre el esquema todav\'ia vac\'io (sin
+    \texttt{baseline-on-migrate} enmascarando un esquema preexistente).
+  \item \texttt{afterMigrate.sql} (\emph{callback} de Flyway) otorga a
+    \texttt{biopet\_app} los privilegios sobre los objetos de esquema
+    reci\'en creados por \texttt{V1--V6}, una vez que esos objetos ya
+    existen.
+  \item \texttt{DataInitializer} (\texttt{CommandLineRunner
+    seedAdmin}) siembra el usuario administrador de forma idempotente
+    \textbf{despu\'es} de que Flyway termina, dentro del propio ciclo de
+    arranque de Spring Boot, no como script de Postgres.
+  \item \texttt{db/schema.sql}, \texttt{db/seed.sql}, \texttt{db/roles.sql}
+    y \texttt{db/procs/} \textbf{no se ejecutan autom\'aticamente} en este
+    flujo: se conservan en el repositorio como cat\'alogo, evidencia
+    hist\'orica y documentaci\'on de referencia (\texttt{docs/basedatos/CATALOGOSP.md}),
+    no como parte activa del \emph{bootstrap} de Docker.
+\end{enumerate}
+
+Esta arquitectura corrige un dise\~no anterior en el que \texttt{db/schema.sql}
+duplicaba \texttt{V1} y, montado en \texttt{docker-entrypoint-initdb.d} junto
+con \texttt{spring.flyway.baseline-on-migrate}, enmascaraba la migraci\'on
+real detr\'as de un baseline sobre un volumen que aparentaba ser nuevo. La
+versi\'on final v1.0.0 elimina esa duplicidad: Flyway es la \'unica v\'ia
+por la que se crea el esquema, verificable ejecutando \texttt{make up}
+desde una clonaci\'on limpia y observando \texttt{V1} a \texttt{V6}
+aplicarse en orden en los logs del backend.
+
+\section{Manejo uniforme de errores (RFC~7807)}
+
+Todos los errores de la API usan el formato \texttt{application/problem+json}
+(RFC~7807~\cite{rfc7807}), con \texttt{type}, \texttt{title},
+\texttt{status}, \texttt{detail} e \texttt{instance}
+(\texttt{GlobalExceptionHandler}, \texttt{ProblemDetailFactory}). El
+\texttt{detail} nunca incluye \emph{stack trace} ni el valor bruto de un
+par\'ametro inv\'alido. El listado~\ref{lst:problem-detail} muestra la
+f\'abrica real que construye cada \texttt{ProblemDetail}, reutilizada por
+todos los manejadores de excepci\'on del backend.
+
+\begin{lstlisting}[language=Java,caption={F\'abrica de errores RFC~7807 en \texttt{ProblemDetailFactory.java} (fragmento real).},label={lst:problem-detail}]
+public static ProblemDetail build(HttpStatus status, ProblemType type,
+        String title, String detail, HttpServletRequest request) {
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(status, detail);
+    problemDetail.setType(type.uri());
+    problemDetail.setTitle(title);
+    problemDetail.setInstance(URI.create(request.getRequestURI()));
+    return problemDetail;
+}
+\end{lstlisting}
+
+\section{Frontend}
+
+Aplicaci\'on Angular~17.3 con componentes \emph{standalone} y formularios
+reactivos. \rutalarga{core/auth.service.ts}/\rutalarga{auth.guard.ts} gestionan
+la sesi\'on por cookies (\texttt{withCredentials: true}, sin JWT en
+\texttt{localStorage}); \rutalarga{core/http-error.interceptor.ts} traduce el
+\texttt{ProblemDetail} del backend a mensajes legibles y reintenta
+\texttt{refresh} ante un 401 en rutas protegidas; \rutalarga{features/login.component.ts}
+y \rutalarga{features/mascotas.component.ts} usan atributos ARIA
+(\texttt{aria-invalid}, \texttt{aria-describedby}, \texttt{role="alert"},
+\texttt{aria-live}) para anunciar errores a lectores de pantalla, en
+l\'inea con WCAG~2.1~\cite{wcag21}.
+
+% EVIDENCIA-ZAIDA-01
+% Ruta esperada: figuras/zaida/01-frontend-login.png
+\evidencia{figuras/zaida/01-frontend-login.png}%
+{Pantalla de inicio de sesi\'on del frontend de BIOPET.}%
+{fig:frontend-login-final}
+
+% EVIDENCIA-ZAIDA-02
+% Ruta esperada: figuras/zaida/02-crud-mascotas.png
+\evidencia{figuras/zaida/02-crud-mascotas.png}%
+{CRUD de mascotas en el frontend: listado, alta y edici\'on.}%
+{fig:crud-mascotas-final}
+
+\section{Persistencia}
+
+Spring Data JPA sobre PostgreSQL, con consultas derivadas para
+\texttt{UsuarioRepository} y \texttt{MascotaRepository}, y acceso formal
+(\texttt{@Procedure}/\texttt{@NamedStoredProcedureQuery}) para las seis
+rutinas almacenadas descritas en el cap\'itulo~\ref{cap:arquitectura}.
+Hibernate/JPA se conecta en tiempo de ejecuci\'on con la cuenta de
+privilegios m\'inimos \texttt{biopet\_app}; Flyway usa la cuenta propietaria
+\texttt{biopet\_user}, separando la conexi\'on que aplica migraciones de la
+que sirve tr\'afico de la aplicaci\'on.

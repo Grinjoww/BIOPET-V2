@@ -1,0 +1,158 @@
+\chapter{Introducci\'on}
+\label{cap:introduccion}
+
+\section{Contexto: gesti\'on veterinaria y digitalizaci\'on incompleta}
+
+La administraci\'on de una cl\'inica veterinaria involucra procesos que, en
+ausencia de una herramienta digital centralizada, dependen de registros
+manuales o en hojas de c\'alculo dispersas: identificaci\'on de mascotas y
+due\~nos, historial de atenciones, control de vacunas y programaci\'on de
+citas. La literatura reciente sobre el contexto ecuatoriano confirma que
+esta carencia no es an\'ecdota: Cede\~no Ochoa, Catuto Murillo \& Rodas-Silva
+documentan expl\'icitamente c\'omo la mayor\'ia de cl\'inicas veterinarias
+locales carecen de herramientas tecnol\'ogicas de gesti\'on, lo que provoca
+p\'erdida y duplicidad de expedientes por manejo manual~\cite{cedeno2021veterinaria}.
+Rodr\'iguez et al. documentan un patr\'on similar en otro contexto
+geogr\'afico, motivando un sistema de c\'odigo abierto para el mismo
+dominio~\cite{rodriguez2024oscrum}. BIOPET nace de ese mismo diagn\'ostico:
+la necesidad de un sistema web que centralice identificaci\'on,
+autenticaci\'on, y la gesti\'on de mascotas, citas, consultas y vacunas de
+una cl\'inica veterinaria, con evidencia emp\'irica de que efectivamente
+funciona y es razonablemente seguro, no solo de que fue programado.
+
+\section{Problema abordado}
+
+El problema que BIOPET aborda tiene dos capas. La primera es funcional:
+proveer una plataforma web que permita registrar usuarios con distintos
+roles (administrador, veterinario, auxiliar, due\~no), administrar mascotas
+asociadas a un due\~no, y gestionar el ciclo de atenci\'on veterinaria
+(citas, consultas, vacunas) con control de acceso adecuado a cada rol. La
+segunda capa, menos visible pero igual de cr\'itica, es de \textbf{evidencia
+emp\'irica}: un sistema acad\'emico puede afirmar que ``funciona'' sin que
+esa afirmaci\'on est\'e respaldada por pruebas automatizadas, medici\'on de
+rendimiento bajo carga, auditor\'ia de seguridad real o percepci\'on de
+usabilidad medida con un instrumento estandarizado. BIOPET trata esa
+segunda capa como parte del problema mismo a resolver, no como un anexo
+opcional: cada afirmaci\'on cuantitativa de este informe cita su fuente de
+evidencia real en el repositorio.
+
+\section{Motivaci\'on}
+
+Tres entregas previas (Entrega~1A, Entrega~1B y Tercera Entrega) generaron
+retroalimentaci\'on docente real, registrada \'integramente en
+\texttt{docs/observaciones/OBSERVACIONES.md}: 15 observaciones formales,
+todas cerradas a la fecha de este informe, cubriendo desde la ausencia de un
+repositorio accesible hasta la falta de evidencia Lighthouse o de un DOI de
+archivado permanente. Esa bitácora de correcciones es, en s\'i misma, parte
+de la motivaci\'on de este documento: la Entrega Final no reescribe el
+proyecto desde cero, sino que consolida el trabajo ya evaluado, corrigiendo
+expl\'icitamente lo se\~nalado y documentando con honestidad lo que sigue
+pendiente.
+
+\section{Preguntas de investigaci\'on}
+\label{sec:preguntas-investigacion}
+
+Este informe organiza su evaluaci\'on emp\'irica alrededor de tres
+preguntas de investigaci\'on, cada una medible con evidencia real ya
+recolectada y respondida expl\'icitamente en el
+cap\'itulo~\ref{cap:discusion} (secci\'on~\ref{sec:respuestas-rq}):
+
+\begin{description}[nosep]
+  \item[RQ1.] \textquestiondown En qu\'e medida BIOPET satisface los
+    requisitos funcionales y no funcionales definidos para la Entrega
+    Final, y cu\'ales permanecen expl\'icitamente pendientes?
+  \item[RQ2.] \textquestiondown Qu\'e resultados presenta BIOPET en
+    cobertura de pruebas, rendimiento, usabilidad, calidad web y seguridad
+    bajo las evaluaciones emp\'iricas realmente ejecutadas?
+  \item[RQ3.] \textquestiondown En qu\'e medida el proceso de despliegue,
+    integraci\'on continua, publicaci\'on de la imagen de contenedor y
+    archivado permanente permiten reproducir y verificar el artefacto
+    final de forma independiente?
+\end{description}
+
+\section{Objetivo general}
+
+Consolidar, evaluar emp\'iricamente y documentar acad\'emicamente el sistema
+BIOPET en su versi\'on v1.0.0, integrando evidencia real de calidad
+funcional, seguridad, rendimiento, usabilidad, mantenibilidad y
+reproducibilidad, enmarcada en el modelo de calidad ISO/IEC~25010 y en una
+metodolog\'ia de investigaci\'on de ingenier\'ia expl\'icita, sin inventar
+resultados ni ocultar limitaciones.
+
+\subsection*{Objetivos espec\'ificos}
+\begin{enumerate}[nosep]
+  \item Verificar el cumplimiento de los requisitos funcionales y no
+    funcionales declarados en el SRS y documentar la arquitectura del
+    sistema (incluidos los m\'odulos de Unidad~IV), distinguiendo
+    expl\'icitamente lo verificado de lo pendiente. \emph{(RQ1)}
+  \item Reportar la evidencia emp\'irica real de pruebas automatizadas,
+    cobertura, rendimiento, usabilidad y calidad web recolectada hasta el
+    cierre de esta entrega. \emph{(RQ2)}
+  \item Auditar la seguridad del sistema desde tres \'angulos
+    complementarios (revisi\'on manual OWASP, an\'alisis din\'amico ZAP,
+    an\'alisis est\'atico SpotBugs/Find Security Bugs), incluyendo el
+    tratamiento expl\'icito del \'unico hallazgo de severidad alta
+    detectado. \emph{(RQ2)}
+  \item Documentar el despliegue real en producci\'on, la publicaci\'on de
+    la imagen de contenedor en GHCR, el archivado permanente en Zenodo y
+    la reproducibilidad de punta a punta del artefacto. \emph{(RQ3)}
+  \item Discutir los resultados frente a la literatura relacionada
+    disponible y declarar honestamente las amenazas a la validez y las
+    limitaciones del estudio, incluyendo condiciones a\'un no verificables
+    (por ejemplo, operaci\'on sostenida durante per\'iodos prolongados).
+    \emph{(RQ1--RQ3)}
+\end{enumerate}
+
+\section{Alcance}
+
+El alcance funcional implementado y verificado cubre: registro y
+autenticaci\'on de usuarios por cookies seguras; autorizaci\'on por rol y
+por propiedad; CRUD completo de mascotas; y los m\'odulos de citas,
+consultas y vacunas incorporados en la Unidad~IV, respaldados por seis
+rutinas almacenadas de PostgreSQL. Quedan expl\'icitamente \textbf{fuera}
+del alcance implementado, y as\'i se documentan en el cap\'itulo de
+requisitos (cap\'itulo~\ref{cap:requisitos}): historial cl\'inico
+cronol\'ogico completo como m\'odulo independiente, integraci\'on con
+dispositivos IoT, facturaci\'on digital, reportes exportables en PDF/Excel,
+y recomendaciones cl\'inicas generadas por IA externa. El alcance de
+evaluaci\'on emp\'irica cubre pruebas automatizadas, cobertura, rendimiento,
+usabilidad, calidad web, y seguridad est\'atica/din\'amica, todas ejecutadas
+en un entorno acad\'emico (desarrollo local y despliegue en el plan gratuito
+de Render), no en un entorno industrial de alta disponibilidad.
+
+\section{Contribuci\'on del proyecto}
+
+La contribuci\'on principal de BIOPET, frente al panorama de trabajos
+relacionados revisado en el cap\'itulo~\ref{cap:trabajos-relacionados}, no
+es una t\'ecnica nueva de ingenier\'ia de software, sino la
+\textbf{amplitud verificable de la evidencia emp\'irica} recolectada sobre
+un mismo artefacto real: cobertura de pruebas, rendimiento bajo carga,
+usabilidad medida con instrumento estandarizado, calidad web automatizada, y
+seguridad auditada por tres m\'etodos distintos, todo trazable a
+requisitos formales y reproducible con comandos documentados
+(\texttt{make up}, \texttt{mvn clean verify}, scripts de
+\texttt{scripts/}). Ning\'un trabajo relacionado revisado reporta las seis
+dimensiones a la vez sobre el mismo sistema (secci\'on~\ref{sec:sintesis-trabajos-relacionados}).
+
+\section{Organizaci\'on de este informe}
+
+El resto del documento se organiza as\'i: el cap\'itulo~\ref{cap:marco-teorico}
+resume el marco te\'orico y normativo usado en todo el informe; el
+cap\'itulo~\ref{cap:trabajos-relacionados}
+revisa los trabajos relacionados bajo un protocolo inspirado en
+PRISMA~2020; el cap\'itulo~\ref{cap:metodologia} describe la metodolog\'ia
+de investigaci\'on de ingenier\'ia adoptada; el cap\'itulo~\ref{cap:requisitos}
+documenta la ingenier\'ia de requisitos; el cap\'itulo~\ref{cap:arquitectura}
+la arquitectura y las decisiones de dise\~no; el cap\'itulo~\ref{cap:implementacion}
+los m\'odulos implementados; los cap\'itulos~\ref{cap:pruebas-calidad} y
+\ref{cap:seguridad} la evidencia de pruebas/calidad y de seguridad; el
+cap\'itulo~\ref{cap:despliegue} el despliegue y la reproducibilidad; el
+cap\'itulo~\ref{cap:trazabilidad-final} la matriz de trazabilidad; los
+cap\'itulos~\ref{cap:resultados-final} y \ref{cap:discusion} integran y
+discuten los resultados; el cap\'itulo~\ref{cap:amenazas-limitaciones-final}
+documenta las amenazas a la validez y las limitaciones; el
+cap\'itulo~\ref{cap:conclusiones-final} presenta las conclusiones; el
+cap\'itulo~\ref{cap:declaraciones} recoge las declaraciones formales
+(CRediT, \'etica, disponibilidad); y los anexos
+(cap\'itulo~\ref{cap:anexos-final}) complementan con glosario, endpoints y
+documentos de referencia.

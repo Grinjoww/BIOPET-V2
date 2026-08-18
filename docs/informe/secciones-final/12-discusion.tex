@@ -1,0 +1,147 @@
+\chapter{Discusi\'on}
+\label{cap:discusion}
+
+\section{Cobertura y calidad de c\'odigo}
+
+Elevar el umbral autom\'atico de JaCoCo de 60\,\% a 70\,\% y mantener LINE
+en 91{,}80\,\% (muy por encima del umbral) sugiere que la suite de pruebas
+creci\'o en proporci\'on al c\'odigo nuevo de la Unidad~IV, no solo en
+n\'umero absoluto (109~$\to$~205 pruebas): el crecimiento de BRANCH
+(76{,}87\,\%~$\to$~79{,}39\,\%) fue menor que el de LINE, lo que es
+consistente con la naturaleza t\'ipica de c\'odigo de validaci\'on
+condicional (por ejemplo, en \texttt{sp\_registrar\_consulta\_validada} y
+sus equivalentes en Java) que a\~nade ramas dif\'iciles de cubrir en su
+totalidad. La cobertura sigue midiendo ejecuci\'on, no correcci\'on: el
+hecho de que 0 hallazgos \texttt{SQL\_*} coexistan con 205 pruebas en verde
+es evidencia complementaria, no una prueba formal de ausencia de defectos.
+
+\section{Rendimiento}
+
+Las diez corridas de k6 mantienen el mismo patr\'on cualitativo observado
+en la Tercera Entrega (latencia mediana de un solo d\'igito de
+milisegundos en condiciones de cach\'e caliente, throughput cercano a
+92~req/s), con tasa de error 0{,}0\,\% sostenida al duplicar el n\'umero de
+corridas (3+3~$\to$~5+5). El an\'alisis de Wilcoxon con tama\~no de efecto
+de Rosenthal muestra que el efecto de la cach\'e no es uniforme entre
+corridas ($r$ desde $-0{,}07$ hasta $-0{,}84$), lo que sugiere que factores
+del entorno de ejecuci\'on (por ejemplo, el estado de la JVM o del pool de
+conexiones al inicio de cada corrida) influyen en la magnitud observable
+del beneficio de cach\'e, sin que eso invalide la conclusi\'on cualitativa
+de que la cach\'e reduce la latencia. Frente a Putri, Hadi \& Ramdani
+(2017)~\cite{putri2017perftesting} (cap\'itulo~\ref{cap:trabajos-relacionados}),
+BIOPET reporta el mismo tipo de evidencia de \emph{benchmarking} pero
+complementada con otras cinco dimensiones de calidad, no en aislamiento.
+
+\section{Seguridad}
+
+El resultado combinado de las tres t\'ecnicas de auditor\'ia (manual,
+din\'amica, est\'atica) es consistente entre s\'i: ning\'una detect\'o
+patrones de inyecci\'on SQL explotable, y el \'unico hallazgo de severidad
+alta (CSRF deshabilitado) tiene una mitigaci\'on arquitect\'onica expl\'icita
+y documentada (secci\'on~\ref{sec:csrf}), no ignorada. Comparado con el
+trabajo de Yang et al. sobre vulnerabilidades JWT~\cite{yang2026tokentimebomb},
+BIOPET no reclama haber verificado la ausencia de las categor\'ias de
+vulnerabilidad que ese estudio descubre mediante \emph{fuzzing} dirigido a
+la librer\'ia \texttt{jjwt}: esa clase de an\'alisis queda expl\'icitamente
+fuera del alcance de las tres t\'ecnicas usadas aqu\'i.
+
+\section{Usabilidad}
+
+Con $n=18$ y media 74{,}44/100, BIOPET se ubica sobre el umbral de
+referencia de 68 puntos de Bangor, Kortum \& Miller~\cite{bangor2008sus},
+en la categor\'ia ``Bueno''. El intervalo de confianza se estrech\'o
+respecto a la muestra de $n=10$ de la Tercera Entrega, pero como se declara
+en el cap\'itulo~\ref{cap:pruebas-calidad}, ampliar la muestra no resuelve
+por s\'i solo el sesgo de reclutamiento por conveniencia. El participante
+de menor puntaje (sin experiencia web previa) refuerza, de forma
+consistente con la literatura de usabilidad, la relevancia de una fase de
+orientaci\'on breve para usuarios de perfil similar en trabajo futuro.
+
+\section{Calidad}
+
+La combinaci\'on de cobertura alta, cero hallazgos SQL y auditor\'ia de
+seguridad multim\'etodo en verde sugiere un nivel de calidad de c\'odigo
+consistente con las buenas pr\'acticas esperadas en un proyecto de este
+tipo, enmarcado bajo ISO/IEC~25010 (secci\'on~\ref{sec:iso25010}). El
+hallazgo de SEO~82/100 (por debajo del umbral 90) detectado en la primera
+corrida de Lighthouse (2026-08-01) se document\'o como \'area de mejora
+concreta en vez de minimizarse, y qued\'o corregido en la corrida definitiva
+del 2026-08-18 (SEO~100/100 en las 12 corridas, ambos perfiles): a la fecha
+de cierre de este informe, las cuatro categor\'ias de Lighthouse cumplen su
+umbral.
+
+\section{Despliegue y reproducibilidad}
+
+El despliegue real en Render, con \emph{healthcheck} en estado \texttt{UP}
+y HTTPS activo, junto con la imagen inmutable en GHCR y el archivado
+permanente en Zenodo, cierra la brecha entre ``el sistema funciona en mi
+m\'aquina'' y ``el sistema es reproducible y accesible por terceros'' que
+persist\'ia en la Tercera Entrega. La reproducibilidad de punta a punta
+(\texttt{make up}, im\'agenes fijadas por \emph{digest}, migraciones desde
+base vac\'ia verificadas) es, junto con la amplitud de evidencia
+multim\'etrica, uno de los dos pilares que distinguen a BIOPET frente a
+los trabajos relacionados revisados (cap\'itulo~\ref{cap:trabajos-relacionados}),
+ninguno de los cuales documenta reproducibilidad de infraestructura con el
+mismo nivel de detalle.
+
+\section{Comparaci\'on con trabajos relacionados: l\'imites de la afirmaci\'on}
+
+Ninguna comparaci\'on de este cap\'itulo implica superioridad absoluta de
+BIOPET sobre Rodr\'iguez et al.~\cite{rodriguez2024oscrum}, Cede\~no Ochoa
+et al.~\cite{cedeno2021veterinaria}, Putri et al.~\cite{putri2017perftesting}
+o Yang et al.~\cite{yang2026tokentimebomb}: no existe una comparaci\'on
+emp\'irica directa (mismos datos, mismo entorno) entre BIOPET y ninguno de
+esos sistemas. La \'unica afirmaci\'on sostenible, con la evidencia
+disponible, es que BIOPET reporta un conjunto \textbf{m\'as amplio} de
+dimensiones de calidad medidas sobre un mismo artefacto que cualquiera de
+los trabajos revisados individualmente, no que su calidad relativa en cada
+dimensi\'on individual sea superior.
+
+\section{Respuesta expl\'icita a las preguntas de investigaci\'on}
+\label{sec:respuestas-rq}
+
+\textbf{RQ1 --- \textquestiondown En qu\'e medida BIOPET satisface los
+requisitos definidos para la Entrega Final?} El n\'ucleo \emph{Must Have}
+(autenticaci\'on, autorizaci\'on por rol/propiedad, CRUD de mascotas) est\'a
+completamente verificado, y los tres requisitos formalizados en la
+Unidad~IV (\texttt{REQ-F-023} a \texttt{REQ-F-025}: gesti\'on
+administrativa de usuarios, vacunas e integraci\'on de API externa) est\'an
+verificados o implementados seg\'un el caso (cap\'itulo~\ref{cap:requisitos}). Un
+subconjunto expl\'icito de requisitos \emph{Should}/\emph{Could} heredados
+de la Entrega~1A (historial cl\'inico longitudinal completo, calendario
+interactivo de citas, IoT, facturaci\'on digital, reportes exportables,
+recomendaciones por IA) permanece \textbf{pendiente}, sin que este informe
+lo declare cumplido. Respuesta: BIOPET satisface el n\'ucleo de requisitos
+comprometido para esta entrega y una parte de los requisitos ampliados de
+Unidad~IV; no satisface la totalidad del alcance funcional original de la
+Entrega~1A.
+
+\textbf{RQ2 --- \textquestiondown Qu\'e resultados presenta BIOPET en las
+evaluaciones emp\'iricas ejecutadas?} 205 pruebas automatizadas (0
+fallos/errores); cobertura JaCoCo 91{,}80\,\%~LINE/79{,}39\,\%~BRANCH sobre
+un umbral autom\'atico de 70\,\%; diez corridas de rendimiento k6 con
+0{,}0\,\% de tasa de error; usabilidad SUS con $n=18$, media 74{,}44/100
+(categor\'ia ``Bueno''); calidad web Lighthouse con las cuatro categor\'ias
+cumplidas en la corrida del 2026-08-18 (SEO~100/100); y seguridad auditada
+por tres m\'etodos independientes (OWASP manual, ZAP din\'amico, SpotBugs
+est\'atico), con 0 alertas de severidad alta y 0 hallazgos de inyecci\'on
+SQL (cap\'itulos~\ref{cap:pruebas-calidad} y \ref{cap:seguridad}). Respuesta:
+en las seis dimensiones evaluadas, BIOPET cumple los umbrales configurados
+por el propio equipo, con las limitaciones de alcance documentadas en el
+cap\'itulo~\ref{cap:amenazas-limitaciones-final} (entorno acad\'emico,
+tama\~no muestral, mecanismo de sesi\'on de la corrida Lighthouse del
+2026-08-18 sin documentar en prosa).
+
+\textbf{RQ3 --- \textquestiondown El despliegue, CI, GHCR y archivado
+permiten reproducir y verificar el artefacto?} S\'i, con evidencia real:
+seis \emph{jobs} de CI en verde, despliegue activo en Render con
+\emph{healthcheck} \texttt{UP}, imagen de contenedor publicada en GHCR con
+referencia inmutable por \emph{digest}, y archivado permanente en Zenodo
+con DOI real para el software y para el conjunto de datos de evidencias
+(cap\'itulo~\ref{cap:despliegue}). La reproducibilidad tiene l\'imites
+declarados: el tag Git \texttt{v1.0.0} y el GitHub Release a\'un no existen,
+y el plan gratuito de PostgreSQL en Render no permite verificar hoy una
+operaci\'on sostenida m\'as all\'a de 30 d\'ias
+(secci\'on~\ref{sec:limitacion-30-dias}). Respuesta: el artefacto es
+reproducible de punta a punta en el entorno de desarrollo y verificable en
+producci\'on dentro de esas condiciones expl\'icitas.

@@ -1,0 +1,258 @@
+\chapter{Pruebas y calidad}
+\label{cap:pruebas-calidad}
+
+\section{Pruebas automatizadas del backend}
+
+La suite completa del backend, ejecutada con \texttt{mvn clean verify}
+(verificado directamente contra \texttt{Backend/target/surefire-reports/}
+en esta fase de cierre), reporta:
+
+\begin{table}[H]
+  \centering
+  \caption{Resultado real de la suite de pruebas del backend.}
+  \label{tab:pruebas-final}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    M\'etrica & Valor \\
+    \midrule
+    Pruebas ejecutadas & 205 \\
+    Fallos & 0 \\
+    Errores & 0 \\
+    Omitidas & 0 \\
+    Resultado del build & \texttt{BUILD SUCCESS} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% EVIDENCIA-JAIME-01
+% Ruta esperada: figuras/jaime/01-maven-verify.png
+\evidencia{figuras/jaime/01-maven-verify.png}%
+{Salida real de \texttt{mvn clean verify}: pruebas del backend con \texttt{BUILD SUCCESS}.}%
+{fig:maven-verify-final}
+
+\section{Cobertura JaCoCo}
+\label{sec:jacoco-final}
+
+JaCoCo~\cite{jacoco-docs} mide y verifica autom\'aticamente la cobertura
+con una regla \texttt{BUNDLE} sobre todo el m\'odulo backend. El umbral
+autom\'atico configurado en \texttt{Backend/pom.xml} se elev\'o de 60\,\%
+(Tercera Entrega) a \textbf{70\,\%} para v1.0.0.
+
+\begin{table}[H]
+  \centering
+  \caption{Cobertura medida por \texttt{jacoco:check} (fuente: \texttt{docs/mediciones/jacoco/METRICS.md}).}
+  \label{tab:jacoco-final}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    Contador & Cubierto & No cubierto & Cobertura & Umbral \\
+    \midrule
+    LINE & 885 & 79 & 91{,}80\,\% & 70\,\% \\
+    BRANCH & 181 & 47 & 79{,}39\,\% & 70\,\% \\
+    COMPLEXITY & 299 & 77 & 79{,}52\,\% & 60\,\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% EVIDENCIA-JAIME-02
+% Ruta esperada: figuras/jaime/02-jacoco-resumen.png
+\evidencia{figuras/jaime/02-jacoco-resumen.png}%
+{Resumen navegable de JaCoCo con la cobertura por paquete.}%
+{fig:jacoco-resumen-final}
+
+Los tres contadores superan con margen su umbral configurado. La cobertura
+mide ejecuci\'on de pruebas, no ausencia de defectos: una l\'inea cubierta
+por una prueba no implica que est\'e libre de errores l\'ogicos no
+contemplados por la aserci\'on de esa prueba.
+
+\section{Rendimiento (k6)}
+\label{sec:rendimiento-final}
+
+Herramienta de carga: k6~\cite{k6-docs}. La metodolog\'ia sigue el mismo
+patr\'on de \emph{benchmarking} t\'ecnico contra un artefacto web real
+descrito por Hasselbring~\cite{hasselbring2021benchmarking} como est\'andar
+emp\'irico de ingenier\'ia de software, y usa los percentiles p95/p99 como
+marco de referencia para interpretar el rendimiento de aplicaciones web
+de negocio, en la l\'inea propuesta por Rempel~\cite{rempel2015webperf}.
+Para v1.0.0 se ampli\'o el n\'umero de corridas de 3+3 (Tercera Entrega) a
+\textbf{5 en fr\'io + 5 en caliente}, contra \texttt{GET /api/mascotas}
+sobre HTTPS/TLS~1.3 real, 50~VUs, \emph{ramp-up} de 5~s y carga sostenida
+de 30~s por corrida.
+
+\begin{table}[H]
+  \centering
+  \tiny
+  \caption{Resultado real de las diez corridas de k6 (fuente: \texttt{docs/mediciones/perf/REPORT.md}).}
+  \label{tab:k6-final}
+  \begin{tabular}{@{}lrrrrrrr@{}}
+    \toprule
+    Corrida & n & Media (ms) & Mediana (ms) & p95 (ms) & p99 (ms) & Error (\%) & Throughput (req/s) \\
+    \midrule
+    caliente-01 & 3196 & 10{,}54 & 8{,}68 & 20{,}15 & 30{,}68 & 0{,}0 & 91{,}17 \\
+    caliente-02 & 3226 & 7{,}19 & 6{,}63 & 9{,}70 & 17{,}18 & 0{,}0 & 92{,}09 \\
+    caliente-03 & 3226 & 6{,}60 & 6{,}01 & 10{,}86 & 16{,}13 & 0{,}0 & 92{,}13 \\
+    caliente-04 & 3236 & 5{,}21 & 4{,}92 & 6{,}83 & 10{,}12 & 0{,}0 & 92{,}40 \\
+    caliente-05 & 3236 & 5{,}40 & 4{,}96 & 7{,}81 & 12{,}59 & 0{,}0 & 92{,}41 \\
+    fr\'io-01 & 3206 & 10{,}51 & 8{,}47 & 21{,}10 & 33{,}14 & 0{,}0 & 91{,}49 \\
+    fr\'io-02 & 3211 & 9{,}37 & 7{,}60 & 17{,}23 & 25{,}79 & 0{,}0 & 91{,}62 \\
+    fr\'io-03 & 3204 & 10{,}80 & 8{,}43 & 22{,}13 & 33{,}40 & 0{,}0 & 91{,}36 \\
+    fr\'io-04 & 3206 & 10{,}71 & 8{,}50 & 20{,}16 & 32{,}65 & 0{,}0 & 91{,}45 \\
+    fr\'io-05 & 3199 & 10{,}61 & 7{,}88 & 20{,}71 & 40{,}87 & 0{,}0 & 91{,}51 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+La tasa de error fue \textbf{0{,}0\,\%} en las diez corridas, sin
+excepci\'on. Intervalos de confianza al 95\,\% (distribuci\'on t de
+Student) reportados por corrida en \texttt{docs/mediciones/perf/REPORT.md};
+por ejemplo, caliente-01: $[10{,}30, 10{,}78]$~ms. Adem\'as del IC~95\,\%,
+se aplic\'o la prueba de Wilcoxon pareada entre condiciones fr\'ia y
+caliente (por \'indice de llegada), con tama\~no de efecto $r$ de
+Rosenthal: el efecto es peque\~no en la corrida~01 ($r=-0{,}07$) y grande en
+las corridas~03--04 ($r=-0{,}65$ a $-0{,}84$), consistente con una cach\'e
+que reduce la latencia de forma creciente conforme el sistema se estabiliza
+entre corridas consecutivas.
+
+% EVIDENCIA-FRED-06
+% Ruta esperada: figuras/fred/06-performance-report.png
+\evidencia{figuras/fred/06-performance-report.png}%
+{Vista del reporte agregado de rendimiento.}%
+{fig:performance-report-final}
+
+% EVIDENCIA-FRED-CALIENTE
+% Ruta esperada: figuras/fred/Rendimiento-PruebaCaliente.png
+\evidencia{figuras/fred/Rendimiento-PruebaCaliente.png}%
+{Salida de consola de una corrida de k6 en caliente.}%
+{fig:rendimiento-caliente-final}
+
+% EVIDENCIA-FRED-FRIO
+% Ruta esperada: figuras/fred/Rendimiento-PruebaFria.png
+\evidencia{figuras/fred/Rendimiento-PruebaFria.png}%
+{Salida de consola de una corrida de k6 en fr\'io.}%
+{fig:rendimiento-frio-final}
+
+\section{Usabilidad (SUS)}
+\label{sec:sus-final}
+
+El instrumento System Usability Scale de Brooke (1996)~\cite{sus-brooke1996},
+alineado con los conceptos de usabilidad de
+ISO~9241-11:2018~\cite{iso9241-11} (eficacia, eficiencia y satisfacci\'on
+en un contexto de uso), sin modificar, se aplic\'o a \textbf{18
+participantes} externos al equipo
+(P01--P18, ampliado desde los 10 de la Tercera Entrega), siguiendo el
+protocolo de \texttt{docs/etica/ETHICS.md}: consentimiento informado por
+participante y una tarea de referencia com\'un (login, alta, edici\'on,
+eliminaci\'on l\'ogica, logout).
+
+\begin{table}[H]
+  \centering
+  \caption{Resultados agregados del instrumento SUS (n = 18).}
+  \label{tab:sus-final}
+  \begin{tabular}{lr}
+    \toprule
+    M\'etrica & Valor \\
+    \midrule
+    Media (SUS Score) & 74{,}44 / 100 \\
+    Desviaci\'on t\'ipica (muestral, $n-1$) & 22{,}35 \\
+    Intervalo de confianza 95\,\% & $[63{,}33,\ 85{,}56]$ (margen $\pm 11{,}12$) \\
+    Mediana (p50) & 82{,}50 \\
+    M\'inimo / M\'aximo & 22{,}50 / 97{,}50 \\
+    Clasificaci\'on cualitativa (Bangor et al.) & Bueno \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% EVIDENCIA-ZAIDA-05
+% Ruta esperada: figuras/zaida/05-sus-resultados.png
+\evidencia{figuras/zaida/05-sus-resultados.png}%
+{Resultados agregados del instrumento SUS (n=18): media, desviaci\'on t\'ipica, IC 95\,\%.}%
+{fig:sus-resultados-final}
+
+\textbf{Interpretaci\'on.} La media obtenida (74{,}44) se ubica en la
+categor\'ia \textbf{Bueno} de la escala de adjetivos SUS, con un IC~95\,\%
+que incluye el umbral de referencia de 68 puntos considerado ``sobre el
+promedio'' de la industria seg\'un el benchmark emp\'irico de Bangor,
+Kortum \& Miller~\cite{bangor2008sus}. El participante con menor puntaje
+(P08, 22{,}5) declar\'o experiencia web ``ninguna'', consistente con el
+efecto conocido de curva de aprendizaje inicial en usuarios sin experiencia
+digital previa. La ampliaci\'on de la muestra de $n=10$ a $n=18$ redujo el
+margen del intervalo de confianza (de un margen mayor en la Tercera
+Entrega a $\pm 11{,}12$ aqu\'i), pero \textbf{un tama\~no muestral mayor no
+implica, por s\'i solo, representatividad externa}: los participantes
+siguen siendo reclutados por conveniencia (secci\'on~\ref{cap:amenazas-limitaciones-final}).
+
+\section{Calidad web autom\'atica (Lighthouse)}
+\label{sec:lighthouse-final}
+
+La configuraci\'on de auditor\'ia (\texttt{lighthouserc.js}, perfil m\'ovil
+simulado; \texttt{lighthouserc.desktop.js}, perfil de escritorio) declara
+umbrales Performance~$\geq$~80, Accessibility~$\geq$~90, Best
+Practices~$\geq$~90 y SEO~$\geq$~90~\cite{lighthouse-docs}. Tras la corrida
+inicial del 2026-08-01 (solo perfil m\'ovil, SEO~82/100, umbral no
+cumplido), el equipo ejecut\'o una \textbf{corrida nueva y completa el
+2026-08-18} (\texttt{docs/mediciones/lighthouse/lhci-20260818-0538-*.json},
+metadatos en \texttt{lhci-20260818-0538.meta.txt}), cubriendo \textbf{ambos
+perfiles} (m\'ovil y escritorio), 3~corridas por ruta y por perfil (12
+corridas totales), sobre las mismas rutas \texttt{/login} y
+\texttt{/mascotas}. A diferencia de la corrida de agosto (donde
+\texttt{/mascotas} redirig\'ia siempre a \texttt{/login} sin sesi\'on
+activa), el campo \texttt{finalUrl} de las seis corridas de
+\texttt{/mascotas} del 2026-08-18 coincide exactamente con la URL
+solicitada (\texttt{http://localhost:4200/mascotas}, sin redirecci\'on),
+verificado directamente contra los JSON crudos.
+
+\begin{table}[H]
+  \centering
+  \caption{Resultado real de la corrida Lighthouse del 2026-08-18 (12 corridas, mobile+desktop; fuente: \texttt{docs/mediciones/lighthouse/lhci-20260818-0538-*.json}).}
+  \label{tab:lighthouse-final}
+  \begin{tabular}{@{}llrl@{}}
+    \toprule
+    Categor\'ia & Perfil & Puntaje (0--100) & Umbral \\
+    \midrule
+    Performance & Escritorio & 100 & $\geq$ 80 --- Cumplido \\
+    Performance & M\'ovil & 90--94 & $\geq$ 80 --- Cumplido \\
+    Accessibility & Ambos & 91 & $\geq$ 90 --- Cumplido \\
+    Best Practices & Ambos & 96--100 & $\geq$ 90 --- Cumplido \\
+    SEO & Ambos & \textbf{100} & $\geq$ 90 --- \textbf{Cumplido} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% EVIDENCIA-ZAIDA-04
+% Ruta esperada: figuras/zaida/04-lighthouse.png
+\evidencia{figuras/zaida/04-lighthouse.png}%
+{Reporte de Lighthouse CI del frontend de BIOPET.}%
+{fig:lighthouse-final}
+
+\textbf{Estado real para v1.0.0.} Las \textbf{cuatro} categor\'ias cumplen
+su umbral en las 12 corridas del 2026-08-18, en ambos perfiles: el hallazgo
+de SEO~82/100 de la corrida de agosto qued\'o corregido (SEO~100/100 en las
+12 corridas de la corrida definitiva). Performance en escritorio alcanza el
+m\'aximo (100/100); en m\'ovil se mantiene en el mismo rango que la corrida
+anterior (90--94/100). A diferencia de la corrida de agosto, los seis
+reportes de \texttt{/mascotas} del 2026-08-18 tienen \texttt{finalUrl}
+igual a la URL solicitada (sin redirecci\'on a \texttt{/login}), lo que
+indica que esta vez la ruta \texttt{/mascotas} s\'i fue auditada
+directamente. El equipo no document\'o expl\'icitamente en
+\texttt{docs/mediciones/lighthouse/README.md} el mecanismo usado para
+evitar la redirecci\'on del \emph{guard} de autenticaci\'on en esta
+corrida (por ejemplo, una sesi\'on preestablecida); este informe reporta
+el dato tal como aparece en los JSON crudos, sin afirmar un mecanismo no
+documentado. La narrativa completa del \texttt{README.md} de esta carpeta
+a\'un describe en detalle \'unicamente la corrida de agosto; la corrida de
+escritorio/m\'ovil del 2026-08-18 est\'a archivada con sus JSON crudos y
+metadatos, pero su narrativa completa todav\'ia no fue redactada --- esto
+se declara como pendiente documental menor, no como ausencia de
+evidencia: los datos num\'ericos citados en esta secci\'on se leyeron
+directamente de los archivos JSON reales.
+
+\section{Diferenciaci\'on de los tipos de medici\'on}
+
+Este informe distingue expl\'icitamente: rendimiento (k6, agregado por
+corrida, IC~95\,\% con distribuci\'on t), cach\'e (verificaci\'on aislada
+por clave con \texttt{redis-cli}), cobertura (JaCoCo, LINE/BRANCH/COMPLEXITY
+sobre el \texttt{BUNDLE} completo), usabilidad (SUS, ejecutada, $n=18$),
+calidad web (Lighthouse, ejecutada en ambos perfiles mobile y desktop, 12
+corridas, cuatro categor\'ias cumplidas), y seguridad (revisi\'on manual OWASP +
+an\'alisis din\'amico ZAP + an\'alisis est\'atico SpotBugs/Find Security
+Bugs, cap\'itulo~\ref{cap:seguridad}), para evitar mezclar cifras de
+naturaleza distinta.

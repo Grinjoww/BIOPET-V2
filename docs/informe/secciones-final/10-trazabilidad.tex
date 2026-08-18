@@ -1,0 +1,70 @@
+\chapter{Matriz de trazabilidad}
+\label{cap:trazabilidad-final}
+
+La matriz cruda vive en \texttt{docs/trazabilidad/matriz.csv} (id de
+requisito, tipo, prioridad MoSCoW, historia de usuario, caso de uso,
+m\'odulo, endpoint, prueba automatizada, evidencia emp\'irica y estado),
+validada autom\'aticamente por \texttt{scripts/validate-traceability.sh}
+frente al SRS. Esta secci\'on selecciona las filas m\'as representativas de
+las tres \'areas de trabajo del equipo, con el estado reportado tal como lo
+declara el SRS/matriz vigente --- ning\'un estado se marca
+\emph{verificado} sin una prueba automatizada o un documento de evidencia
+citado.
+
+\begin{landscape}
+\small
+\begin{longtable}{@{}
+  >{\raggedright\arraybackslash}p{2.0cm}
+  >{\raggedright\arraybackslash}p{1.8cm}
+  >{\raggedright\arraybackslash}p{5.4cm}
+  >{\raggedright\arraybackslash}p{4.6cm}
+  >{\raggedright\arraybackslash}p{6.4cm}
+  >{\raggedright\arraybackslash}p{2.2cm}
+@{}}
+\caption{Matriz de trazabilidad (selecci\'on representativa, v1.0.0). Matriz completa: \texttt{docs/trazabilidad/matriz.csv}.}
+\label{tab:trazabilidad-final} \\
+\toprule
+Requisito & Resp. & Implementaci\'on & Componente & Prueba / evidencia & Estado \\
+\midrule
+\endfirsthead
+\multicolumn{6}{c}{\tablename\ \thetable\ -- continuaci\'on} \\
+\toprule
+Requisito & Resp. & Implementaci\'on & Componente & Prueba / evidencia & Estado \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+REQ-F-001 & Jaime & Registro de usuario (\texttt{ROLE\_DUENO}) & \rutalarga{AuthController/AuthService} & \texttt{AuthControllerTest}; Postman & Verificado \\
+REQ-F-003 & Jaime & Login por cookies + JWT & \rutalarga{AuthController/JwtService} & \texttt{AuthControllerTest}, \texttt{JwtServiceTest}; ADR-006 & Verificado \\
+REQ-F-005 & Jaime & Logout con revocaci\'on Redis & \texttt{TokenBlacklistService} & \texttt{AuthControllerTest}; \rutalarga{A07-authentication.md} & Verificado \\
+REQ-F-006 & Jaime & Autorizaci\'on por rol (\texttt{@PreAuthorize}) & \rutalarga{SecurityConfig/MascotaController} & \texttt{MascotaControllerTest}; \rutalarga{A01-access-control.md} & Verificado \\
+REQ-F-007 & Zaida/Jaime & Perfil de usuario autenticado & \texttt{UsuarioController} & Postman (\rutalarga{docs/postman/}) & Verificado \\
+REQ-F-008--012 & Equipo & CRUD completo de mascotas & \rutalarga{MascotaController/MascotaService} & \texttt{MascotaControllerTest}; Postman & Verificado \\
+REQ-F-013 & Equipo & Historial cl\'inico cronol\'ogico (m\'odulo independiente) & \texttt{ConsultaController} (CRUD b\'asico existe; historial longitudinal no) & \rutalarga{docs/requisitos/SRS.md} & Pendiente \\
+REQ-F-015 & Equipo & Citas veterinarias (CRUD b\'asico existe; calendario interactivo no) & \texttt{CitaController} & \rutalarga{docs/requisitos/SRS.md} & Pendiente \\
+REQ-F-020 & Jaime & Auditor\'ia de operaciones (parcial: solo autenticaci\'on) & \texttt{AuthenticationAuditService} & \texttt{AuthenticationAuditServiceTest}; \rutalarga{A09-logging.md} & Parcial \\
+REQ-F-021 & Fred & Resumen de mascotas por especie & \texttt{fn\_resumen\_mascotas\_por\_especie} & \texttt{ResumenEspeciesIntegrationTest} (Testcontainers) & Verificado \\
+REQ-F-023 & Equipo (Unidad IV) & Gesti\'on administrativa de usuarios & \rutalarga{UsuarioController/UsuarioService} & \texttt{UsuarioControllerTest} (16 pruebas) & Verificado \\
+REQ-F-024 & Equipo (Unidad IV) & Gesti\'on de vacunas & \rutalarga{VacunaController/VacunaService} & \texttt{VacunaControllerTest} (10 pruebas); Postman & Verificado \\
+REQ-F-025 & Equipo (Unidad IV) & Consulta de informaci\'on externa de especies (cach\'e Redis) & \rutalarga{ExternalApiController/ExternalApiService} & Sin prueba automatizada; evidencia manual cach\'e fr\'ia/caliente & Implementado \\
+REQ-NF-001 & Fred & Rendimiento del listado de mascotas ($\leq$200/500~ms p95) & \texttt{MascotaService} (\texttt{@Cacheable}) & k6 (10 corridas), error 0{,}0\,\% & Verificado \\
+REQ-NF-002 & Jaime & Comunicaci\'on cifrada obligatoria (HTTPS/TLS) & \texttt{TomcatDualConnectorConfig} & Verificaci\'on en vivo, TLSv1.3 (desarrollo) & Verificado \\
+REQ-NF-005 & Zaida & Interfaz responsiva / calidad web (Lighthouse) & Frontend Angular & Lighthouse (12 corridas, mobile+desktop), 4/4 cumplen & Verificado \\
+REQ-NF-006 & Jaime & Formato uniforme de error (\texttt{ProblemDetail}) & \texttt{GlobalExceptionHandler} & Postman, RFC~7807 & Verificado \\
+REQ-NF-008 & Jaime & Cifrado de contrase\~nas (BCrypt) & \texttt{SecurityConfig} (\texttt{PasswordEncoder}) & \texttt{AuthControllerTest}; \rutalarga{db/seed.sql} & Verificado \\
+REQ-NF-009 & Jaime & Auditor\'ia estructurada \texttt{AUTH\_AUDIT} & \texttt{AuthenticationAuditService} & \texttt{AuthenticationAuditServiceTest}; \rutalarga{A09-logging.md} & Verificado \\
+REQ-NF-010 & Jaime & Rate limiting de login & \texttt{LoginRateLimiterService} & \texttt{AuthControllerTest}; \rutalarga{A07-authentication.md} & Verificado \\
+REQ-NF-012 & Fred & Cach\'e del listado de mascotas con TTL externo & Redis/Valkey, \texttt{application.yml} & TTL confirmado (\rutalarga{docs/mediciones/redis/}); sin hit ratio & Parcial \\
+REQ-NF-013 & Fred/Jaime & Estrategia h\'ibrida de acceso a datos (JPA + procedimientos almacenados) & \rutalarga{db/procs/}, repositorios JPA & \texttt{ResumenEspeciesIntegrationTest}; ADR-007 & Verificado \\
+\end{longtable}
+\normalsize
+\end{landscape}
+
+Cobertura de contribuciones reales por integrante en esta matriz: Jaime
+(seguridad, autenticaci\'on, autorizaci\'on, cobertura JaCoCo,
+an\'alisis est\'atico/din\'amico de seguridad), Fred (persistencia
+reproducible, procedimientos almacenados, cach\'e, rendimiento k6, GHCR,
+despliegue), y Zaida (frontend, accesibilidad, requisitos, SUS,
+Lighthouse, PRISMA). Ning\'un requisito se marca \emph{verificado} sin una
+prueba automatizada o un documento de evidencia citado en su columna.

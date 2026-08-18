@@ -131,7 +131,7 @@
   author       = {{Google Chrome Developers}},
   title        = {{Lighthouse}},
   howpublished = {\url{https://developer.chrome.com/docs/lighthouse/}},
-  note         = {Herramienta usada para la auditoria de accesibilidad/SEO/performance del frontend; 6 corridas archivadas en docs/mediciones/lighthouse/ (2026-08-01, perfil movil). Corrida en perfil desktop y re-ejecucion tras el fix de SEO (meta description + robots.txt) quedan pendientes de que el equipo las ejecute contra el contenedor real.}
+  note         = {Herramienta usada para la auditoria de accesibilidad/SEO/performance del frontend; 6 corridas iniciales archivadas en docs/mediciones/lighthouse/ (2026-08-01, perfil movil, SEO 82/100) mas 12 corridas de re-ejecucion (2026-08-18, perfiles movil y desktop, lhci-20260818-0538-*.json) tras los fixes de SEO (meta description + robots.txt), con SEO 100/100 en las 12 corridas y las cuatro categorias (Performance, Accessibility, Best Practices, SEO) cumpliendo su umbral.}
 }
 
 @misc{credit-taxonomy,
@@ -416,4 +416,32 @@
   year      = {2020},
   doi       = {10.1145/3404397.3404442},
   note      = {Aporte de Fred (F21); respalda el overhead medible del despliegue contenerizado de BIOPET (docs/despliegue/).}
+}
+
+% ===========================================================================
+% Referencias normativas adicionales citadas por el capitulo de metodologia
+% y de trabajos relacionados del informe final (re-agregadas tras el ultimo
+% merge de referencias.bib desde main, que no las incluia). No duplican
+% ninguna entrada anterior; se anaden al final para no reordenar el bloque
+% de Fred ya integrado.
+% ===========================================================================
+
+@techreport{incose2023requirements,
+  author      = {{INCOSE Requirements Working Group}},
+  title       = {{Guide to Writing Requirements}},
+  institution = {International Council on Systems Engineering (INCOSE)},
+  number      = {INCOSE-TP-2010-006-04},
+  year        = {2023},
+  note        = {Version 4, junio 2023. Aplicada en docs/checklists/incose2023-req.md contra los requisitos de docs/requisitos/SRS.md.}
+}
+
+@article{page2021prisma,
+  author  = {Matthew J. Page and Joanne E. McKenzie and Patrick M. Bossuyt and Isabelle Boutron and Tammy C. Hoffmann and Cynthia D. Mulrow and Larissa Shamseer and Jennifer M. Tetzlaff and Elie A. Akl and Sue E. Brennan and Roger Chou and Julie Glanville and Jeremy M. Grimshaw and Asbj{\o}rn Hr{\'o}bjartsson and Manoj M. Lalu and Tianjing Li and Elizabeth W. Loder and Evan Mayo-Wilson and Steve McDonald and Luke A. McGuinness and Lesley A. Stewart and James Thomas and Andrea C. Tricco and Vivian A. Welch and Penny Whiting and David Moher},
+  title   = {The {PRISMA} 2020 statement: an updated guideline for reporting systematic reviews},
+  journal = {BMJ},
+  volume  = {372},
+  pages   = {n71},
+  year    = {2021},
+  doi     = {10.1136/bmj.n71},
+  note    = {Marco de rigor y transparencia adaptado para la revision narrativa de trabajos relacionados de BIOPET (docs/checklists/prisma2020.md), no como metaanalisis clinico.}
 }

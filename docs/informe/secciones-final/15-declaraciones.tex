@@ -1,0 +1,86 @@
+\chapter{Declaraciones}
+\label{cap:declaraciones}
+
+\section{Contribuciones (taxonom\'ia CRediT)}
+
+La matriz completa de roles CRediT~\cite{credit-taxonomy}, verificada
+individuo por individuo contra commits, ramas de trabajo y archivos
+concretos del repositorio (\texttt{git shortlog -sne --all}), vive en
+\texttt{CONTRIBUTORS.md}. Se resume aqu\'i:
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Resumen de contribuciones CRediT por integrante (detalle completo en \texttt{CONTRIBUTORS.md}).}
+  \label{tab:credit-final}
+  \begin{tabular}{@{}p{3.6cm}p{4.4cm}p{5.4cm}@{}}
+    \toprule
+    Integrante & \'Areas principales & Evidencia \\
+    \midrule
+    Mariscal Cabrera, Jaime Josu\'e & Seguridad, autenticaci\'on/autorizaci\'on, cobertura JaCoCo, an\'alisis est\'atico/din\'amico de seguridad, ADR-006/007, CI & \rutalarga{Backend/src/main/java/com/biopet/security/}, \rutalarga{docs/mediciones/sec/}, \rutalarga{.github/workflows/} \\
+    Beltr\'an Montiel, Fred Adri\'an & Procedimientos almacenados, acceso a datos, cach\'e, rendimiento k6, despliegue/GHCR & \rutalarga{db/procs/}, \rutalarga{docs/mediciones/perf/}, \rutalarga{docs/despliegue/} \\
+    Taipe Mora, Zaida Melissa & Frontend Angular, accesibilidad, requisitos (SRS), SUS, Lighthouse, PRISMA & \rutalarga{frontend/src/app/}, \rutalarga{docs/requisitos/}, \rutalarga{docs/mediciones/sus/} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Autores \'unicos de esta entrega}
+
+Los tres autores de BIOPET, con afiliaci\'on institucional \'unica, son:
+Fred Adri\'an Beltr\'an Montiel (\texttt{fbeltranm@uteq.edu.ec}), Jaime
+Josu\'e Mariscal Cabrera (\texttt{jmariscalc@uteq.edu.ec}) y Zaida Melissa
+Taipe Mora (\texttt{ztaipem@uteq.edu.ec}), todos de la Universidad
+T\'ecnica Estatal de Quevedo. Otros colaboradores hist\'oricos que
+participaron en fases anteriores del programa acad\'emico no son autores de
+esta entrega y no se listan como tales en \texttt{CITATION.cff} ni en este
+informe.
+
+\section{\'Etica}
+
+BIOPET usa exclusivamente datos sint\'eticos de desarrollo/prueba y datos
+emp\'iricos de evaluaci\'on generados por herramientas automatizadas
+contra el propio sistema (\texttt{docs/etica/ETHICS.md}). El sistema no
+almacena datos cl\'inicos reales de mascotas ni ha sido operado con datos
+de clientes reales de una cl\'inica veterinaria. La prueba de usabilidad
+SUS se realiz\'o con consentimiento informado firmado por cada uno de los
+18 participantes (plantilla en \texttt{docs/etica/consentimientos/plantilla.md});
+los formularios firmados no se suben al repositorio p\'ublico, y los
+resultados agregados se identifican \'unicamente por c\'odigo de
+participante (P01--P18). Ning\'un documento de este informe ni sus figuras
+reproducen contrase\~nas con valor, JWT completos, valores de cookies,
+encabezados \texttt{Authorization} con valor real, claves privadas ni el
+identificador \texttt{jti} de un token real.
+
+\section{Disponibilidad de datos}
+
+El conjunto de datos de evidencias emp\'iricas (rendimiento, seguridad,
+usabilidad, calidad web, cobertura) est\'a archivado permanentemente en
+Zenodo con DOI \texttt{\doidataset}, y disponible tambi\'en en
+\rutalarga{docs/mediciones/} del repositorio, con procedencia documentada en
+\rutalarga{docs/mediciones/DATA-PROVENANCE.md} y diccionario de variables en
+\rutalarga{docs/mediciones/DATA-DICTIONARY.md}, siguiendo los principios
+FAIR (\rutalarga{docs/checklists/fair.md}).
+
+\section{Disponibilidad del c\'odigo}
+
+El c\'odigo fuente completo (backend, frontend, migraciones, scripts) est\'a
+disponible en \texttt{https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET}
+bajo licencia MIT, y archivado permanentemente en Zenodo con DOI
+\texttt{\doisoftware}. La imagen de contenedor del backend est\'a publicada
+en GHCR con referencia inmutable por \emph{digest}
+(cap\'itulo~\ref{cap:despliegue}).
+
+\section{Conflicto de intereses}
+
+Ninguno de los tres autores declara conflicto de intereses en relaci\'on
+con este trabajo. El proyecto es exclusivamente acad\'emico, sin
+financiamiento externo (\texttt{CONTRIBUTORS.md}, categor\'ia \emph{Funding
+acquisition}: no aplica).
+
+\section{Reproducibilidad}
+
+Todos los resultados cuantitativos de este informe son reproducibles con
+los comandos documentados en el cap\'itulo~\ref{cap:despliegue} y en
+\texttt{docs/informe/README.md}, contra el mismo commit citado en cada
+reporte de evidencia (\texttt{docs/mediciones/*/README.md} y
+\texttt{*.md} de reporte individuales).

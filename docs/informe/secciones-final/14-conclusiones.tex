@@ -1,0 +1,91 @@
+\chapter{Conclusiones}
+\label{cap:conclusiones-final}
+
+\section{Principales logros}
+
+\begin{enumerate}[nosep]
+  \item Un sistema web funcional de gesti\'on veterinaria, con
+    autenticaci\'on y autorizaci\'on por rol/propiedad, CRUD de mascotas, y
+    los m\'odulos de citas, consultas y vacunas de la Unidad~IV,
+    respaldados por seis rutinas almacenadas de PostgreSQL con acceso JPA
+    formal.
+  \item Evidencia emp\'irica multim\'etrica real: 205 pruebas
+    automatizadas (0 fallos), cobertura JaCoCo 91{,}80\,\%/79{,}39\,\% sobre
+    un umbral autom\'atico del 70\,\%, diez corridas de rendimiento con
+    0{,}0\,\% de tasa de error, usabilidad SUS medida con 18 participantes
+    reales, y auditor\'ia de seguridad por tres m\'etodos independientes.
+  \item Despliegue real en producci\'on (Render, HTTPS activo,
+    \emph{healthcheck} \texttt{UP}), imagen de contenedor inmutable
+    publicada en GHCR, y archivado permanente en Zenodo con DOI reales
+    para el software y el conjunto de datos de evidencias.
+  \item Cierre completo (15/15) de las observaciones docentes formales
+    acumuladas a lo largo de tres entregas previas.
+\end{enumerate}
+
+\section{Evidencia}
+
+Cada afirmaci\'on cuantitativa de este informe cita su fuente real en el
+repositorio (archivo, script o reporte espec\'ifico), reproducible por un
+tercero con los comandos documentados en el
+cap\'itulo~\ref{cap:despliegue}. Ninguna cifra se estim\'o ni se
+extrapol\'o de una entrega anterior sin verificaci\'on directa contra la
+evidencia vigente.
+
+\section{Valor del proyecto}
+
+M\'as all\'a de la funcionalidad implementada, el valor distintivo de
+BIOPET, frente al panorama de trabajos relacionados revisado
+(cap\'itulo~\ref{cap:trabajos-relacionados}), es la \textbf{amplitud
+verificable de su evidencia emp\'irica} sobre un mismo artefacto: ning\'un
+trabajo comparado reporta simult\'aneamente cobertura de pruebas,
+rendimiento, usabilidad, calidad web y seguridad por tres \'angulos
+distintos, todo enmarcado bajo ISO/IEC~25010 y con reproducibilidad de
+infraestructura de punta a punta. Esto no implica superioridad sobre esos
+trabajos: implica que la pr\'actica de documentaci\'on y evidencia aplicada
+en BIOPET permite razonar sobre relaciones entre dimensiones de calidad
+(por ejemplo, entre cobertura de pruebas y ausencia de hallazgos de
+seguridad est\'atica) que un estudio de una sola dimensi\'on no puede
+mostrar.
+
+\section{Estado de release}
+
+BIOPET \texttt{v1.0.0} representa el cierre funcional y de evidencia de la
+Entrega Final, pero \textbf{no debe interpretarse como un sistema listo
+para producci\'on industrial sin condiciones}: el despliegue actual usa el
+plan gratuito de Render (con purgado de datos a los 30 d\'ias, sin
+verificaci\'on posible hoy de operaci\'on sostenida m\'as all\'a de ese
+horizonte), el rate limiting de login no es distribuido, no existe
+integraci\'on con un SIEM, y varios requisitos \emph{Should}/\emph{Could}
+heredados de la Entrega~1A permanecen pendientes. El tag Git \texttt{v1.0.0}
+y el GitHub Release correspondiente todav\'ia no se han creado a la fecha
+de cierre de este informe (fuera del alcance expl\'icito de esta tarea de
+redacci\'on).
+
+\section{Trabajo futuro}
+
+\begin{itemize}[nosep]
+  \item Completar el historial cl\'inico longitudinal, el calendario
+    interactivo de citas, la facturaci\'on digital y los reportes
+    exportables (\texttt{REQ-F-013}, \texttt{REQ-F-015}, \texttt{REQ-F-018},
+    \texttt{REQ-F-019}).
+  \item Redactar la narrativa completa del \texttt{README.md} de
+    \texttt{docs/mediciones/lighthouse/} para la corrida mobile+desktop del
+    2026-08-18 (ya archivada con JSON crudos y las cuatro categor\'ias
+    cumplidas), documentando expl\'icitamente el mecanismo de sesi\'on que
+    permiti\'o auditar \texttt{/mascotas} directamente en esa corrida.
+  \item Medir rendimiento bajo carga espec\'ificamente para los endpoints
+    de citas, consultas y vacunas, no solo para el listado de mascotas.
+  \item Migrar a un plan de base de datos persistente (o instrumentar
+    verificaci\'on de respaldo/restauraci\'on) para poder evaluar
+    emp\'iricamente la operaci\'on sostenida m\'as all\'a de 30 d\'ias.
+  \item Evaluar un mecanismo de rate limiting distribuido si el sistema
+    llegara a desplegarse con m\'ultiples r\'eplicas del backend.
+  \item Integrar los logs \texttt{AUTH\_AUDIT} con un sistema de
+    recolecci\'on y alertamiento centralizado (SIEM).
+  \item Documentar el conteo de candidatos evaluados y excluidos del
+    bloque de Jaime en la revisi\'on PRISMA, para homogeneizar el nivel de
+    detalle entre los tres bloques (cap\'itulo~\ref{cap:trabajos-relacionados}).
+  \item Crear el tag Git \texttt{v1.0.0} y el GitHub Release
+    correspondiente, lo que activar\'a autom\'aticamente la publicaci\'on
+    de las etiquetas \texttt{1.0.0}/\texttt{latest} en GHCR.
+\end{itemize}

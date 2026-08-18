@@ -1,0 +1,144 @@
+\chapter{Marco te\'orico}
+\label{cap:marco-teorico}
+
+Este cap\'itulo re\'une, de forma compacta, los conceptos y normas que
+sustentan las decisiones t\'ecnicas y metodol\'ogicas descritas en el resto
+del informe. No repite el detalle de aplicaci\'on de cada concepto a
+BIOPET (eso corresponde a los cap\'itulos~\ref{cap:requisitos} a
+\ref{cap:despliegue}); se limita a definir el marco conceptual usado y a
+se\~nalar d\'onde se aplica.
+
+\section{Ingenier\'ia de requisitos}
+
+La especificaci\'on de requisitos de BIOPET sigue la estructura de
+ISO/IEC/IEEE~29148:2018, est\'andar internacional que define el contenido
+m\'inimo de un documento de Especificaci\'on de Requisitos de Software
+(SRS): descripci\'on global del producto, requisitos funcionales y no
+funcionales enunciados de forma verificable, y trazabilidad expl\'icita
+hacia artefactos derivados (historias de usuario, casos de uso, pruebas).
+La redacci\'on individual de cada requisito sigue adem\'as las
+caracter\'isticas de calidad de la \emph{INCOSE Guide to Writing
+Requirements}~\cite{incose2023requirements} --- en particular
+\emph{Unambiguous} (un requisito admite una \'unica interpretaci\'on) y
+\emph{Verifiable} (existe un m\'etodo objetivo para confirmar su
+cumplimiento) --- aplicadas en el cap\'itulo~\ref{cap:requisitos}. Las
+historias de usuario y los casos de uso son las dos t\'ecnicas
+complementarias de elicitaci\'on/especificaci\'on usadas para descomponer
+cada requisito en un flujo de interacci\'on concreto, seg\'un la pr\'actica
+comparada por Pacheco, Garc\'ia \& Reyes~\cite{pacheco2018requirements}
+(cap\'itulo~\ref{cap:trabajos-relacionados}).
+
+\section{Arquitectura de software: el modelo C4}
+
+El modelo C4 de Brown~\cite{c4-model} describe la arquitectura de un
+sistema en niveles de abstracci\'on progresivos (Contexto, Contenedores,
+Componentes, C\'odigo), cada uno dirigido a una audiencia distinta. BIOPET
+documenta formalmente los niveles de Contenedores y Componentes
+(cap\'itulo~\ref{cap:arquitectura}, secciones~\ref{sec:c4-nivel-2} y
+\ref{sec:c4-nivel-3}), eligiendo ese nivel de detalle porque es el que
+permite razonar sobre las decisiones de despliegue y de dise\~no interno
+del backend sin caer en el detalle de clases individuales, que cambia con
+mayor frecuencia que la arquitectura.
+
+\section{Calidad de software: ISO/IEC~25010}
+
+ISO/IEC~25010:2011~\cite{iso25010-2011} define un modelo de calidad de
+producto de software organizado en ocho caracter\'isticas (Funcionalidad,
+Eficiencia de desempe\~no, Compatibilidad, Usabilidad, Confiabilidad,
+Seguridad, Mantenibilidad, Portabilidad), cada una con subcaracter\'isticas
+espec\'ificas. Se usa en este informe como vocabulario com\'un para
+organizar la evidencia emp\'irica recolectada (cap\'itulo~\ref{cap:pruebas-calidad}),
+siguiendo el enfoque de aplicaci\'on pr\'actica descrito por Estdale \&
+Georgiadou~\cite{estdale2018applying25010}: mapear cada caracter\'istica
+contra evidencia real, declarando expl\'icitamente cu\'ando una
+subcaracter\'istica no fue evaluada, en vez de omitirla silenciosamente
+(secci\'on~\ref{sec:iso25010}).
+
+\section{Arquitectura REST y JWT}
+
+La API de BIOPET sigue el estilo arquitect\'onico REST (\emph{Representational
+State Transfer}) sobre HTTP: recursos identificados por URL, verbos HTTP
+con sem\'antica definida, y respuestas sin estado del lado del servidor
+entre solicitudes. La autenticaci\'on usa JSON Web Token (JWT), formato
+compacto y autocontenido definido en RFC~7519~\cite{rfc7519}: un token
+firmado digitalmente que transporta un conjunto de \emph{claims}
+(declaraciones) verificables sin necesidad de una consulta adicional al
+servidor. BIOPET usa JWT firmado con HMAC-SHA256, transportado en cookies
+en vez de en el cuerpo de la respuesta o en \texttt{localStorage}
+(cap\'itulo~\ref{cap:seguridad}), decisi\'on de arquitectura registrada en
+ADR-006. Los errores de la API siguen RFC~7807~\cite{rfc7807}
+(\emph{Problem Details for HTTP APIs}), formato est\'andar para comunicar
+fallos HTTP de forma estructurada y legible por m\'aquina.
+
+\section{Seguridad de aplicaciones web: OWASP Top~10}
+
+El OWASP Top~10~\cite{owasp-top10} es la clasificaci\'on de referencia de
+la industria para los riesgos de seguridad m\'as cr\'iticos en aplicaciones
+web (control de acceso roto, fallas criptogr\'aficas, inyecci\'on,
+configuraci\'on de seguridad, fallas de identificaci\'on/autenticaci\'on,
+fallas de registro/monitoreo, entre otros). BIOPET usa esta clasificaci\'on
+como marco de auditor\'ia manual (cap\'itulo~\ref{cap:seguridad}),
+complementada con an\'alisis din\'amico (OWASP ZAP) y est\'atico (SpotBugs
++ Find Security Bugs), siguiendo una l\'ogica de defensa en profundidad:
+ning\'un m\'etodo \'unico de auditor\'ia se considera suficiente por s\'i
+solo.
+
+\section{Acceso a datos: JPA y procedimientos almacenados}
+
+Spring Data JPA (\emph{Java Persistence API}) provee un mapeo
+objeto-relacional (ORM) que traduce operaciones sobre entidades Java a
+sentencias SQL generadas autom\'aticamente, adecuado para operaciones CRUD
+simples sobre una \'unica tabla. Para operaciones que involucran l\'ogica
+de negocio, validaci\'on cruzada entre tablas o agregaciones complejas,
+BIOPET usa procedimientos y funciones almacenados de PostgreSQL, invocados
+desde el backend mediante \texttt{@Procedure}/\texttt{@NamedStoredProcedureQuery}
+de Spring Data JPA (secci\'on~\ref{sec:acceso-jpa-formal}). Esta
+estrategia h\'ibrida sigue la misma l\'ogica documentada por Zmaranda et
+al.~\cite{zmaranda2020crud}: dejar que cada mecanismo de acceso a datos
+resuelva el tipo de operaci\'on para el que fue dise\~nado, en vez de
+forzar toda la l\'ogica a trav\'es de un \'unico mecanismo. Esta decisi\'on
+es consistente con evidencia emp\'irica comparativa adicional: SQL nativo
+supera en tiempo de ejecuci\'on a las consultas generadas por ORM tanto en
+C\#~\cite{nowicki2022comparative} como, v\'ia JDBC directo, en
+Java~\cite{zuchnik2021comparative}, y la implementaci\'on de la capa de
+persistencia tiene un impacto medible sobre el rendimiento general de la
+aplicaci\'on~\cite{siebyla2020impact}. La comparaci\'on de rendimiento
+entre pilas REST equivalentes (Spring~Boot y .NET~Core), relevante para la
+decisi\'on de arquitectura registrada en ADR-002, sigue tambi\'en una
+metodolog\'ia de \emph{benchmarking} comparable a la usada
+aqu\'i~\cite{dhalla2021performance,godinho2024performance}.
+
+\section{Patr\'on \emph{cache-aside}}
+
+El patr\'on \emph{cache-aside} (tambi\'en llamado \emph{lazy loading})
+consiste en que la aplicaci\'on consulta primero la cach\'e; si el dato no
+est\'a presente (\emph{cache miss}), lo obtiene del almac\'en de datos
+primario y lo escribe en la cach\'e para lecturas futuras; en cada
+escritura sobre el dato primario, la entrada de cach\'e correspondiente se
+invalida. BIOPET implementa este patr\'on de forma declarativa con las
+anotaciones \texttt{@Cacheable} (lectura) y \texttt{@CacheEvict}
+(invalidaci\'on) de Spring sobre Redis/Valkey
+(secci\'on~\ref{sec:rendimiento-final}, listado~\ref{lst:cache-aside}),
+respaldado por trabajos previos sobre la efectividad de esta estrategia en
+acceso a datos relacionales~\cite{zulfa2020caching}. La configuraci\'on
+del tiempo de vida (TTL) de cada entrada de cach\'e, externalizada por
+variable de entorno en BIOPET (\texttt{CACHE\_TTL\_MS}), sigue la misma
+recomendaci\'on de an\'alisis a gran escala de cl\'usteres de cach\'e en
+memoria: la configuraci\'on del TTL es un factor clave del comportamiento
+observado~\cite{yang2021large}. El despliegue contenerizado de BIOPET
+(cap\'itulo~\ref{cap:despliegue}) tiene, como cualquier despliegue en
+contenedores, un \emph{overhead} medible seg\'un su
+configuraci\'on~\cite{ghatrehsamani2020art}.
+
+\section{S\'intesis}
+
+Los conceptos anteriores no se aplican de forma aislada: la ingenier\'ia
+de requisitos (29148/INCOSE) alimenta la matriz de trazabilidad
+(cap\'itulo~\ref{cap:trazabilidad-final}); el modelo C4 documenta la
+arquitectura que implementa esos requisitos; ISO/IEC~25010 organiza la
+evidencia emp\'irica que verifica si esa arquitectura cumple sus atributos
+de calidad; y REST/JWT/OWASP/JPA/\emph{cache-aside} son las decisiones de
+implementaci\'on concretas evaluadas por esa evidencia. Este marco
+com\'un es lo que permite, en el cap\'itulo~\ref{cap:discusion}, discutir
+los resultados de BIOPET en un mismo vocabulario en vez de como hallazgos
+inconexos.

@@ -1,0 +1,184 @@
+\chapter{Dise\~no y arquitectura}
+\label{cap:arquitectura}
+
+Este cap\'itulo integra la documentaci\'on arquitect\'onica versionada en
+\texttt{docs/diagrams/} (modelo C4~\cite{c4-model}) y las decisiones de
+arquitectura relevantes (\texttt{docs/adr/}), actualizada para reflejar el
+estado v1.0.0 (PostgreSQL~18/Valkey~8 en producci\'on, acceso JPA formal a
+procedimientos almacenados).
+
+\section{Arquitectura general}
+
+BIOPET sigue una arquitectura de tres niveles: un \emph{frontend} Angular~17
+(aplicaci\'on de p\'agina \'unica, componentes \emph{standalone}), un
+\emph{backend} Spring~Boot~3.2 sobre Java~21 que expone una API
+REST~\cite{spring-boot-docs}, una base de datos relacional
+PostgreSQL~\cite{postgresql-docs} (16 en desarrollo local, 18 en
+producci\'on) gestionada con Flyway (migraciones \texttt{V1} a
+\texttt{V6}), y Redis/Valkey~\cite{redis-docs} (7 en desarrollo, Valkey~8
+en producci\'on) usado tanto para la lista negra de tokens JWT revocados
+como para la cach\'e de lecturas de mascotas. Todo el sistema se
+levanta mediante Docker Compose y un \texttt{Makefile} con un \'unico
+comando reproducible (\texttt{make up}).
+
+\section{C4 Nivel 2 --- Contenedores}
+\label{sec:c4-nivel-2}
+
+El diagrama de contenedores (\texttt{docs/diagrams/c4-contenedores/})
+describe los cuatro contenedores del sistema: el frontend Angular, el
+backend Spring Boot, PostgreSQL y Redis/Valkey, junto con los protocolos
+reales entre ellos (HTTPS/JSON con cookies entre frontend y backend; JDBC
+entre backend y PostgreSQL; el cliente Redis de Spring Data entre backend
+y Redis/Valkey).
+
+% EVIDENCIA-COMPARTIDA-C4-L2
+% Ruta esperada: figuras/compartidas/c4-contenedores.png
+\evidencia{figuras/compartidas/c4-contenedores.png}%
+{Diagrama C4 Nivel 2 (contenedores) de BIOPET: frontend, backend, PostgreSQL y Redis/Valkey, con los protocolos reales entre ellos.}%
+{fig:c4-nivel-2-final}
+
+\section{C4 Nivel 3 --- Componentes del backend}
+\label{sec:c4-nivel-3}
+
+El diagrama de componentes del backend fue elaborado mediante inspecci\'on
+directa del c\'odigo fuente (constructores, llamadas directas,
+configuraci\'on de Spring), no por convenci\'on de nombres. A los
+componentes ya documentados en la Tercera Entrega (controladores de
+autenticaci\'on, mascotas y usuario; servicios de seguridad; manejo de
+errores; persistencia; infraestructura del servidor) se suman, en v1.0.0,
+los controladores de la Unidad~IV: \texttt{CitaController},
+\texttt{ConsultaController}, \texttt{VacunaController} y
+\texttt{ExternalApiController}, junto con el repositorio formal de acceso a
+procedimientos almacenados.
+
+% EVIDENCIA-JAIME-C4-L3
+% Ruta esperada: figuras/jaime/c4-componentes-backend.png
+\evidencia{figuras/jaime/c4-componentes-backend.png}%
+{Diagrama C4 Nivel 3 (componentes) del backend de BIOPET.}%
+{fig:c4-nivel-3-final}
+
+\section{Acceso JPA formal a procedimientos almacenados}
+\label{sec:acceso-jpa-formal}
+
+Las seis rutinas de \texttt{db/procs/} son objetos PostgreSQL de tipo
+\texttt{PROCEDURE}, invocadas desde el backend mediante
+\texttt{@Procedure}/\texttt{@NamedStoredProcedureQuery} de Spring Data JPA,
+en vez de \texttt{@Query(nativeQuery=true)} plano (usado en la Tercera
+Entrega solo para la primera rutina). Las cuatro rutinas con prefijo
+\texttt{fn\_*} originalmente eran \texttt{FUNCTION}; se reclasificaron a
+\texttt{PROCEDURE} (conservando el nombre por compatibilidad) para permitir
+esa invocaci\'on formal.
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Cat\'alogo de las seis rutinas almacenadas de BIOPET (fuente: \texttt{docs/basedatos/CATALOGOSP.md}).}
+  \label{tab:catalogo-sp}
+  \begin{tabular}{@{}p{4.0cm}p{2.2cm}p{6.6cm}@{}}
+    \toprule
+    Rutina & Categor\'ia & Prop\'osito \\
+    \midrule
+    \texttt{fn\_resumen\_mascotas\_por\_especie} & Agregado & Resumen de mascotas activas por especie, filtrable por due\~no \\
+    \texttt{fn\_historial\_clinico\_mascota} & Multi-tabla & Historial cl\'inico consolidado: datos, due\~no, conteos de consultas/citas, \'ultima consulta, \'ultima y pr\'oxima vacuna \\
+    \texttt{fn\_reporte\_dashboard} & Reporte & Indicadores de dashboard para un rango de fechas \\
+    \texttt{fn\_siguiente\_numero\_ficha} & C\'odigo secuencial & Siguiente n\'umero de ficha \texttt{PREFIJO-NNNNNN} \\
+    \texttt{sp\_actualizar\_estado\_citas\_masivas} & Actualizaci\'on masiva & \texttt{UPDATE} controlado del estado de citas por veterinario/fecha l\'imite \\
+    \texttt{sp\_registrar\_consulta\_validada} & Validaci\'on cruzada & Registra una consulta solo si la mascota y el veterinario son v\'alidos y activos \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Estrategia de migraci\'on sin romper compatibilidad.} La
+reclasificaci\'on no se aplic\'o reescribiendo la migraci\'on Flyway
+original (\texttt{V5\_\_procedimientos\_biopet.sql}, que pudo haberse
+aplicado ya en bases persistentes: reescribirla habr\'ia producido
+\texttt{checksum mismatch}). En su lugar, una migraci\'on nueva y aditiva
+(\texttt{V6\_\_formalizar\_procedimientos\_jpa.sql}) hace \texttt{DROP
+FUNCTION IF EXISTS} de las cuatro rutinas creadas por \texttt{V5} y las
+vuelve a crear como \texttt{PROCEDURE} con su firma final. Flyway aplica
+\texttt{V1} a \texttt{V6} en orden sobre un checkout nuevo, y solo
+\texttt{V6} sobre una base que ya tenga \texttt{V1--V5} aplicadas.
+
+% EVIDENCIA-FRED-STOREPROCEDURE
+% Ruta esperada: figuras/fred/StoreProceduro-AccesoHibrido.png
+\evidencia{figuras/fred/StoreProceduro-AccesoHibrido.png}%
+{Acceso h\'ibrido a procedimientos almacenados: invocaci\'on formal JPA sobre las rutinas reclasificadas como \texttt{PROCEDURE}.}%
+{fig:sp-acceso-hibrido-final}
+
+% EVIDENCIA-FRED-POSTMAN-SP
+% Ruta esperada: figuras/fred/Postman-STOREPROCEDURE.png
+\evidencia{figuras/fred/Postman-STOREPROCEDURE.png}%
+{Invocaci\'on real de una rutina almacenada verificada desde Postman.}%
+{fig:postman-sp-final}
+
+\section{Decisiones de arquitectura relevantes (ADR)}
+\label{sec:adr-relevantes-final}
+
+\begin{table}[H]
+  \centering
+  \caption{ADR vigentes del repositorio.}
+  \label{tab:adr-relevantes-final}
+  \begin{tabular}{@{}p{2cm}p{9.5cm}p{2.5cm}@{}}
+    \toprule
+    ADR & Decisi\'on & Estado \\
+    \midrule
+    ADR-002 & Migraci\'on de la pila de backend de ASP.NET Core~8 a Java~21 / Spring Boot~3.2. & Aceptado \\
+    ADR-003 & Revocaci\'on de JWT mediante lista negra en Redis, indexada por \texttt{jti}. & Aceptado \\
+    ADR-004 & Estrategia de base de datos reproducible: Flyway como fuente de verdad del esquema, m\'as scripts de inicializaci\'on de Docker con privilegios m\'inimos. & Aceptado \\
+    ADR-005 & Reproducibilidad del despliegue: \texttt{Makefile} y pinning de im\'agenes por digest \texttt{sha256}. & Aceptado \\
+    ADR-006 & Decisiones de autenticaci\'on y seguridad: JWT por cookies, claims, revocaci\'on, rate limiting, cabeceras, TLS. & Aceptado \\
+    ADR-007 & Acceso formal JPA a procedimientos almacenados de PostgreSQL (\texttt{@Procedure}/\texttt{@NamedStoredProcedureQuery}), reclasificaci\'on \texttt{fn\_*} a \texttt{PROCEDURE}. & Aceptado \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+ADR-001 (selecci\'on inicial de ASP.NET Core~8 en la Entrega~1A) qued\'o
+formalmente superado por ADR-002 y se conserva \'unicamente como registro
+hist\'orico.
+
+\section{Patrones y decisiones de seguridad relevantes al dise\~no}
+
+El patr\'on \emph{cache-aside} declarativo de Spring
+(\texttt{@Cacheable}/\texttt{@CacheEvict} en \texttt{MascotaService})
+respalda las lecturas de \texttt{GET /api/mascotas}, con Redis/Valkey como
+almac\'en de cach\'e. La autenticaci\'on usa JWT firmado con HMAC-SHA256,
+transportado en cookies \texttt{HttpOnly}+\texttt{Secure}+\texttt{SameSite=Strict},
+con revocaci\'on real v\'ia lista negra en Redis y rate limiting de login
+en memoria (detalle completo en el cap\'itulo~\ref{cap:seguridad}). El
+formato uniforme de error sigue RFC~7807 (\texttt{ProblemDetail})~\cite{rfc7807}.
+
+\section{ISO/IEC~25010: marco de calidad}
+\label{sec:iso25010}
+
+\texttt{docs/arquitectura/ISO-25010.md} mapea las ocho caracter\'isticas de
+calidad de ISO/IEC~25010:2011~\cite{iso25010-2011} (Funcionalidad,
+Eficiencia de desempe\~no, Compatibilidad, Usabilidad, Confiabilidad,
+Seguridad, Mantenibilidad, Portabilidad) contra evidencia real de BIOPET,
+siguiendo el enfoque de aplicaci\'on pr\'actica de Estdale \&
+Georgiadou~\cite{estdale2018applying25010} (secci\'on~\ref{cap:trabajos-relacionados}).
+Cada subcaracter\'istica se declara \textbf{evaluada} (con ruta de
+evidencia citada) o \textbf{no evaluada directamente} cuando no existe
+medici\'on espec\'ifica --- por ejemplo, \emph{Interoperability} m\'as
+all\'a de la API REST documentada con OpenAPI, o \emph{Adaptability} m\'as
+all\'a de la configuraci\'on externalizada por variables de entorno.
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Mapeo resumido de ISO/IEC~25010 sobre evidencia de BIOPET.}
+  \label{tab:iso25010-resumen}
+  \begin{tabular}{@{}p{3.4cm}p{9.4cm}@{}}
+    \toprule
+    Caracter\'istica & Evidencia principal \\
+    \midrule
+    Funcionalidad (\emph{Functional Suitability}) & Matriz de trazabilidad, SRS, 205 pruebas automatizadas \\
+    Eficiencia de desempe\~no & 10 corridas k6 (\texttt{docs/mediciones/perf/REPORT.md}) \\
+    Compatibilidad & Docker Compose multi-servicio, API REST documentada con OpenAPI \\
+    Usabilidad & SUS (n=18), atributos ARIA verificados en c\'odigo \\
+    Confiabilidad & 0{,}0\,\% tasa de error en las 10 corridas k6, healthcheck de producci\'on \texttt{UP} \\
+    Seguridad & OWASP Top~10 manual, ZAP Baseline, SpotBugs/Find Security Bugs (cap\'itulo~\ref{cap:seguridad}) \\
+    Mantenibilidad & Cobertura JaCoCo 91{,}80\,\%/79{,}39\,\%, CI con 6 jobs \\
+    Portabilidad & Im\'agenes Docker por digest \texttt{sha256}, despliegue reproducible en Render \\
+    \bottomrule
+  \end{tabular}
+\end{table}

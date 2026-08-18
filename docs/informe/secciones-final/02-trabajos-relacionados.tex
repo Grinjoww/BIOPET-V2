@@ -1,0 +1,245 @@
+\chapter{Trabajos relacionados}
+\label{cap:trabajos-relacionados}
+
+Este cap\'itulo integra la revisi\'on de trabajos relacionados realizada por
+Zaida (bloque requisitos/usabilidad/dominio veterinario), Jaime (bloque
+arquitectura/seguridad/rendimiento/calidad) y Fred (bloque arquitectura de
+datos/rendimiento), consolidada y cerrada con un protocolo inspirado en
+PRISMA~2020~\cite{page2021prisma} en \texttt{docs/checklists/prisma2020.md}.
+PRISMA fue dise\~nado para revisiones sistem\'aticas de intervenciones
+sanitarias; aqu\'i se adapta expl\'icitamente como marco de \textbf{rigor y
+transparencia} para una revisi\'on narrativa de trabajos relacionados de
+ingenier\'ia de software, no como un metaan\'alisis cl\'inico --- varios
+\'items orientados a estad\'istica de efectos cl\'inicos se marcan
+\emph{No aplica} en el checklist original en vez de forzarlos.
+
+\section{Criterios de elegibilidad y fuentes}
+
+\textbf{Inclusi\'on:} estudio con DOI o enlace verificable; publicado en
+fuente acad\'emica o en una revista/\emph{proceedings} con revisi\'on por
+pares (o norma/documento oficial de industria sin DOI, como ISO u OWASP);
+relevante a al menos uno de los tres bloques tem\'aticos (requisitos,
+usabilidad o dominio veterinario --- Zaida; arquitectura, seguridad,
+rendimiento o calidad --- Jaime; arquitectura de datos/rendimiento ---
+Fred). \textbf{Exclusi\'on:} blogs comerciales sin revisi\'on por pares,
+p\'aginas de venta de software, trabajos sin autor o fecha verificable.
+\textbf{Fuentes consultadas:} IEEE Xplore, ACM Digital Library, Scopus y
+Google Scholar (bloque Zaida, b\'usqueda 2026-08-17); auditor\'ia de la
+bibliograf\'ia ya existente m\'as verificaci\'on dirigida contra Crossref y
+p\'aginas oficiales de editorial/conferencia/norma (bloque Jaime, misma
+fecha); verificaci\'on dirigida de DOI reales, uno a uno, con un filtro
+temporal expl\'icito de 2020--2026 (bloque Fred, 2026-08-17). El proceso de
+selecci\'on fue independiente por bloque (cada autor filtr\'o su propio
+tema), sin doble revisor cruzado por estudio --- limitaci\'on declarada
+expl\'icitamente, no oculta.
+
+De un total de 15 candidatos revisados por Zaida (12 excluidos por no
+cumplir el criterio de elegibilidad), una verificaci\'on dirigida de 4
+candidatos por Jaime, y 13 candidatos por DOI verificados uno a uno por
+Fred (2 descartados: uno por fuera del rango temporal 2020--2026, otro por
+fuente inaccesible con HTTP~403), el conjunto final incluye \textbf{10
+estudios}, cumpliendo la meta original de $\geq$8--9. Los tres bloques
+(Zaida, Jaime, Fred) est\'an integrados en el checklist PRISMA cerrado
+(\texttt{docs/checklists/prisma2020.md}, cierre 2026-08-18) y en el
+diagrama de flujo regenerado que se muestra en la
+figura~\ref{fig:prisma-flow}.
+
+% EVIDENCIA-COMPARTIDA-PRISMA
+% Ruta esperada: figuras/zaida/06-prisma-flow-diagram.png
+\evidencia{figuras/zaida/06-prisma-flow-diagram.png}%
+{Diagrama de flujo PRISMA de identificaci\'on y selecci\'on de estudios (regenerado 2026-08-18). Bloque Zaida completamente cuantificado (15 identificados $\to$ 12 excluidos $\to$ 3 incluidos); bloque Fred completamente cuantificado (13 candidatos por DOI $\to$ 2 excluidos $\to$ 3 incluidos); bloque Jaime con el conteo final de incluidos (4), sin registro de candidatos excluidos (\'unico gap declarado que persiste en el diagrama, se\~nalado con l\'inea punteada).}%
+{fig:prisma-flow}
+
+\section{Estudios incluidos}
+
+\subsection{Pacheco, Garc\'ia \& Reyes (2018) --- T\'ecnicas de elicitaci\'on de requisitos}
+Revisi\'on sistem\'atica sobre 140 estudios (1993--2015) que identifica las
+entrevistas estructuradas como la t\'ecnica de elicitaci\'on de requisitos
+con mayor evidencia emp\'irica de madurez y efectividad~\cite{pacheco2018requirements}.
+El SRS de BIOPET (\texttt{docs/requisitos/SRS.md}) documenta requisitos ya
+elicitados (historias de usuario, casos de uso, patr\'on ISO/IEC/IEEE~29148)
+pero no declara expl\'icitamente qu\'e t\'ecnica se us\'o para llegar a
+ellos; a diferencia de Pacheco et al., que comparan t\'ecnicas entre s\'i,
+BIOPET aplica una t\'ecnica ya elegida y la documenta con trazabilidad
+formal completa (SRS~$\to$~HU~$\to$~CU~$\to$~matriz), sin reportar esa
+comparaci\'on.
+
+\subsection{Bangor, Kortum \& Miller (2008) --- Benchmark emp\'irico del SUS}
+Analiza aproximadamente diez a\~nos de datos SUS sobre cientos de
+productos, estableciendo un puntaje medio de referencia de la industria de
+68/100 (``sobre el promedio'') y 80{,}3 como umbral de
+``excelente''~\cite{bangor2008sus}. Este estudio es la fuente del
+benchmark contra el que se interpreta el puntaje SUS propio de BIOPET
+(secci\'on~\ref{sec:sus-final}): BIOPET no construye un benchmark nuevo,
+usa el ya existente para interpretar una medici\'on real sobre un sistema
+concreto.
+
+\subsection{Cede\~no Ochoa, Catuto Murillo \& Rodas-Silva (2021) --- Aplicaciones web para cl\'inicas veterinarias en Ecuador}
+Caso de estudio sobre el desarrollo de una aplicaci\'on web para gesti\'on
+de una cl\'inica veterinaria ecuatoriana, documentando la mejora
+cualitativa de procesos administrativos al migrar de manejo manual a una
+plataforma centralizada~\cite{cedeno2021veterinaria}. Es el trabajo con
+contexto pa\'is m\'as cercano encontrado y verificado. A diferencia de
+BIOPET, no reporta una evaluaci\'on emp\'irica multim\'etrica del sistema
+resultante (sin cobertura de pruebas, rendimiento bajo carga, seguridad
+auditada ni usabilidad medida con instrumento estandarizado).
+
+\subsection{Rodr\'iguez, Llerena, Guevara, Baren \& Castro (2024) --- OSCRUM}
+Estudio de caso sobre el desarrollo de SysVet, un sistema web de c\'odigo
+abierto para gesti\'on veterinaria, usando la metodolog\'ia \'agil
+OSCRUM~\cite{rodriguez2024oscrum}. Comparte con BIOPET el inter\'es en la
+reproducibilidad del artefacto (c\'odigo abierto, proceso documentado),
+pero documenta el \emph{proceso} de desarrollo \'agil, no una evaluaci\'on
+emp\'irica multim\'etrica del \emph{producto} resultante.
+
+\subsection{Putri, Hadi \& Ramdani (2017) --- Pruebas de rendimiento de un sistema web acad\'emico}
+Caracteriza cuantitativamente el rendimiento de un sistema de admisi\'on
+de estudiantes bajo carga, mediante \emph{benchmarking} t\'ecnico contra el
+sistema real~\cite{putri2017perftesting}. Es metodol\'ogicamente an\'alogo a
+la evaluaci\'on de rendimiento de BIOPET con k6
+(secci\'on~\ref{sec:rendimiento-final}): ambos son estudios de
+\emph{benchmarking} de un artefacto web real en un entorno acad\'emico, sin
+dise\~no experimental controlado. A diferencia de BIOPET, Putri et al.
+miden \'unicamente rendimiento, sin seguridad, usabilidad ni cobertura de
+pruebas.
+
+\subsection{Yang et al. (2026) --- Vulnerabilidades en implementaciones de JWT (NDSS)}
+Auditor\'ia sistem\'atica de 43 implementaciones reales de JSON Web Token
+en diez lenguajes, con una herramienta de \emph{fuzzing} dirigido
+(JWTeemo), que descubre 31 vulnerabilidades previamente desconocidas (20
+con CVE asignado)~\cite{yang2026tokentimebomb}. BIOPET usa JWT como
+mecanismo central de autenticaci\'on (cap\'itulo~\ref{cap:seguridad}); este
+trabajo es la referencia acad\'emica m\'as actual disponible sobre los
+riesgos reales de esa misma tecnolog\'ia. A diferencia de Yang et al., que
+auditan \emph{implementaciones/librer\'ias} gen\'ericas, BIOPET no reclama
+haber descubierto vulnerabilidades JWT como contribuci\'on cient\'ifica:
+aporta evidencia de que una aplicaci\'on concreta que usa JWT fue auditada
+con m\'ultiples t\'ecnicas y no present\'o los patrones de mayor severidad
+detectables por ellas, sin afirmar estar ``libre'' de la categor\'ia de
+vulnerabilidades de \emph{fuzzing} dirigido a la librer\'ia subyacente
+(\texttt{jjwt}), que queda expl\'icitamente fuera del alcance de la
+auditor\'ia de BIOPET.
+
+\subsection{Estdale \& Georgiadou (2018) --- Aplicaci\'on pr\'actica de ISO/IEC~25010}
+Discute la dificultad pr\'actica de aplicar el modelo de calidad
+ISO/IEC~25010 a un producto de software real, m\'as all\'a de la cita
+te\'orica de la norma~\cite{estdale2018applying25010}. Es paralelo
+metodol\'ogico directo al mapeo realizado en
+\texttt{docs/arquitectura/ISO-25010.md} (secci\'on~\ref{sec:iso25010}),
+donde se mapean las ocho caracter\'isticas de ISO/IEC~25010:2011 contra
+evidencia real de BIOPET, declarando honestamente ``no evaluada
+directamente'' cuando no existe evidencia. A diferencia del trabajo de
+Estdale \& Georgiadou, que discute el modelo en general, BIOPET aporta un
+mapeo concreto con rutas de evidencia verificables por cada
+subcaracter\'istica.
+
+\subsection{Bucao, Quinones, Abong, Penuela \& Sun (2023) --- VETelgeuse}
+Sistema de gesti\'on web y m\'ovil para cl\'inicas veterinarias peque\~nas y
+medianas, evaluado con el cuestionario de usabilidad USE sobre 30
+usuarios reales~\cite{bucao2023vetelgeuse}. Confirma, junto con Cede\~no
+Ochoa et al. y Llaneta et al., que el dominio de BIOPET (gesti\'on
+veterinaria web) tiene evidencia acad\'emica real m\'as all\'a de un
+\'unico estudio. A diferencia de BIOPET, su validaci\'on emp\'irica se
+limita a usabilidad, sin cobertura de pruebas, rendimiento bajo carga ni
+auditor\'ia de seguridad.
+
+\subsection{Llaneta, Guelas, Labanan, Mercado \& Sasis (2022) --- TerraVet}
+Propone un \emph{framework} web y m\'ovil para conectar due\~nos de
+mascotas con cl\'inicas veterinarias, publicado en ICIST~2022 (ACM), con
+una evaluaci\'on preliminar de la propuesta~\cite{llaneta2022terravet}. Es
+paralelo de dominio y de arquitectura web+m\'ovil a BIOPET, pero no eval\'ua
+rendimiento bajo carga ni despliegue en la nube, ambos reportados en este
+informe (cap\'itulos~\ref{cap:pruebas-calidad} y \ref{cap:despliegue}).
+
+\subsection{Zmaranda, Pop-Fele, Gyor\"odi, Gyor\"odi \& Pecherle (2020) --- CRUD con ORM vs. SQL directo}
+Compara el tiempo de ejecuci\'on de operaciones CRUD usando mapeadores
+objeto-relacionales (ORM) de .NET frente a acceso directo a
+datos~\cite{zmaranda2020crud}. Respalda directamente la decisi\'on de
+arquitectura de BIOPET de usar un \textbf{acceso h\'ibrido}: Spring Data
+JPA para operaciones CRUD simples y SQL nativo en procedimientos
+almacenados para consultas complejas y validaciones cruzadas
+(secci\'on~\ref{sec:acceso-jpa-formal}). A diferencia de BIOPET, el estudio
+de Zmaranda et al. se limita a una sola pila (.NET) y no eval\'ua
+procedimientos almacenados ni agregaciones equivalentes a
+\texttt{fn\_reporte\_dashboard} o \texttt{fn\_historial\_clinico\_mascota}.
+
+\section{S\'intesis comparativa}
+\label{sec:sintesis-trabajos-relacionados}
+
+\begin{table}[H]
+  \centering
+  \tiny
+  \caption{S\'intesis comparativa de los diez estudios incluidos frente a BIOPET.}
+  \label{tab:sintesis-relacionados}
+  \begin{tabular}{@{}p{2.4cm}p{2.2cm}p{3.0cm}p{4.8cm}@{}}
+    \toprule
+    Estudio & Dominio & Evaluaci\'on reportada & Diferencia principal frente a BIOPET \\
+    \midrule
+    Pacheco et al. (2018) & Elicitaci\'on de requisitos & Madurez/efectividad comparada de t\'ecnicas & BIOPET no compara t\'ecnicas; aplica una y la traza formalmente \\
+    Bangor et al. (2008) & Usabilidad (SUS) & Benchmark de interpretaci\'on (68/80{,}3) & BIOPET usa el benchmark, no construye uno nuevo \\
+    Cede\~no Ochoa et al. (2021) & Gesti\'on veterinaria (Ecuador) & Mejora cualitativa de procesos & Sin evaluaci\'on multim\'etrica; BIOPET s\'i \\
+    Rodr\'iguez et al. (2024) --- OSCRUM & Gesti\'on veterinaria, c\'odigo abierto & Proceso \'agil documentado & Documenta proceso, no eval\'ua emp\'iricamente el producto \\
+    Putri et al. (2017) & Sistema web acad\'emico & Rendimiento bajo carga & Solo rendimiento; sin seguridad, usabilidad ni cobertura \\
+    Yang et al. (2026) --- NDSS & Seguridad JWT (multi-lenguaje) & Vulnerabilidades descubiertas & Audita librer\'ias gen\'ericas, no una aplicaci\'on completa \\
+    Estdale \& Georgiadou (2018) & Calidad de software (ISO/IEC~25010) & Discusi\'on de evidenciabilidad & Gu\'ia general, no un mapeo concreto enlazado a evidencia \\
+    Bucao et al. (2023) --- VETelgeuse & Gesti\'on veterinaria (Filipinas) & Usabilidad (USE, n=30) & Solo usabilidad; sin rendimiento, seguridad ni cobertura \\
+    Llaneta et al. (2022) --- TerraVet & Gesti\'on veterinaria (marco web+m\'ovil) & Propuesta de \emph{framework}, evaluaci\'on preliminar & No eval\'ua rendimiento ni despliegue en la nube \\
+    Zmaranda et al. (2020) & Acceso a datos (ORM vs. SQL directo) & Tiempos de operaciones CRUD & Limitado a .NET; no cubre procedimientos almacenados ni agregaciones \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Tomados individualmente, los diez estudios eval\'uan siempre \textbf{una
+sola dimensi\'on a la vez}: elicitaci\'on de requisitos sin evaluar el
+producto resultante, un benchmark de usabilidad sin aplicarlo a un sistema
+concreto, el dominio veterinario sin evaluaci\'on multim\'etrica (tres
+veces: Cede\~no Ochoa, Bucao, Llaneta), un proceso \'agil sin evaluaci\'on
+emp\'irica del producto, rendimiento sin seguridad ni usabilidad, seguridad
+JWT gen\'erica sin evaluar una aplicaci\'on completa, el modelo de calidad
+discutido sin aplicarlo con evidencia enlazada a un caso real, o
+rendimiento de acceso a datos limitado a una sola pila tecnol\'ogica.
+BIOPET se posiciona frente a estos diez trabajos como una evaluaci\'on
+\textbf{multim\'etrica} de un \'unico artefacto: cobertura de pruebas,
+rendimiento, usabilidad, calidad web, y seguridad por tres \'angulos
+distintos (revisi\'on manual OWASP, an\'alisis din\'amico ZAP, an\'alisis
+est\'atico SpotBugs/Find Security Bugs), todas enmarcadas bajo
+ISO/IEC~25010 como vocabulario com\'un. Con la incorporaci\'on del bloque
+de Fred, el dominio veterinario exacto de BIOPET pasa de tener un solo
+estudio de contraste (Cede\~no Ochoa et al.) a tres (sumando Bucao et al. y
+Llaneta et al.), aunque ninguno de los tres combina el contexto
+ecuatoriano con una evaluaci\'on multim\'etrica --- esa combinaci\'on
+espec\'ifica sigue sin evidencia externa directa. No se afirma que BIOPET
+sea metodol\'ogicamente superior a ninguno de estos trabajos: no existe una
+comparaci\'on emp\'irica directa que lo demuestre; la diferencia se\~nalada
+es de \textbf{amplitud de la evidencia reportada} sobre un mismo sistema,
+no de calidad relativa del artefacto.
+
+\section{Limitaciones de esta revisi\'on}
+\label{sec:limitaciones-trabajos-relacionados}
+
+\begin{itemize}[nosep]
+  \item Solo se incluyeron fuentes en espa\~nol e ingl\'es; podr\'ian existir
+    estudios relevantes en otros idiomas no cubiertos.
+  \item El bloque de Jaime no document\'o el conteo de candidatos evaluados
+    y excluidos (solo el resultado final de 4 incluidos), a diferencia de
+    los bloques de Zaida (15 candidatos, 12 exclusiones documentadas) y de
+    Fred (13 candidatos por DOI, 2 descartados con motivo individual);
+    este gap se se\~nala expl\'icitamente con l\'inea punteada en el
+    diagrama de flujo regenerado (figura~\ref{fig:prisma-flow}), \'unico
+    bloque que a\'un no est\'a completamente cuantificado.
+  \item La selecci\'on no tuvo un segundo revisor independiente por
+    estudio: cada bloque fue filtrado por una sola persona sobre su propio
+    tema, sin validaci\'on cruzada entre integrantes --- recurso real de un
+    equipo de tres personas en un Proyecto Fin de Curso, declarado
+    expl\'icitamente en vez de omitirse. El bloque de Fred aplic\'o,
+    adem\'as, un filtro temporal expl\'icito (2020--2026) que los otros dos
+    bloques no declararon como criterio formal --- diferencia de criterio
+    entre bloques declarada, no oculta.
+  \item Con el bloque de Fred, el dominio veterinario exacto de BIOPET pasa
+    de un estudio de contraste a tres, pero ninguno combina el contexto
+    ecuatoriano con una evaluaci\'on multim\'etrica del sistema: esa
+    combinaci\'on espec\'ifica sigue subrepresentada en la literatura
+    acad\'emica disponible, no por sesgo de b\'usqueda sino por escasez
+    real, hallazgo reportado independientemente por los tres bloques de
+    revisi\'on.
+\end{itemize}

@@ -1,0 +1,194 @@
+\chapter{Ingenier\'ia de requisitos}
+\label{cap:requisitos}
+
+Este cap\'itulo integra \texttt{docs/requisitos/SRS.md} (Especificaci\'on
+de Requisitos de Software, con patr\'on ISO/IEC/IEEE~29148), las historias
+de usuario, los casos de uso y \texttt{docs/requisitos/CHANGELOG-REQ.md}.
+El SRS distingue expl\'icitamente requisitos \textbf{verificados},
+\textbf{implementados} (sin prueba automatizada dedicada) y
+\textbf{pendientes}; este cap\'itulo respeta esa misma distinci\'on: ning\'un
+requisito que el SRS marca como pendiente se declara aqu\'i como cumplido.
+
+\section{Priorizaci\'on MoSCoW}
+
+Los requisitos se priorizan con la t\'ecnica MoSCoW (Must, Should, Could,
+Won't). El n\'ucleo \emph{Must Have} corresponde al compromiso funcional
+operativo de esta entrega: autenticaci\'on, autorizaci\'on por rol y por
+propiedad, y CRUD de mascotas. Los m\'odulos de citas, consultas y
+vacunas, incorporados durante la Unidad~IV, se formalizaron como
+\texttt{REQ-F-023} a \texttt{REQ-F-025} (secci\'on~\ref{sec:req-unidad4}).
+
+\section{Requisitos funcionales implementados y verificados}
+
+Los requisitos \texttt{REQ-F-001} a \texttt{REQ-F-012} y \texttt{REQ-F-021}
+cubren registro de usuario, login/logout/refresh por cookies,
+autorizaci\'on por rol, perfil del usuario autenticado, y el CRUD completo
+de mascotas con resumen por especie; todos con estado \textbf{verificado}
+en el SRS, respaldados por pruebas automatizadas de controlador/servicio
+(cap\'itulo~\ref{cap:pruebas-calidad}).
+
+\subsection{Requisitos incorporados en la Unidad~IV (\texttt{REQ-F-023} a \texttt{REQ-F-025})}
+\label{sec:req-unidad4}
+
+Estos tres requisitos formalizan funcionalidades reales incorporadas al
+backend durante la Unidad~IV, distintas de Citas y Consultas (que ya
+ten\'ian requisito formal hist\'orico propio --- \texttt{REQ-F-015} y
+\texttt{REQ-F-013} respectivamente --- y no se duplican aqu\'i):
+
+\begin{itemize}[nosep]
+  \item \textbf{REQ-F-023 --- Gesti\'on administrativa de usuarios}
+    (\texttt{UsuarioController}/\texttt{UsuarioService}): un
+    \texttt{ADMIN} lista, consulta, crea, actualiza y da de baja l\'ogica
+    cuentas de cualquier rol, sin poder autoescalar el rol de su propia
+    cuenta. Estado: \textbf{verificado} (\texttt{UsuarioControllerTest},
+    16 pruebas).
+  \item \textbf{REQ-F-024 --- Gesti\'on de vacunas} (\texttt{VacunaController}):
+    registro, consulta (global, por mascota o por identificador),
+    actualizaci\'on y baja l\'ogica de vacunas, con propiedad restringida
+    para \texttt{ROLE\_DUENO}. Estado: \textbf{verificado}
+    (\texttt{VacunaControllerTest}, 10 pruebas; colecci\'on Postman
+    \texttt{BIOPET-Vacunas.postman\_collection.json}); la operaci\'on
+    \texttt{GET /api/vacunas/mascota/\{mascotaId\}} no tiene prueba
+    automatizada dedicada.
+  \item \textbf{REQ-F-025 --- Consulta de informaci\'on externa de especies}
+    (\texttt{ExternalApiController}): consulta de datos de una especie
+    (nombre cient\'ifico, h\'abitat, dieta) desde un servicio externo (API
+    Ninjas), con cach\'e Redis \emph{cache-aside} para evitar llamadas
+    repetidas. Estado: \textbf{implementado} (sin prueba automatizada
+    dedicada; no se marca ``verificado'' siguiendo la misma convenci\'on ya
+    usada en el resto del SRS); evidencia emp\'irica manual de la
+    comparaci\'on cach\'e fr\'ia/caliente en
+    \rutalarga{docs/u4/evidencias/fred/redis-cache-comparacion.md}.
+\end{itemize}
+
+Rendimiento bajo carga de citas, consultas y vacunas no fue medido
+espec\'ificamente con k6 (la medici\'on de rendimiento del
+cap\'itulo~\ref{cap:pruebas-calidad}, secci\'on~\ref{sec:rendimiento-final},
+se limita al endpoint de mascotas), limitaci\'on declarada en el
+cap\'itulo~\ref{cap:amenazas-limitaciones-final}.
+
+Las seis rutinas almacenadas de PostgreSQL (\texttt{fn\_resumen\_mascotas\_por\_especie},
+\texttt{fn\_historial\_clinico\_mascota}, \texttt{fn\_reporte\_dashboard},
+\texttt{fn\_siguiente\_numero\_ficha}, \texttt{sp\_actualizar\_estado\_citas\_masivas},
+\texttt{sp\_registrar\_consulta\_validada}) respaldan estos m\'odulos con
+acceso JPA formal (secci\'on~\ref{sec:acceso-jpa-formal}).
+
+\section{Requisitos pendientes, heredados de la Entrega~1A}
+
+Los requisitos \texttt{REQ-F-013} a \texttt{REQ-F-020} y \texttt{REQ-F-022}
+permanecen, con honestidad, en estado \textbf{pendiente} o \textbf{parcial}
+en el SRS, sin implementaci\'on de backend ni de frontend a la fecha de
+este informe salvo lo explicitado:
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Requisitos funcionales pendientes o parciales heredados de la Entrega 1A (fuente: \texttt{docs/requisitos/SRS.md}).}
+  \label{tab:req-pendientes}
+  \begin{tabular}{@{}p{2.0cm}p{6.4cm}p{1.6cm}p{2.0cm}@{}}
+    \toprule
+    Requisito & Descripci\'on & Prioridad & Estado \\
+    \midrule
+    REQ-F-013 & Registro/consulta de historial cl\'inico cronol\'ogico como m\'odulo independiente & Should & Pendiente \\
+    REQ-F-014 & Registro de medicamentos prescritos & Could & Pendiente \\
+    REQ-F-015 & Calendario interactivo de citas (m\'odulo b\'asico de citas ya existe; el calendario interactivo no) & Should & Pendiente \\
+    REQ-F-016 & API de recepci\'on de telemetr\'ia IoT & Could & Pendiente \\
+    REQ-F-017 & Recomendaciones cl\'inicas generadas por IA externa & Could & Pendiente \\
+    REQ-F-018 & Facturaci\'on digital y registro de pagos & Should & Pendiente \\
+    REQ-F-019 & Reportes estad\'isticos exportables (PDF/Excel) & Could & Pendiente \\
+    REQ-F-020 & Auditor\'ia de operaciones del sistema & Should & Parcial \\
+    REQ-F-022 & Notificaciones por correo electr\'onico & Could & Pendiente \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Nota de honestidad sobre \texttt{REQ-F-015} y \texttt{REQ-F-013}.}
+El backend expone \texttt{CitaController} y \texttt{ConsultaController}
+reales, con endpoints funcionales y respaldados por las rutinas
+almacenadas de la Unidad~IV (secci\'on~\ref{sec:req-unidad4}); sin embargo,
+el SRS mantiene \texttt{REQ-F-013} (historial cl\'inico cronol\'ogico
+completo, con consulta longitudinal) y la parte de \emph{calendario
+interactivo} de \texttt{REQ-F-015} como pendientes, porque esas
+funcionalidades espec\'ificas --- m\'as all\'a del CRUD b\'asico de
+consultas y citas ya implementado --- no est\'an completas ni tienen
+frontend dedicado. Este informe reporta ambos estados tal como los declara
+el SRS vigente, sin resolver la aparente tensi\'on ampliando el alcance
+por cuenta propia: se trata como lo que es, una actualizaci\'on parcial del
+SRS que a\'un no reclasific\'o expl\'icitamente cada subrequisito heredado
+frente al c\'odigo nuevo de la Unidad~IV, y se documenta como limitaci\'on
+de consistencia documental en el cap\'itulo~\ref{cap:amenazas-limitaciones-final}.
+
+\texttt{REQ-F-020} (auditor\'ia) se marca \textbf{parcial}, no
+\textbf{pendiente}: el registro de eventos de autenticaci\'on
+(\texttt{AUTH\_AUDIT}, cap\'itulo~\ref{cap:seguridad}) s\'i existe y est\'a
+verificado, pero no cubre auditor\'ia gen\'erica de todas las operaciones
+CRUD sobre mascotas ni de los m\'odulos de citas/consultas/vacunas.
+
+\section{Requisitos no funcionales relevantes}
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Requisitos no funcionales relevantes citados en este informe (fuente: \texttt{docs/requisitos/SRS.md}, secci\'on 3.2).}
+  \label{tab:req-nf-relevantes}
+  \begin{tabular}{@{}p{2.0cm}p{6.6cm}p{2.6cm}@{}}
+    \toprule
+    Requisito & Descripci\'on & Estado \\
+    \midrule
+    REQ-NF-001 & Rendimiento del listado de mascotas ($\leq$200~ms p95 caliente, $\leq$500~ms fr\'ia) & Verificado \\
+    REQ-NF-002 & Comunicaci\'on cifrada obligatoria (HTTPS/TLS) & Verificado (TLS de desarrollo) \\
+    REQ-NF-003 & Expiraci\'on configurable de tokens JWT & Verificado \\
+    REQ-NF-004 & Claims est\'andar del JWT (RFC~7519) & Verificado \\
+    REQ-NF-005 & Interfaz responsiva (320--1440px) / Lighthouse & Verificado (secci\'on~\ref{sec:lighthouse-final}) \\
+    REQ-NF-006 & Compatibilidad de navegadores (Chrome/Firefox/Edge) & Pendiente de evidencia archivada \\
+    REQ-NF-008 & Cifrado de contrase\~nas (BCrypt) & Verificado \\
+    REQ-NF-009 & Registro de eventos de autenticaci\'on (OWASP A09) & Verificado \\
+    REQ-NF-010 & Limitaci\'on de intentos de login (OWASP A07) & Verificado \\
+    REQ-NF-011 & Arquitectura en capas (\texttt{controller}/\texttt{service}/\texttt{repository}) & Verificado \\
+    REQ-NF-012 & Cach\'e del listado de mascotas con TTL externo & Verificado parcialmente (TTL confirmado; sin hit ratio medido) \\
+    REQ-NF-013 & Estrategia h\'ibrida de acceso a datos (JPA + procedimientos almacenados) & Verificado (cap\'itulo~\ref{cap:arquitectura}) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+El requisito de interfaz responsiva/calidad web (\texttt{REQ-NF-005}) est\'a
+\textbf{verificado}: las cuatro categor\'ias de Lighthouse (Performance,
+Accessibility, Best Practices, SEO) cumplen su umbral en la corrida del
+2026-08-18, en ambos perfiles mobile y desktop
+(secci\'on~\ref{sec:lighthouse-final}) --- superando el estado
+``verificado parcialmente'' que declaraba una revisi\'on anterior del SRS,
+fechada antes de esa corrida. \texttt{REQ-NF-012} (hit ratio de cach\'e
+Redis) permanece verificado solo parcialmente: existe evidencia de TTL y
+de existencia de clave bajo carga, pero no una medici\'on expl\'icita de
+\texttt{keyspace\_hits}/\texttt{keyspace\_misses} a lo largo del tiempo.
+No existe, en el SRS actual, un requisito no funcional formal dedicado
+espec\'ificamente a la usabilidad medida con SUS: la medici\'on SUS
+(secci\'on~\ref{sec:sus-final}) responde a un criterio de evaluaci\'on de
+la Gu\'ia de la Entrega Final, no a un \texttt{REQ-NF} numerado del SRS.
+
+\section{Trazabilidad y estado de la validaci\'on autom\'atica}
+
+\texttt{scripts/validate-traceability.sh} valida de forma cruzada que todo
+requisito del SRS tenga fila en \texttt{docs/trazabilidad/matriz.csv} con
+historia de usuario y caso de uso asociados. El detalle completo de la
+matriz se presenta en el cap\'itulo~\ref{cap:trazabilidad-final}.
+
+\section{Marco INCOSE}
+
+La redacci\'on de cada requisito sigue el patr\'on ``El sistema
+deber\'a\ldots'' con entradas, resultado esperado y criterios de
+aceptaci\'on verificables, alineado con las caracter\'isticas de calidad de
+requisitos de la \emph{INCOSE Guide to Writing Requirements}~\cite{incose2023requirements}
+(\texttt{docs/checklists/incose2023-req.md}): en particular
+\emph{Unambiguous} y \emph{Verifiable}, aplicadas expl\'icitamente al
+cerrar la ambig\"uedad hist\'orica de \texttt{REQ-F-017} (observaci\'on
+OBS-04, ya cerrada).
+
+\section{Cambios entre versiones}
+
+\texttt{docs/requisitos/CHANGELOG-REQ.md} documenta la evoluci\'on del SRS
+entre la Entrega~1A, la Entrega~1B, la Tercera Entrega y la Entrega Final,
+incluyendo la incorporaci\'on de \texttt{REQ-F-022} (recuperaci\'on formal
+de RF-07, cierre de OBS-02) y de \texttt{REQ-F-023} a \texttt{REQ-F-025}
+(Unidad~IV). Ning\'un identificador de requisito se reutiliz\'o para dos
+funcionalidades distintas.

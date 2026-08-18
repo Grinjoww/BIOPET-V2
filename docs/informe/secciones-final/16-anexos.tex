@@ -1,0 +1,394 @@
+\chapter{Anexos}
+\label{cap:anexos-final}
+
+\section{Glosario de siglas}
+
+\small
+\begin{longtable}{@{}ll@{}}
+\caption{Siglas usadas en este informe.}
+\label{tab:glosario-final} \\
+    \toprule
+    Sigla & Significado \\
+    \midrule
+\endfirsthead
+    \multicolumn{2}{c}{\tablename\ \thetable\ -- continuaci\'on} \\
+    \toprule
+    Sigla & Significado \\
+    \midrule
+\endhead
+    \bottomrule
+\endfoot
+    ADR & Architecture Decision Record \\
+    API & Application Programming Interface \\
+    ARIA & Accessible Rich Internet Applications \\
+    CI & Continuous Integration \\
+    CRUD & Create, Read, Update, Delete \\
+    CSP & Content Security Policy \\
+    CVE & Common Vulnerabilities and Exposures \\
+    DOI & Digital Object Identifier \\
+    DSR & Design Science Research \\
+    FAIR & Findable, Accessible, Interoperable, Reusable \\
+    GHCR & GitHub Container Registry \\
+    GQM & Goal--Question--Metric \\
+    HSTS & HTTP Strict Transport Security \\
+    IC & Intervalo de confianza \\
+    INCOSE & International Council on Systems Engineering \\
+    ISO/IEC & International Organization for Standardization / International Electrotechnical Commission \\
+    JWT & JSON Web Token \\
+    MoSCoW & Must, Should, Could, Won't \\
+    OWASP & Open Worldwide Application Security Project \\
+    PRISMA & Preferred Reporting Items for Systematic Reviews and Meta-Analyses \\
+    RBAC & Role-Based Access Control \\
+    RFC & Request for Comments \\
+    SAST & Static Application Security Testing \\
+    SEO & Search Engine Optimization \\
+    SIEM & Security Information and Event Management \\
+    SP & Stored Procedure \\
+    SRS & Software Requirements Specification \\
+    SUS & System Usability Scale \\
+    TLS & Transport Layer Security \\
+    UI & User Interface \\
+    VU & Usuario virtual (\emph{Virtual User}, k6) \\
+    WCAG & Web Content Accessibility Guidelines \\
+    ZAP & Zed Attack Proxy \\
+\end{longtable}
+\normalsize
+
+\section{Endpoints principales de la API}
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Endpoints reales expuestos por el backend v1.0.0.}
+  \label{tab:endpoints-final}
+  \begin{tabular}{@{}llp{7.0cm}@{}}
+    \toprule
+    M\'etodo & Ruta & Autenticaci\'on / rol \\
+    \midrule
+    POST & /api/auth/registro & P\'ublico (crea siempre \texttt{ROLE\_DUENO}) \\
+    POST & /api/auth/login & P\'ublico \\
+    POST & /api/auth/refresh & Cookie \texttt{refresh\_token} \\
+    POST & /api/auth/logout & Cookie (idempotente sin sesi\'on) \\
+    GET & /api/usuarios/me & Cualquier rol autenticado \\
+    GET/POST/PUT/DELETE & /api/mascotas[/\{id\}] & Rol y propiedad (secci\'on \ref{cap:seguridad}) \\
+    GET & /api/mascotas/resumen-especies & Cualquier rol autenticado \\
+    \ /* & /api/citas/* & \texttt{CitaController}, rol y propiedad \\
+    \ /* & /api/consultas/* & \texttt{ConsultaController}, \texttt{VETERINARIO}/\texttt{ADMIN} \\
+    \ /* & /api/vacunas/* & \texttt{VacunaController}, rol y propiedad \\
+    \ /* & /api/externa/* & \texttt{ExternalApiController} \\
+    GET & /actuator/health & P\'ublico \\
+    GET & /api/docs, /swagger-ui.html & P\'ublico (OpenAPI 3.0, Springdoc) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Documentos de referencia en el repositorio}
+
+\begin{itemize}[nosep]
+  \item ADR: \texttt{docs/adr/ADR-002} a \texttt{ADR-007}.
+  \item Diagramas C4: \texttt{docs/diagrams/} (contenedores, componentes del backend).
+  \item Requisitos: \texttt{docs/requisitos/} (SRS, historias, casos de uso, \texttt{CHANGELOG-REQ.md}).
+  \item Trazabilidad: \texttt{docs/trazabilidad/matriz.csv}.
+  \item Pruebas y cobertura: \texttt{docs/mediciones/jacoco/}.
+  \item Rendimiento: \texttt{docs/mediciones/perf/}.
+  \item Usabilidad: \texttt{docs/mediciones/sus/}.
+  \item Calidad web: \texttt{docs/mediciones/lighthouse/}.
+  \item Seguridad: \texttt{docs/mediciones/sec/} (OWASP manual, ZAP, an\'alisis est\'atico).
+  \item Procedencia y diccionario de datos: \rutalarga{docs/mediciones/DATA-PROVENANCE.md}, \rutalarga{docs/mediciones/DATA-DICTIONARY.md}.
+  \item Base de datos: \texttt{docs/basedatos/CATALOGOSP.md}.
+  \item Despliegue: \texttt{docs/despliegue/} (\texttt{DEPLOYMENT.md}, \texttt{RUNBOOK.md}, \texttt{BACKUP.md}).
+  \item Publicaci\'on: \texttt{docs/publicacion/PAQUETE-V1.0.0.md}.
+  \item \'Etica: \texttt{docs/etica/ETHICS.md}.
+  \item Checklists de rigor metodol\'ogico: \rutalarga{docs/checklists/} (\texttt{ralph2021-engineering-research.md}, \texttt{prisma2020.md}, \texttt{incose2023-req.md}, \texttt{fair.md}).
+  \item Bit\'acora de observaciones: \texttt{docs/observaciones/OBSERVACIONES.md}.
+  \item Contribuciones CRediT: \texttt{CONTRIBUTORS.md}.
+  \item Metadatos de citaci\'on: \texttt{CITATION.cff}.
+\end{itemize}
+
+\section{Clases de prueba automatizadas citadas en este informe}
+
+\small
+\begin{itemize}[nosep]
+  \item \texttt{AuthControllerTest}, \texttt{JwtCookieAuthenticationTest},
+    \texttt{JwtServiceTest}, \texttt{LoginRateLimiterServiceTest},
+    \texttt{AuthenticationAuditServiceTest} (seguridad y autenticaci\'on).
+  \item \texttt{MascotaControllerTest} (autorizaci\'on por rol y propiedad).
+  \item \texttt{SqlInjectionSecurityTest}, \texttt{SecurityHeadersTest}
+    (OWASP A03 y A05).
+  \item \texttt{ResumenEspeciesIntegrationTest} (Testcontainers, PostgreSQL real).
+\end{itemize}
+\normalsize
+
+\section{Anexo A --- Bit\'acora de observaciones docentes}
+\label{sec:anexo-observaciones}
+
+Las 15 observaciones formales recibidas a lo largo de las Entregas~1A,
+1B y Tercera Entrega est\'an \textbf{cerradas en su totalidad (15/15)},
+con evidencia de cierre verificable en
+\texttt{docs/observaciones/OBSERVACIONES.md}.
+
+\begin{longtable}{@{}p{1.6cm}p{1.6cm}p{8.4cm}p{2.6cm}@{}}
+\caption{Observaciones docentes acumuladas y su estado de cierre.}
+\label{tab:anexo-observaciones} \\
+\toprule
+C\'odigo & Entrega & Observaci\'on (resumen) & Estado \\
+\midrule
+\endfirsthead
+\multicolumn{4}{c}{\tablename\ \thetable\ -- continuaci\'on} \\
+\toprule
+C\'odigo & Entrega & Observaci\'on (resumen) & Estado \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+OBS-01 & 1A & Repositorio no proporcionado o inaccesible & Cerrada \\
+OBS-02 & 1A & Ausencia de RF-07 en la lista consolidada de requisitos & Cerrada \\
+OBS-03 & 1A & RF-WEB remapeados sin matriz de trazabilidad expl\'icita & Cerrada \\
+OBS-04 & 1A & Ambig\"uedad leve en RF-10 (recomendaciones informativas) & Cerrada \\
+OBS-05 & 1B & DER entregado como \texttt{.dot}, no como exportaci\'on PNG de pgAdmin & Cerrada \\
+OBS-06 & 1B & Colecci\'on Postman no versionada & Cerrada \\
+OBS-07 & 1B & Workflow CI fuera de \texttt{.github/workflows/} & Cerrada \\
+OBS-08 & 1B & Tag \texttt{v0.1.0-entrega-1b} exigido no creado & Cerrada \\
+OBS-09 & 3 & Tag \texttt{v0.9.0-rc} exigido no creado & Cerrada \\
+OBS-10 & 3 & Software no archivado en Zenodo, DOI pendiente & Cerrada \\
+OBS-11 & 3 & Evidencia/reporte Lighthouse faltante & Cerrada \\
+OBS-12 & 3 & Calidad del sistema no enmarcada en ISO/IEC~25010 & Cerrada \\
+OBS-13 & 3 & \texttt{CONTRIBUTORS.md} sin roles CRediT individuales & Cerrada \\
+OBS-14 & 3 & Afirmaci\'on falsa sobre ausencia de historial Git & Cerrada \\
+OBS-15 & 3 & Correo institucional de Jaime en commits & Cerrada \\
+\end{longtable}
+
+\section{Anexo B --- Estrategia de b\'usqueda PRISMA}
+\label{sec:anexo-prisma-busqueda}
+
+Cadenas y criterios de b\'usqueda documentados por bloque en
+\texttt{docs/checklists/prisma2020.md} (\'item~7):
+
+\begin{itemize}[nosep]
+  \item \textbf{Zaida} (IEEE Xplore, ACM Digital Library, Scopus, Google
+    Scholar; b\'usqueda 2026-08-17):
+    \texttt{"requirements elicitation" AND "systematic literature review"}
+    \textbullet\ \texttt{"system usability scale" AND web application}
+    \textbullet\ \texttt{veterinary management system web application case
+    study}.
+  \item \textbf{Jaime}: verificaci\'on dirigida por tema (metodolog\'ia
+    Engineering Research/DSR/GQM, calidad ISO/IEC~25010, seguridad
+    JWT/OWASP, rendimiento web) contra Crossref, sobre referencias ya
+    identificadas por relevancia tem\'atica directa, sin cadena booleana
+    \'unica documentada.
+  \item \textbf{Fred} (2026-08-17): verificaci\'on uno a uno de 13
+    candidatos por DOI (rango temporal expl\'icito 2020--2026), 2
+    descartados (Yang et al. ICSE~2018 por fuera de rango; art\'iculo de
+    TURCOMAT por HTTP~403).
+\end{itemize}
+
+\section{Anexo C --- Instrumento SUS aplicado}
+\label{sec:anexo-sus}
+
+Las diez preguntas originales de Brooke (1996)~\cite{sus-brooke1996}, sin
+modificar la escala de 5 puntos, tal como se aplicaron
+(\texttt{docs/mediciones/sus/instrumento-sus.md}):
+
+\begin{enumerate}[nosep]
+  \item Creo que usar\'ia este sistema con frecuencia.
+  \item Encontr\'e el sistema innecesariamente complejo.
+  \item Pens\'e que el sistema era f\'acil de usar.
+  \item Creo que necesitar\'ia el apoyo de una persona con conocimientos
+    t\'ecnicos para poder usar este sistema.
+  \item Encontr\'e que las diversas funciones de este sistema estaban bien
+    integradas.
+  \item Pens\'e que hab\'ia demasiada inconsistencia en este sistema.
+  \item Imagino que la mayor\'ia de las personas aprender\'ian a usar este
+    sistema muy r\'apidamente.
+  \item Encontr\'e el sistema muy engorroso (poco pr\'actico) de usar.
+  \item Me sent\'i muy seguro/a usando el sistema.
+  \item Necesit\'e aprender muchas cosas antes de poder usar este sistema.
+\end{enumerate}
+
+Escala: 1~=~Totalmente en desacuerdo, \ldots, 5~=~Totalmente de acuerdo.
+C\'alculo (Brooke, 1996): \'items impares contribuyen (valor$-1$); \'items
+pares contribuyen ($5-$valor); suma$\times 2.5$ = puntaje 0--100
+(\texttt{scripts/analisis-sus.py}, funci\'on \texttt{sus\_score()}).
+
+\section{Anexo D --- Evidencia de integraci\'on continua}
+\label{sec:anexo-ci}
+
+No se dispone de capturas de pantalla archivadas de corridas de CI en el
+repositorio; por eso este anexo documenta la evidencia \textbf{real y
+verificable de otra forma} (definici\'on de los \emph{jobs} en el propio
+YAML, no una captura), en vez de inventar capturas inexistentes:
+
+\begin{itemize}[nosep]
+  \item Definici\'on de los 6 \emph{jobs} verificable en
+    \rutalarga{.github/workflows/ci.yml}: \texttt{backend-test},
+    \texttt{frontend-build}, \texttt{traceability}, \texttt{sql-audit},
+    \texttt{security-static}, \texttt{zap-baseline}.
+  \item Reproducci\'on local equivalente: \texttt{make all} (encadena las
+    mismas verificaciones que corren en CI).
+  \item Resultado esperado de cada \emph{job}, verificado localmente en
+    esta fase: \texttt{backend-test} (205 pruebas, \texttt{jacoco:check}
+    $\geq$70\,\%); \texttt{sql-audit} (0 hallazgos,
+    \rutalarga{scripts/audit-sql-dynamic.sh}); \texttt{security-static}
+    (0 hallazgos \texttt{SQL\_*}); \texttt{zap-baseline} (0 alertas altas).
+\end{itemize}
+
+\section{Anexo E --- Checklist Ralph et al. (Engineering Research)}
+\label{sec:anexo-ralph}
+
+Tabulaci\'on resumida del checklist completo
+(\texttt{docs/checklists/ralph2021-engineering-research.md}, 15~\'items):
+
+\begin{longtable}{@{}p{1.2cm}p{9.4cm}p{2.4cm}@{}}
+\caption{Resumen del checklist Ralph et al. (2021), est\'andar Engineering Research.}
+\label{tab:anexo-ralph} \\
+\toprule
+\'Item & Descripci\'on (par\'afrasis) & Estado \\
+\midrule
+\endfirsthead
+\multicolumn{3}{c}{\tablename\ \thetable\ -- continuaci\'on} \\
+\toprule
+\'Item & Descripci\'on (par\'afrasis) & Estado \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+E1 & Describe el artefacto propuesto con detalle adecuado & Cumple \\
+E2 & Justifica la necesidad/utilidad del artefacto & Cumple \\
+E3 & Eval\'ua conceptualmente el artefacto (fortalezas/debilidades/limitaciones) & Cumple \\
+E4 & Eval\'ua emp\'iricamente con un m\'etodo reconocido (\emph{benchmarking} + encuesta de usabilidad) & Cumple \\
+E5 & Indica claramente la metodolog\'ia emp\'irica usada & Cumple \\
+E6 & Discute alternativas de estado del arte & Cumple parcialmente \\
+E7 & Compara emp\'iricamente con alternativas o \emph{benchmarks} & Cumple parcialmente \\
+E8 & Supuestos expl\'icitos, plausibles y consistentes & Cumple parcialmente \\
+E9 & Notaci\'on consistente & Cumple \\
+D1 & Materiales suplementarios (c\'odigo, datos) & Cumple \\
+D2 & Justifica elementos faltantes del paquete de replicaci\'on & Cumple parcialmente \\
+D3 & Discute la base te\'orica del artefacto & Cumple (ver cap\'itulo~\ref{cap:marco-teorico}) \\
+D4 & Argumentos de correcci\'on formal (teoremas, demostraciones) & No aplica \\
+D5 & Ejemplos ilustrativos del artefacto & Cumple \\
+D6 & Eval\'ua en contexto relevante para la industria & No cumple (fuera de alcance de un PFC) \\
+\end{longtable}
+
+\section{Anexo F --- Matriz de trazabilidad completa}
+\label{sec:anexo-matriz-completa}
+
+Reproducci\'on \'integra de \texttt{docs/trazabilidad/matriz.csv}
+(38~requisitos), validada por \texttt{scripts/validate-traceability.sh}.
+Columnas de endpoint y evidencia emp\'irica cruda se omiten aqu\'i por
+espacio; est\'an disponibles en el CSV original.
+
+\begin{landscape}
+\small
+\begin{longtable}{@{}p{2.0cm}p{1.3cm}p{1.3cm}p{2.0cm}p{2.0cm}p{4.6cm}p{4.4cm}p{2.0cm}@{}}
+\caption{Matriz de trazabilidad completa (fuente: \texttt{docs/trazabilidad/matriz.csv}).}
+\label{tab:anexo-matriz-completa} \\
+\toprule
+Requisito & Tipo & MoSCoW & HU & CU & M\'odulo/c\'odigo & Prueba automatizada & Estado \\
+\midrule
+\endfirsthead
+\multicolumn{8}{c}{\tablename\ \thetable\ -- continuaci\'on} \\
+\toprule
+Requisito & Tipo & MoSCoW & HU & CU & M\'odulo/c\'odigo & Prueba automatizada & Estado \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+REQ-F-001 & funcional & Must & HU-001 & CU-01 & \rutalarga{AuthController/AuthService} & \texttt{AuthControllerTest} & verificado \\
+REQ-F-002 & funcional & Must & HU-001 & CU-01 & \texttt{GlobalExceptionHandler} & \texttt{AuthControllerTest} & verificado \\
+REQ-F-003 & funcional & Must & HU-002 & CU-02 & \rutalarga{AuthController/JwtService} & \texttt{AuthControllerTest}+\texttt{JwtServiceTest} & verificado \\
+REQ-F-004 & funcional & Must & HU-003 & CU-03 & \rutalarga{AuthController/AuthService} & \texttt{AuthControllerTest} & verificado \\
+REQ-F-005 & funcional & Must & HU-004 & CU-04 & \rutalarga{AuthController/TokenBlacklistService} & \texttt{AuthControllerTest} & verificado \\
+REQ-F-006 & funcional & Must & HU-005 & CU-05 & \rutalarga{SecurityConfig/MascotaController} & \texttt{MascotaControllerTest} & verificado \\
+REQ-F-007 & funcional & Should & HU-006 & CU-06 & \rutalarga{UsuarioController/AuthService} & \texttt{UsuarioControllerTest} & verificado \\
+REQ-F-008 & funcional & Must & HU-007 & CU-07 & \rutalarga{MascotaController/MascotaService} & \texttt{MascotaControllerTest} & verificado \\
+REQ-F-009 & funcional & Must & HU-008 & CU-08 & \rutalarga{MascotaController/MascotaService} & \texttt{MascotaControllerTest} & verificado \\
+REQ-F-010 & funcional & Must & HU-009 & CU-09 & \rutalarga{MascotaController/MascotaService} & \texttt{MascotaControllerTest} & verificado \\
+REQ-F-011 & funcional & Must & HU-010 & CU-10 & \rutalarga{MascotaController/MascotaService} & \texttt{MascotaControllerTest} & verificado \\
+REQ-F-012 & funcional & Must & HU-011 & CU-11 & \rutalarga{MascotaController/MascotaService} & \texttt{MascotaControllerTest} & verificado \\
+REQ-F-013 & funcional & Should & HU-012 & CU-12 & \rutalarga{ConsultaController/ConsultaService} & \texttt{ConsultaControllerTest} (parcial) & implementado \\
+REQ-F-014 & funcional & Could & HU-013 & CU-13 & --- & --- & pendiente \\
+REQ-F-015 & funcional & Should & HU-014 & CU-14 & \rutalarga{CitaController/CitaService} & \texttt{CitaControllerTest} & implementado \\
+REQ-F-016 & funcional & Could & HU-015 & CU-15 & --- & --- & pendiente \\
+REQ-F-017 & funcional & Could & HU-016 & CU-16 & --- & --- & pendiente \\
+REQ-F-018 & funcional & Should & HU-017 & CU-17 & --- & --- & pendiente \\
+REQ-F-019 & funcional & Could & HU-018 & CU-18 & --- & --- & pendiente \\
+REQ-F-020 & funcional & Should & HU-019 & CU-19 & --- & --- & pendiente \\
+REQ-F-021 & funcional & Should & HU-020 & CU-20 & \rutalarga{MascotaController/MascotaRepository} & \texttt{ResumenEspeciesIntegrationTest} & verificado \\
+REQ-F-022 & funcional & Could & HU-021 & CU-21 & --- & --- & pendiente \\
+REQ-F-023 & funcional & Should & HU-022 & CU-22 & \rutalarga{UsuarioController/UsuarioService} & \texttt{UsuarioControllerTest} & verificado \\
+REQ-F-024 & funcional & Should & HU-023 & CU-23 & \rutalarga{VacunaController/VacunaService} & \texttt{VacunaControllerTest} (parcial) & verificado \\
+REQ-F-025 & funcional & Could & HU-024 & CU-24 & \rutalarga{ExternalApiController/ExternalApiService} & sin prueba dedicada & implementado \\
+REQ-NF-001 & no funcional & Must & --- & --- & Cach\'e Redis (listado mascotas) & k6 v2.1.0 (10 corridas) & verificado \\
+REQ-NF-002 & no funcional & Must & --- & --- & \rutalarga{SecurityConfig/TomcatDualConnectorConfig} & \texttt{SecurityHeadersTest} & verificado \\
+REQ-NF-003 & no funcional & Must & --- & --- & \texttt{JwtService} & \texttt{JwtServiceTest} & verificado \\
+REQ-NF-004 & no funcional & Must & --- & --- & \texttt{JwtService} & \texttt{JwtServiceTest} (6 pruebas) & verificado \\
+REQ-NF-005 & no funcional & Must & --- & --- & Frontend Angular & Lighthouse (12 corridas, mobile+desktop) & verificado \\
+REQ-NF-006 & no funcional & Should & --- & --- & Frontend Angular & Manual (pendiente) & pendiente \\
+REQ-NF-007 & no funcional & Must & --- & --- & \texttt{Makefile}/\texttt{docker-compose.yml} & \emph{healthcheck} Docker Compose & implementado \\
+REQ-NF-008 & no funcional & Must & --- & --- & \texttt{SecurityConfig} (BCrypt) & \texttt{AuthControllerTest} & verificado \\
+REQ-NF-009 & no funcional & Must & --- & --- & Logging de autenticaci\'on & \texttt{AuthenticationAuditServiceTest} & verificado \\
+REQ-NF-010 & no funcional & Must & --- & --- & \texttt{LoginRateLimiterService} & \texttt{LoginRateLimiterServiceTest} & verificado \\
+REQ-NF-011 & no funcional & Must & --- & --- & Estructura de paquetes backend & Revisi\'on de c\'odigo & verificado \\
+REQ-NF-012 & no funcional & Should & --- & --- & Cach\'e Redis (TTL configurable) & Inspecci\'on + medici\'on Redis & verificado \\
+REQ-NF-013 & no funcional & Must & --- & --- & \texttt{MascotaRepository} (\texttt{fn\_resumen\_...}) & \texttt{ResumenEspeciesIntegrationTest} & verificado \\
+\end{longtable}
+\end{landscape}
+
+\section{Anexo G --- Clasificaci\'on de referencias por nivel de impacto}
+\label{sec:anexo-referencias-impacto}
+
+Criterio aplicado: se clasifica como \textbf{alto impacto} \'unicamente
+una referencia publicada en una revista o \emph{proceedings} con revisi\'on
+por pares, de una editorial acad\'emica reconocida (IEEE, ACM, Springer,
+Wiley, Taylor \& Francis, BMJ) con DOI verificado, o en un venue
+ampliamente reconocido del \'area (por ejemplo NDSS en seguridad). No se
+clasifican como alto impacto las normas t\'ecnicas/RFC/documentaci\'on
+oficial de herramientas (que son referencias v\'alidas pero no
+acad\'emicas), ni las revistas regionales sin indexaci\'on Scopus/Web of
+Science verificable.
+
+\begin{longtable}{@{}p{7.4cm}p{4.8cm}p{2.0cm}@{}}
+\caption{Clasificaci\'on de las 41 referencias del informe.}
+\label{tab:anexo-referencias-impacto} \\
+\toprule
+Categor\'ia & Ejemplos & Cantidad \\
+\midrule
+\endfirsthead
+\multicolumn{3}{c}{\tablename\ \thetable\ -- continuaci\'on} \\
+\toprule
+Categor\'ia & Ejemplos & Cantidad \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Alto impacto (revista/\emph{proceedings} indexado, DOI, editorial reconocida) & BMJ (PRISMA), NDSS, ACM Trans.\ on Storage, IEEE, Springer LNNS/CCIS, IET Software, Int.\ J.\ HCI, JMIS & 16 \\
+Acad\'emica verificada, indexaci\'on no confirmada (revista regional/peque\~na con DOI) & Journal of Computer Sciences Institute (x3), Jurnal Teknologi dan Sistem Komputer, Research J.\ of Education Science and Technology, J.\ of Software and Systems Development, J.\ Physics Conf.\ Series, Ecuadorian Science Journal & 7 \\
+Norma t\'ecnica / RFC / est\'andar de industria (v\'alida como referencia normativa, no acad\'emica) & OWASP Top~10, RFC~7519/7807, ISO~9241-11, ISO/IEC~25010, WCAG~2.1, INCOSE, CRediT & 7 \\
+Documentaci\'on oficial de herramienta ya usada en el proyecto & Spring Security/Boot, JaCoCo, PostgreSQL, Redis, k6, Lighthouse, C4 model & 7 \\
+Est\'andar emp\'irico no revisado por pares formalmente (\emph{preprint} arXiv ampliamente adoptado) & Ralph et al. (2021), Empirical Standards & 1 \\
+\midrule
+\textbf{Total} & & \textbf{38--41*} \\
+\end{longtable}
+
+\noindent\footnotesize *La suma var\'ia seg\'un c\'omo se cuenten los
+l\'imites entre categor\'ias (p.~ej. \texttt{sus-brooke1996} es un
+cap\'itulo de libro Taylor \& Francis cl\'asico y ampliamente citado, se
+cuenta en ``alto impacto'' pese a no ser un art\'iculo de revista); el
+total de entradas \'unicas en \texttt{referencias.bib} es 41.\normalsize
+
+\textbf{Resultado de la auditor\'ia (bloqueo declarado, no ocultado):} de
+las 41 referencias del informe, \textbf{16 cumplen verificablemente el
+criterio de alto impacto} definido arriba, por debajo del m\'inimo de 20
+exigido por la Gu\'ia Final. No se reclasificaron revistas regionales o
+peque\~nas como ``alto impacto'' \'unicamente para alcanzar el n\'umero
+--- ver la nota en el cap\'itulo de declaraciones sobre este bloqueo.
+
+\section{Evidencias pendientes de incorporaci\'on como figura}
+
+La lista de capturas pendientes de copiar a \texttt{figuras/} (responsable,
+n\'umero, ruta esperada, descripci\'on) se mantiene en
+\texttt{docs/informe/README.md}, para no duplicarla en dos lugares del
+repositorio. Las figuras ya incorporadas en la Tercera Entrega
+(\texttt{figuras/jaime/}, \texttt{figuras/fred/}, \texttt{figuras/zaida/})
+se reutilizan directamente en este informe mediante el mismo comando
+\texttt{\textbackslash evidencia}.

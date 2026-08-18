@@ -1,0 +1,213 @@
+\chapter{Seguridad}
+\label{cap:seguridad}
+
+Este cap\'itulo integra la auditor\'ia de seguridad de BIOPET desde tres
+\'angulos complementarios: revisi\'on manual sobre OWASP Top~10~\cite{owasp-top10},
+an\'alisis din\'amico (OWASP ZAP Baseline) y an\'alisis est\'atico
+(SpotBugs + Find Security Bugs), m\'as la auditor\'ia dedicada de SQL
+din\'amico en procedimientos almacenados.
+
+\section{Autenticaci\'on por cookies y revocaci\'on}
+
+JWT firmado con HMAC-SHA256, transportado en cookies
+\texttt{HttpOnly}+\texttt{Secure}+\texttt{SameSite=Strict}
+(\texttt{access\_token}, \texttt{refresh\_token}), con revocaci\'on real
+v\'ia lista negra en Redis indexada por \texttt{jti} (ADR-003), rate
+limiting de login en memoria (5 fallos consecutivos $\to$ 401; el sexto
+$\to$ 429 con cabecera \texttt{Retry-After}) y auditor\'ia estructurada
+(\texttt{AUTH\_AUDIT}) que solo acepta \texttt{ip} y \texttt{subject} como
+par\'ametros, sin v\'ia de c\'odigo para que una contrase\~na, un JWT
+completo o un encabezado \texttt{Authorization} llegue al logger.
+
+\section{Autorizaci\'on por rol y por propiedad}
+
+Autorizaci\'on combinada: por rol (\texttt{@PreAuthorize}) y por propiedad
+(\texttt{ROLE\_DUENO} solo accede a sus propias mascotas). 401 para
+autenticaci\'on ausente/inv\'alida, 403 para autenticaci\'on v\'alida sin
+autorizaci\'on, ambos como \texttt{ProblemDetail} sin \emph{stack trace}.
+
+% EVIDENCIA-JAIME-05
+% Ruta esperada: figuras/jaime/05-postman-401.png
+\evidencia{figuras/jaime/05-postman-401.png}%
+{Respuesta 401 (\texttt{ProblemDetail}) capturada desde la colecci\'on Postman de BIOPET.}%
+{fig:postman-401-final}
+
+\section{Cabeceras de seguridad y TLS}
+
+\texttt{SecurityConfig} (Spring Security~\cite{spring-security-docs}) fija
+cinco cabeceras en todas las respuestas: \texttt{X-Frame-Options: DENY},
+\texttt{X-Content-Type-Options: nosniff},
+\texttt{Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; object-src 'none'},
+\texttt{Referrer-Policy: no-referrer}, y \texttt{Strict-Transport-Security}
+solo sobre HTTPS. TLS~1.3 verificado en vivo
+(\texttt{TLS\_AES\_256\_GCM\_SHA384}) en el entorno de desarrollo; en
+producci\'on, HTTPS es provisto autom\'aticamente por Render sobre el
+subdominio \texttt{*.onrender.com} (cap\'itulo~\ref{cap:despliegue}).
+
+% EVIDENCIA-JAIME-03
+% Ruta esperada: figuras/jaime/03-tls-openssl.png
+\evidencia{figuras/jaime/03-tls-openssl.png}%
+{Salida de \texttt{openssl s\_client -tls1\_3}: TLSv1.3 y \texttt{TLS\_AES\_256\_GCM\_SHA384} negociados (entorno de desarrollo).}%
+{fig:tls-openssl-final}
+
+% EVIDENCIA-JAIME-04
+% Ruta esperada: figuras/jaime/04-security-headers.png
+\evidencia{figuras/jaime/04-security-headers.png}%
+{Cabeceras de seguridad reales capturadas con \texttt{curl.exe -i}.}%
+{fig:security-headers-final}
+
+\section{Auditor\'ia OWASP Top~10 (resumen)}
+
+\begin{table}[H]
+  \centering
+  \caption{Resultado de la auditor\'ia manual OWASP por control (fuente: \rutalarga{docs/mediciones/sec/REPORT.md}).}
+  \label{tab:owasp-final}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Control OWASP & Resultado \\
+    \midrule
+    A01 --- Control de acceso roto & PASS \\
+    A02 --- Fallas criptogr\'aficas (TLS) & PASS \\
+    A03 --- Inyecci\'on & PASS \\
+    A04 --- Dise\~no inseguro & Evaluado (cierre 2026-08-09) \\
+    A05 --- Configuraci\'on de seguridad & PASS \\
+    A06 --- Componentes vulnerables/desactualizados & Evaluado, con hallazgos documentados \\
+    A07 --- Identificaci\'on y autenticaci\'on & PASS \\
+    A09 --- Registro y monitoreo & PASS \\
+    XSS (transversal) & Evaluado (cierre 2026-08-09) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+A08 y A10 no fueron objeto de auditor\'ia dedicada y no se documentan aqu\'i
+para no inventar evidencia inexistente.
+
+\section{Protecci\'on estructural contra inyecci\'on (A03)}
+
+Todos los m\'etodos de repositorio son consultas derivadas de Spring Data o
+invocaciones formales de procedimientos almacenados
+(\texttt{@Procedure}/\texttt{@NamedStoredProcedureQuery}), con par\'ametros
+enlazados y fuertemente tipados. Los payloads de inyecci\'on probados
+(\texttt{1 OR 1=1}, \texttt{1; DROP TABLE usuarios; --}, \texttt{\%' UNION
+SELECT NULL --}) son rechazados en la capa de conversi\'on de Spring MVC
+antes de alcanzar el repositorio, verificado en \texttt{SqlInjectionSecurityTest}.
+
+\section{Auditor\'ia est\'atica: SpotBugs + Find Security Bugs}
+\label{sec:spotbugs}
+
+Ejecutada con \texttt{spotbugs-maven-plugin}~4.10.3.0 + Find Security
+Bugs~1.14.0, \texttt{effort=Max}, \texttt{threshold=Low} (m\'axima
+exhaustividad), sobre todas las clases compiladas del backend.
+
+\begin{table}[H]
+  \centering
+  \caption{Resumen del an\'alisis est\'atico (fuente: \rutalarga{docs/mediciones/sec/static-analysis/README.md}).}
+  \label{tab:spotbugs-final}
+  \begin{tabular}{@{}lr@{}}
+    \toprule
+    M\'etrica & Valor \\
+    \midrule
+    Hallazgos totales & 66 \\
+    Severidad alta (\texttt{priority=1}) & 1 (\texttt{SPRING\_CSRF\_PROTECTION\_DISABLED}) \\
+    Severidad media (\texttt{priority=2}) & 13 \\
+    Severidad baja (\texttt{priority=3}) & 52 \\
+    Hallazgos relacionados con SQL (\texttt{SQL\_*}) & \textbf{0} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection*{Tratamiento del hallazgo CSRF (\'unico de severidad alta)}
+\label{sec:csrf}
+
+\texttt{SecurityConfig.java} deshabilita expl\'icitamente la protecci\'on
+CSRF integrada de Spring Security, lo que SpotBugs/Find Security Bugs
+reporta correctamente como \texttt{SPRING\_CSRF\_PROTECTION\_DISABLED}
+(\texttt{priority=1}). Este informe \textbf{no trata este hallazgo como un
+falso positivo}: la herramienta detect\'o exactamente lo que hay en el
+c\'odigo. Se trata, en cambio, como un \textbf{riesgo mitigado por
+arquitectura}: la protecci\'on CSRF tradicional basada en tokens existe
+para defender flujos de autenticaci\'on por \emph{sesi\'on con cookie
+ambiental} en formularios HTML cl\'asicos, donde el navegador env\'ia la
+cookie de sesi\'on autom\'aticamente en cualquier solicitud
+\emph{cross-site}, incluida una iniciada por un sitio malicioso. BIOPET no
+sigue ese patr\'on: el atributo \texttt{SameSite=Strict} en las cookies
+\texttt{access\_token}/\texttt{refresh\_token} (ADR-006) impide que el
+navegador adjunte esas cookies en solicitudes iniciadas desde un origen
+distinto, que es precisamente el vector que CSRF explota. La combinaci\'on
+\texttt{HttpOnly}+\texttt{Secure}+\texttt{SameSite=Strict} sustituye
+funcionalmente al token CSRF cl\'asico para este esquema de autenticaci\'on
+espec\'ifico, sin que eso implique que el riesgo no exist\'ia --- exist\'ia,
+y se document\'o expl\'icitamente en vez de suprimirse. El gate de CI
+\texttt{security-static} (secci\'on~\ref{sec:ci-jobs}) falla \'unicamente
+ante hallazgos \texttt{SQL\_*}; el hallazgo CSRF se archiva siempre como
+parte del reporte completo (sin filtros ni \texttt{@SuppressFBWarnings}),
+para que quede visible en cada corrida en vez de ocultarse.
+
+\section{Auditor\'ia din\'amica: OWASP ZAP Baseline}
+\label{sec:zap}
+
+Ejecutada con \texttt{zap-baseline.py} (imagen oficial
+\texttt{ghcr.io/zaproxy/zaproxy:stable}, versi\'on~2.17.0) contra el
+backend real, dentro de la red Docker Compose (\texttt{http://backend:8080}),
+en la fecha \texttt{2026-08-17T03:20:27Z}.
+
+\begin{table}[H]
+  \centering
+  \caption{Resumen ZAP Baseline (fuente: \texttt{docs/mediciones/sec/zap/README.md}).}
+  \label{tab:zap-final}
+  \begin{tabular}{@{}lr@{}}
+    \toprule
+    Severidad & Alertas \\
+    \midrule
+    Alta & \textbf{0} \\
+    Media & 0 \\
+    Baja & 0 \\
+    Informativa & 1 (\texttt{Non-Storable Content}, 2 instancias) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+C\'odigo de salida de \texttt{zap-baseline.py}: \texttt{0}. El objetivo de
+la Entrega Final (cero hallazgos de severidad alta) se cumple. El spider de
+ZAP no fue autenticado, por lo que no cubri\'o exhaustivamente endpoints
+protegidos por JWT (limitaci\'on declarada, no oculta).
+
+\section{Auditor\'ia de SQL din\'amico en procedimientos almacenados}
+
+\texttt{scripts/audit-sql-dynamic.sh} analiza los seis archivos de
+\texttt{db/procs/*.sql} en busca de construcci\'on insegura de SQL
+din\'amico (\texttt{EXECUTE} con concatenaci\'on, patrones ajenos a
+PostgreSQL). Resultado: \textbf{0 hallazgos}, \texttt{exit 0}.
+
+\section{Postman}
+
+La colecci\'on \rutalarga{docs/postman/BIOPET.postman_collection.json}
+(40+ \emph{requests}) y \rutalarga{docs/postman/BIOPET-Vacunas.postman_collection.json}
+cubren estado del servicio, autenticaci\'on completa (incluida la
+secuencia de rate limiting), mascotas, citas, consultas, vacunas y un
+cat\'alogo de errores controlados (422, 400, 404, 401, 403, 429). Ninguna
+depende de un JWT o cookie guardado manualmente en variable: se apoyan
+exclusivamente en el \emph{cookie jar} autom\'atico de Postman.
+
+\section{Limitaciones reales de este cap\'itulo}
+
+\begin{itemize}[nosep]
+  \item El certificado TLS del entorno de desarrollo es autofirmado y
+    exclusivamente acad\'emico; en producci\'on, HTTPS lo provee Render de
+    forma autom\'atica (no es un certificado gestionado por el equipo).
+  \item El rate limiting de login es en memoria y por instancia: no es
+    distribuido entre m\'ultiples r\'eplicas del backend.
+  \item Los logs \texttt{AUTH\_AUDIT} se escriben \'unicamente en el log
+    local del proceso; no existe integraci\'on con un SIEM centralizado.
+  \item El spider de ZAP no fue autenticado; no cubri\'o exhaustivamente
+    los endpoints protegidos por JWT ni los m\'odulos de citas/consultas/vacunas
+    m\'as all\'a de lo alcanzable sin sesi\'on.
+  \item El an\'alisis est\'atico no sustituye una revisi\'on de seguridad
+    din\'amica dirigida a la librer\'ia JWT subyacente (\texttt{jjwt}); ese
+    tipo de an\'alisis (\emph{fuzzing} dirigido, ver
+    Yang et al.~\cite{yang2026tokentimebomb}, cap\'itulo~\ref{cap:trabajos-relacionados})
+    queda fuera del alcance de esta auditor\'ia.
+  \item ``0 alertas de severidad alta''/``0 hallazgos \texttt{SQL\_*}'' no
+    implica ausencia total de vulnerabilidades: implica ausencia de los
+    patrones que las reglas configuradas de ZAP y SpotBugs pueden detectar.
+\end{itemize}
