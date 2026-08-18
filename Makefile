@@ -229,9 +229,9 @@ reset-db:
 # Ejecuta la auditoria Lighthouse (bloque C.5 de la Guia) contra el
 # frontend servido por el contenedor y archiva los resultados crudos en
 # docs/mediciones/lighthouse/. Requiere 'make up' corrido previamente.
-# NO forma parte de "make all": las evidencias definitivas mobile+desktop
-# todavia estan siendo cerradas (ver .github/workflows/ci.yml, seccion
-# final) — este target se conserva intacto, listo para integrarse cuando
-# ese trabajo termine.
+# Corre los dos perfiles exigidos (movil via lighthouserc.js, desktop via
+# lighthouserc.desktop.js); ver scripts/run-lighthouse.sh.
+# NO forma parte de "make all": queda como validacion manual, no como gate
+# obligatorio de CI (ver .github/workflows/ci.yml).
 lighthouse:
 	bash scripts/run-lighthouse.sh

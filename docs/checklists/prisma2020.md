@@ -15,15 +15,14 @@ un metaanálisis), por lo que varios ítems orientados a estadística clínica
 (19, 20b–d, 21b–c) se marcan **No aplica** de forma explícita en vez de
 forzarlos.
 
-**Estado de este documento:** consolidado con los insumos disponibles a la
-fecha: 3 estudios de Zaida
-(`docs/informe/borradores/zaida/estudios-primarios-zaida.md`) + 4 de Jaime
-(`docs/informe/borradores/jaime/trabajos-relacionados.md`) = **7 estudios
-incluidos**. Falta el insumo F20 de Fred; el plan operativo apuntaba a
-≥8-9 estudios incluidos entre los tres bloques, así que este checklist
-queda **completo en método y parcial en cobertura** hasta que Fred
-entregue su bloque. Ningún ítem de este documento fue completado con
-datos inventados.
+**Estado de este documento:** **CERRADO** para la Entrega Final v1.0.0 con
+7 estudios incluidos (3 de Zaida + 4 de Jaime). Fred (F20) no entregó su
+bloque y el equipo decidió cerrar sin él en vez de dejarlo indefinidamente
+abierto; esto se declara explícitamente como limitación (ítems 23a-b), no
+se completa con estudios inventados ni se oculta el hueco. La bibliografía
+candidata de ambos bloques ya se integró a `docs/informe/referencias.bib`
+(28 entradas totales, 13 nuevas de esta integración). Ningún ítem de este
+documento fue completado con datos inventados.
 
 ---
 
@@ -107,7 +106,7 @@ datos inventados.
 | 24c | Modificaciones al registro/protocolo. | N/A | No aplica. |
 | 25 | Fuentes de financiamiento de la revisión y rol de los financiadores. | ✅ Trivial, cerrado | Sin financiamiento externo, trabajo académico (ya registrado así en `CONTRIBUTORS.md` para Funding acquisition). |
 | 26 | Conflictos de interés de los autores de la revisión. | ✅ Trivial, cerrado | Sin conflictos de interés conocidos. |
-| 27 | Disponibilidad de datos, código y otros materiales usados en la revisión. | ✅ Completo | Estudios de Zaida: `docs/informe/borradores/zaida/estudios-primarios-zaida.md`. Estudios de Jaime: `docs/informe/borradores/jaime/trabajos-relacionados.md` y `referencias-candidatas.md`. Diagrama de flujo: `docs/informe/figuras/zaida/06-prisma-flow-diagram.png` (fuente: `docs/diagramas/prisma-flow-diagram.svg`). Ninguna de estas listas está incorporada todavía a `docs/informe/referencias.bib` (bibliografía maestra), a propósito, para evitar conflicto de integración — ver nota de cierre en cada borrador. |
+| 27 | Disponibilidad de datos, código y otros materiales usados en la revisión. | ✅ Completo | Estudios de Zaida: `docs/informe/borradores/zaida/estudios-primarios-zaida.md`. Estudios de Jaime: `docs/informe/borradores/jaime/trabajos-relacionados.md` y `referencias-candidatas.md`. Diagrama de flujo: `docs/informe/figuras/zaida/06-prisma-flow-diagram.png` (fuente: `docs/diagramas/prisma-flow-diagram.svg`). **Las 13 referencias nuevas (12 de Jaime menos 1 duplicada + 3 de Zaida) ya se integraron a `docs/informe/referencias.bib`** (28 entradas totales), cerrando la integración pendiente que quedaba declarada en cada borrador individual. |
 
 ---
 
@@ -116,31 +115,31 @@ datos inventados.
 | Estado | Cantidad de ítems |
 |---|---|
 | Completo | 15 |
-| Parcial (falta bloque Fred / detalle de exclusiones de Jaime) | 2 |
+| Parcial (cerrado sin bloque Fred / sin detalle de exclusiones de Jaime, por decisión del equipo) | 2 |
 | No aplica, justificado (revisión narrativa de ingeniería, no metaanálisis clínico) | 8 |
 | Trivial, cerrado | 2 |
 | **Total** | **27** |
 
-## Condición de cierre
+## Condición de cierre — CERRADO 2026-08-17
 
-Este checklist pasa de "parcial" a "completo" cuando:
+Se cierra este checklist con 7 estudios incluidos, decisión explícita del
+equipo ante la no entrega del bloque de Fred (F20), en vez de dejarlo
+indefinidamente abierto. Queda declarado como limitación, no oculto:
 
-1. **Fred (F20) entregue sus 3 estudios verificados** — sigue siendo el
-   único bloque totalmente pendiente; sin él el total queda en 7 de una
-   meta de ≥8-9 estudios incluidos.
-2. Jaime documente el conteo de candidatos evaluados/excluidos de su
-   bloque (hoy solo se conoce su resultado final: 4 incluidos), para
-   poder completar el diagrama de flujo (ítem 16a) y la tabla de
-   exclusiones (ítem 16b) de forma pareja entre los tres bloques.
-3. Las tres listas de referencias candidatas (Fred, Jaime, Zaida) se
-   integren en conjunto a `docs/informe/referencias.bib`, tarea de
-   integración final declarada explícitamente como pendiente en cada
-   borrador individual.
+1. **Fred (F20) no entregó su bloque.** El total queda en 7 de la meta
+   original de ≥8-9 — limitación de cobertura declarada en los ítems 23a-b,
+   no un error de proceso.
+2. El conteo de candidatos evaluados/excluidos de Jaime tampoco se
+   documentó (solo su resultado final: 4 incluidos) — mismo criterio,
+   declarado como limitación del proceso en el ítem 23b en vez de
+   inventarse retroactivamente.
+3. Las referencias candidatas de Fred **nunca se generaron**, por lo que
+   no hay nada de su bloque que integrar a `referencias.bib` — las de
+   Jaime y Zaida ya están integradas (ítem 27).
 
 Lo ya cerrado (bloques Zaida y Jaime, 7 estudios, diagrama de flujo
-parcial, tabla comparativa, síntesis narrativa, limitaciones) no debe
-reabrirse ni reescribirse al completar lo anterior — solo se agrega el
-bloque de Fred y se recalculan los totales.
+parcial, tabla comparativa, síntesis narrativa, limitaciones,
+bibliografía integrada) no debe reabrirse ni reescribirse.
 
 Ningún ítem de este documento fue cerrado con estudios inventados,
 fuentes no verificables, ni conteos de ejemplo copiados de otra revisión.
