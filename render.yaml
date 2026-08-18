@@ -23,9 +23,15 @@ services:
     repo: https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET
     rootDir: Backend
     plan: free
-    dockerCommand: >-
-      sh -c 'export DB_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}" &&
-      exec java -jar /app/app.jar'
+    # NO usar una expresion "sh -c '...'" embebida como string aqui: Render
+    # interpreta dockerCommand como un unico programa a ejecutar (sin pasar
+    # por un shell propio), asi que una cadena "sh -c 'export ... && exec
+    # ...'" termina siendo tratada literalmente como el NOMBRE del
+    # programa -> "not found" (exit 127). En su lugar se referencia
+    # directamente el script Backend/render-entrypoint.sh (copiado y
+    # marcado ejecutable en el Dockerfile), que construye DB_URL a partir
+    # de DB_HOST/DB_PORT/DB_NAME y luego hace "exec java -jar app.jar".
+    dockerCommand: /app/render-entrypoint.sh
     healthCheckPath: /actuator/health
     envVars:
       # Postgres gestionado de Render (valores reales enlazados por Render)
