@@ -11,9 +11,9 @@ Proyecto Fin de Curso — Aplicaciones Web
 
 ## Integrantes
 
-- **Beltrán Montiel, Fred Adrián** — Universidad Técnica Estatal de Quevedo
+- **Beltrán Montiel, Fred Adrián** — Universidad Técnica Estatal de Quevedo (`fbeltranm@uteq.edu.ec`)
 - **Mariscal Cabrera, Jaime Josué** — Universidad Técnica Estatal de Quevedo (`jmariscalc@uteq.edu.ec`)
-- **Taipe Mora, Zaida Melissa** — Universidad Técnica Estatal de Quevedo
+- **Taipe Mora, Zaida Melissa** — Universidad Técnica Estatal de Quevedo (`ztaipem@uteq.edu.ec`)
 
 Docente responsable (evaluación, no autoría del software): Dr. Gleiston
 Cicerón Guerrero Ulloa, Ph.D.
