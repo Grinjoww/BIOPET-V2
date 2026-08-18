@@ -23,6 +23,17 @@ propósito: donde el contenido de la Entrega 3 sigue siendo válido, se cita
 en vez de reescribirse; donde la evidencia cambió, se documenta el valor
 actual con su fuente.
 
+> **Nota de actualización (2026-08-17):** tras integrarse desde `main` el
+> trabajo de Zaida (`docs/mediciones/sus/REPORT.md`,
+> `docs/mediciones/sus/sus-raw.csv`, `scripts/analisis-sus.py`,
+> `docs/etica/ETHICS.md`), la muestra SUS se amplió de n=10 a **n=18**
+> participantes, con media **74.44/100** e IC 95 % **[63.33, 85.56]**. Este
+> documento se reconcilió con esos valores reales; los cambios se limitan a
+> actualizar cifras y su interpretación prudente (un tamaño muestral mayor
+> reduce el margen del intervalo de confianza, pero no implica por sí solo
+> representatividad externa) — ninguna conclusión metodológica de fondo
+> cambió por este ajuste.
+
 ---
 
 ## 1. Enfoque metodológico
@@ -212,7 +223,7 @@ ejecutado en un entorno de desarrollo local con Docker.
 | Mantenibilidad | ¿Qué proporción del código backend se ejercita por la suite de pruebas? | JaCoCo LINE / BRANCH (%), umbral configurado | LINE 91.80 % / BRANCH 79.39 %, umbral `pom.xml` ≥ 70 % ambos | `docs/mediciones/jacoco/METRICS.md` |
 | Mantenibilidad | ¿El proceso de construcción/verificación es reproducible y automatizado? | Existencia y jobs del pipeline de CI | Workflow con jobs `backend-test`, `frontend-build`, `traceability`, `sql-audit`, `security-static`, `zap-baseline` | `.github/workflows/ci.yml` (no modificado en esta fase; solo citado como evidencia) |
 | Rendimiento | ¿Cuál es la latencia y tasa de error del endpoint cacheado de mascotas bajo carga moderada? | k6: p50/p90/p95/p99 (ms), tasa de error (%), throughput (req/s) | Ejemplo (corrida 3, caliente): p95 = 10.62 ms, error 0.0 %, ~92.34 req/s — **valor actual de evidencia; sujeto a actualización en cierre final** (mediciones de rendimiento a cargo de Fred) | `docs/mediciones/perf/REPORT.md` |
-| Usabilidad | ¿Qué tan usable perciben participantes reales el frontend de BIOPET? | Puntaje medio SUS (0–100), n de participantes | Media 74.75/100, n = 10 — **valor actual de evidencia; sujeto a actualización en cierre final** (SUS a cargo de Zaida, tamaño muestral puede ampliarse) | `docs/mediciones/sus/REPORT.md` |
+| Usabilidad | ¿Qué tan usable perciben participantes reales el frontend de BIOPET? | Puntaje medio SUS (0–100), n de participantes | Media 74.44/100, IC95% [63.33, 85.56], n = 18 — **valor actual de evidencia** (actualizado desde `main` con la muestra ampliada de Zaida; ver nota de actualización al inicio de este documento) | `docs/mediciones/sus/REPORT.md` |
 | Calidad web | ¿El frontend cumple umbrales base de rendimiento, accesibilidad y buenas prácticas web? | Puntajes Lighthouse (Performance, Accessibility, Best Practices, SEO) | Accessibility 91/100 (cumple ≥90); SEO 82/100 (no cumple ≥90 en la corrida registrada) — **valor actual de evidencia; sujeto a actualización en cierre final** (Lighthouse a cargo de Zaida) | `docs/mediciones/lighthouse/README.md` |
 | Seguridad | ¿Existen hallazgos de seguridad de severidad alta detectables por escaneo dinámico? | Alertas ZAP Baseline por `riskcode` | 0 alertas de riesgo alto, 1 informativa | `docs/mediciones/sec/zap/README.md` |
 | Seguridad | ¿El análisis estático detecta patrones propensos a inyección SQL u otras vulnerabilidades? | Hallazgos SpotBugs/Find Security Bugs, total y subconjunto `SQL_*` | 66 hallazgos totales, 0 de tipo `SQL_*` | `docs/mediciones/sec/static-analysis/README.md` |
@@ -295,13 +306,14 @@ estimaron.
   modificar la escala de 5 puntos; consentimiento informado por
   participante antes de la tarea.
 - **Métrica principal:** puntaje SUS por participante (0–100) y su media.
-- **Evidencia:** n = 10 participantes, media 74.75/100 (categoría
-  "Bueno" en la escala de adjetivos SUS), IC 95 % que incluye el umbral de
-  referencia de 68 puntos (Bangor et al., 2008)
-  (`docs/mediciones/sus/REPORT.md`, `docs/mediciones/sus/sus-raw.csv`).
+- **Evidencia:** n = 18 participantes, media 74.44/100, IC 95 %
+  [63.33, 85.56] (categoría "Bueno" en la escala de adjetivos SUS); el
+  intervalo incluye el umbral de referencia de 68 puntos (Bangor et al.,
+  2008) (`docs/mediciones/sus/REPORT.md`, `docs/mediciones/sus/sus-raw.csv`).
 - **Limitación:** SUS mide percepción de usabilidad, no eficacia clínica
-  ni operacional real en un contexto veterinario; tamaño muestral mínimo
-  (n=10), sin análisis de correlación entre variables demográficas y
+  ni operacional real en un contexto veterinario; aunque la muestra creció
+  de n=10 a n=18 (por encima del mínimo de 15 exigido para la Entrega
+  Final), sigue sin análisis de correlación entre variables demográficas y
   puntaje.
 
 ### 4.5. Calidad web automatizada (Lighthouse)
@@ -414,7 +426,7 @@ inventar amenazas nuevas desconectadas de BIOPET.
 | Amenaza | Efecto posible | Mitigación aplicada | Riesgo residual |
 |---|---|---|---|
 | Toda la evaluación se realizó en un **entorno académico local**, no en un entorno de producción ni *staging* equivalente | Los resultados de rendimiento y seguridad podrían no extrapolarse a un despliegue en la nube con múltiples usuarios concurrentes reales | Ninguna evaluación se presenta como equivalente a producción; se documenta explícitamente como limitación en cada reporte de mediciones | Alto: sigue sin existir un entorno de *staging*/producción real contra el cual contrastar; **ausencia de despliegue productivo, ver Limitaciones** |
-| La muestra SUS (n=10) es el mínimo exigido por la guía, no necesariamente representativa de usuarios finales de una clínica veterinaria real | Los participantes (probablemente compañeros/entorno académico del equipo) podrían tener mayor familiaridad tecnológica que el usuario final típico | Cuestionario aplicado con consentimiento informado y tarea de referencia estandarizada, reduciendo variabilidad en el procedimiento aunque no en la composición de la muestra | Alto: sesgo de participantes previsible; **muestra SUS limitada, ver Limitaciones** |
+| La muestra SUS (n=18, ampliada desde n=10 de la Tercera Entrega, por encima del mínimo de 15 exigido para la Entrega Final) sigue sin ser necesariamente representativa de usuarios finales de una clínica veterinaria real | Los participantes (reclutados por conveniencia, círculo cercano al equipo según `docs/mediciones/sus/REPORT.md`) podrían tener mayor familiaridad tecnológica que el usuario final típico | Cuestionario aplicado con consentimiento informado y tarea de referencia estandarizada, reduciendo variabilidad en el procedimiento; el tamaño muestral mayor reduce el margen del intervalo de confianza pero no cambia el método de reclutamiento | Alto: sesgo de participantes previsible; **un tamaño muestral mayor no implica representatividad externa, ver Limitaciones** |
 | Lighthouse depende del entorno de ejecución (hardware, red, versión del navegador) en que se corre | Los puntajes no son un valor absoluto reproducible en cualquier máquina | Documentado explícitamente que Lighthouse es una medición dependiente del entorno, no un valor universal | Medio: inherente a la herramienta, no mitigable completamente sin estandarizar el hardware de medición |
 | Los usuarios de prueba del backend (cuentas académicas, admin sembrado) no son usuarios reales de una clínica veterinaria | El comportamiento del sistema frente a datos de producción reales (volumen, variedad, calidad de datos) no fue evaluado | Cuentas y datos claramente identificados como académicos/sintéticos (dominio `example.test`, `db/seed.sql`) | Alto: no evaluado con datos ni usuarios reales de un contexto veterinario operativo |
 
@@ -433,7 +445,7 @@ inventar amenazas nuevas desconectadas de BIOPET.
 | Amenaza | Efecto posible | Mitigación aplicada | Riesgo residual |
 |---|---|---|---|
 | El tamaño de muestra de cada corrida de k6 (~3 200 peticiones) corresponde a una única ventana de tiempo corta (~30–35 s) | Los intervalos de confianza al 95 % (distribución t de Student) son válidos para esa ventana, pero no capturan tendencias en periodos prolongados (horas/días) | IC 95 % calculado y reportado explícitamente por corrida (`docs/mediciones/perf/REPORT.md`) | Medio: el cálculo estadístico dentro de cada corrida es correcto; la ausencia de mediciones de largo plazo es una limitación de alcance, no un error estadístico |
-| El tamaño muestral de SUS (n=10) limita la potencia estadística de cualquier comparación entre subgrupos | No es posible detectar de forma confiable diferencias pequeñas entre subgrupos demográficos con este tamaño de muestra | Se reporta la media y el IC 95 % del puntaje agregado, sin forzar comparaciones entre subgrupos que la muestra no puede sostener | Alto: n=10 es insuficiente para análisis de subgrupos con potencia estadística adecuada |
+| El tamaño muestral de SUS (n=18, ampliado desde n=10) sigue limitando la potencia estadística de cualquier comparación entre subgrupos | No es posible detectar de forma confiable diferencias pequeñas entre subgrupos demográficos con este tamaño de muestra | Se reporta la media y el IC 95 % del puntaje agregado (ahora con un margen más estrecho, ± 11.12 frente al valor previo), sin forzar comparaciones entre subgrupos que la muestra no puede sostener | Medio-Alto: n=18 mejora el margen del intervalo de confianza agregado respecto a n=10, pero sigue siendo insuficiente para dividir en subgrupos (edad, experiencia web, dispositivo) con potencia estadística adecuada |
 | No existe diseño experimental (sin grupos de control ni asignación aleatoria) en ninguna de las mediciones | Cualquier mejora observada entre versiones del sistema no puede atribuirse causalmente a un cambio específico mediante estas mediciones | Este mismo documento evita explícitamente afirmar causalidad en cualquier resultado reportado | Bajo (por diseño): el riesgo se mitiga evitando la afirmación, no eliminando la limitación metodológica de fondo |
 | Las 189 pruebas automatizadas y la cobertura JaCoCo se ejecutan en un único ambiente de prueba (H2 en memoria para la mayoría de pruebas, PostgreSQL real solo en 2 pruebas de integración con Testcontainers) | El comportamiento verificado con H2 podría no ser idéntico al de PostgreSQL real para funciones nativas PL/pgSQL | La función nativa `fn_resumen_mascotas_por_especie` se probó explícitamente con Testcontainers/PostgreSQL real en vez de H2, precisamente por esta amenaza conocida | Bajo para esa función específica; medio para el resto de la suite, que sigue dependiendo de H2 |
 
@@ -454,9 +466,13 @@ fecha de esta revisión:
   involucró desarrolladores profesionales externos ni un proyecto de
   código abierto de uso amplio (mismo hallazgo ya documentado como ítem
   D6 del checklist Ralph et al.).
-- **Tamaño muestral de SUS limitado (n=10).** Es el mínimo exigido por la
-  guía de la entrega; una muestra mayor permitiría mayor potencia
-  estadística y análisis de subgrupos.
+- **Tamaño muestral de SUS todavía moderado (n=18, ampliado desde n=10 de
+  la Tercera Entrega).** Supera el mínimo de 15 exigido para la Entrega
+  Final y redujo el margen del intervalo de confianza agregado, pero
+  sigue siendo insuficiente para análisis de subgrupos con potencia
+  estadística adecuada; un tamaño muestral mayor no implica, por sí solo,
+  representatividad externa de la muestra (los participantes siguen
+  siendo reclutados por conveniencia, ver Amenazas a la validez externa).
 - **Entorno de ejecución único**, sin *staging* ni réplica de producción
   para contrastar mediciones de rendimiento y seguridad.
 - **Sin comparación con sistemas de gestión veterinaria alternativos.**
@@ -515,6 +531,8 @@ completarlo de cara a v1.0.0.
 - **Entorno de producción o *staging*** contra el cual repetir las
   mediciones de rendimiento y seguridad fuera del entorno académico local.
 - **Actualización de mediciones a cargo de Fred (rendimiento/caché) y
-  Zaida (SUS/Lighthouse)** si se decide ampliar el tamaño muestral de SUS
-  o regenerar las corridas de k6/Lighthouse en el cierre final — este
-  borrador cita el valor de evidencia vigente hoy, no un valor definitivo.
+  Zaida (SUS/Lighthouse)** si se regeneran las corridas de k6/Lighthouse
+  en el cierre final. La muestra SUS ya se amplió de n=10 a n=18 (cambio
+  integrado desde `main` y reflejado en este borrador); este documento
+  cita el valor de evidencia vigente hoy (2026-08-17), no necesariamente
+  el valor definitivo de cierre.

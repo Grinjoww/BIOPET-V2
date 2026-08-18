@@ -23,16 +23,28 @@ services:
     repo: https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET
     rootDir: Backend
     plan: free
-    dockerCommand: >-
-      sh -c 'export DB_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}" &&
-      exec java -jar /app/app.jar'
+    # NO usar una expresion "sh -c '...'" embebida como string aqui: Render
+    # interpreta dockerCommand como un unico programa a ejecutar (sin pasar
+    # por un shell propio), asi que una cadena "sh -c 'export ... && exec
+    # ...'" termina siendo tratada literalmente como el NOMBRE del
+    # programa -> "not found" (exit 127). En su lugar se referencia
+    # directamente el script Backend/render-entrypoint.sh (copiado y
+    # marcado ejecutable en el Dockerfile), que construye DB_URL a partir
+    # de DB_HOST/DB_PORT/DB_NAME y luego hace "exec java -jar app.jar".
+    dockerCommand: /app/render-entrypoint.sh
     healthCheckPath: /actuator/health
     envVars:
       # Postgres gestionado de Render (valores reales enlazados por Render)
+      # Propiedades validas de "fromDatabase" segun Render: host, port,
+      # database, user, password (NO "hostname" ni "databaseName" -- esos
+      # nombres son los del campo "databases:" mas abajo, no propiedades
+      # referenciables desde envVars; Render rechazo el Blueprint con
+      # "hostname es invalido" / "databaseName es invalido" hasta corregir
+      # esto).
       - key: DB_HOST
         fromDatabase:
           name: biopet-db
-          property: hostname
+          property: host
       - key: DB_PORT
         fromDatabase:
           name: biopet-db
@@ -40,7 +52,7 @@ services:
       - key: DB_NAME
         fromDatabase:
           name: biopet-db
-          property: databaseName
+          property: database
       # Usuario de aplicacion: rol con privilegios sobre las tablas.
       # En Render se usa el rol de la BD gestionada (ver DEPLOYMENT.md,
       # seccion "Rol de aplicacion").
@@ -60,17 +72,27 @@ services:
         fromDatabase:
           name: biopet-db
           property: password
-      # Redis / Valkey gestionado de Render
-      - key: REDIS_HOST
+      # Redis / Valkey gestionado de Render (Key Value). Render NO expone
+      # "host"/"port" como propiedades separadas de un servicio "keyvalue"
+      # via fromService (a diferencia de "databases:", que si expone
+      # host/port/database/user/password) -- solo expone
+      # "connectionString" (URL completa redis://... con credenciales
+      # incluidas). Backend/src/main/resources/application.yml usa
+      # spring.data.redis.host/port (${REDIS_HOST}/${REDIS_PORT}), que no
+      # se puede alimentar con una URL. Spring Boot (spring-boot-starter-
+      # data-redis) SI soporta nativamente la propiedad alternativa
+      # spring.data.redis.url (variable de entorno equivalente:
+      # SPRING_DATA_REDIS_URL, sin cambiar application.yml ni codigo
+      # Java): cuando esa URL esta presente, Spring Data Redis la usa en
+      # vez de host/port (host/port quedan en su valor por defecto
+      # "localhost"/6379 de application.yml, pero se ignoran). Por eso se
+      # inyecta unicamente SPRING_DATA_REDIS_URL aqui, sin REDIS_HOST ni
+      # REDIS_PORT.
+      - key: SPRING_DATA_REDIS_URL
         fromService:
           type: keyvalue
           name: biopet-cache
-          property: host
-      - key: REDIS_PORT
-        fromService:
-          type: keyvalue
-          name: biopet-cache
-          property: port
+          property: connectionString
       # Valores que el operador completa en el dashboard (sync: false)
       - key: JWT_SECRET
         sync: false
@@ -106,6 +128,11 @@ services:
   - type: keyvalue
     name: biopet-cache
     plan: free
+    # Obligatorio para Render (Blueprint rechazado sin esto: "must
+    # specify IP allow list"). Lista vacia = sin acceso publico por IP;
+    # solo alcanzable por la conexion interna de Render (biopet-backend,
+    # mismo proyecto/region), via SPRING_DATA_REDIS_URL arriba.
+    ipAllowList: []
 
 # ------------------------------------------------------------------
 # Postgres gestionado (datos de produccion)

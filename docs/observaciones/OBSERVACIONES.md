@@ -68,8 +68,8 @@ recalculan ni se reinterpreta la rúbrica del docente.
 | OBS-10 | Entrega 3 | Software no archivado en Zenodo, DOI pendiente | E.2. Archivado/citabilidad | Equipo (por definir) | ABIERTA | PENDIENTE |
 | OBS-11 | Entrega 3 | Evidencia/reporte Lighthouse faltante | Calidad web automatizada | Jaime Mariscal (mediciones) | CERRADA | `9ea0ccb0b3f2a86996d2aa047f385dff7e5c1675` (verificado con `git show`, 34 archivos añadidos) |
 | OBS-12 | Entrega 3 | Calidad del sistema no enmarcada en ISO/IEC 25010 | Marco de calidad del informe | Jaime Mariscal | CERRADA | `docs/arquitectura/ISO-25010.md` (nuevo); commit de esta corrección: PENDIENTE |
-| OBS-13 | Entrega 3 | `CONTRIBUTORS.md` sin roles CRediT individuales | E. Reconocimiento de autoría | Equipo completo | CERRADA | Acuerdo del equipo completo (Fred, Jaime, Zaida) para editar `CONTRIBUTORS.md`; commit de cierre PENDIENTE de subir |
-| OBS-14 | Entrega 3 | Documentación afirma ausencia de historial Git pese a 270 commits | C7. Repositorio Git | Jaime Mariscal (verificación) / Equipo (corrección) | CERRADA | Corregido junto con OBS-13, con acuerdo del equipo completo; commit de cierre PENDIENTE de subir |
+| OBS-13 | Entrega 3 | `CONTRIBUTORS.md` sin roles CRediT individuales | E. Reconocimiento de autoría | Equipo completo | CERRADA | `CONTRIBUTORS.md` — matriz CRediT individualizada por persona con evidencia real |
+| OBS-14 | Entrega 3 | Documentación afirma ausencia de historial Git pese a 270 commits | C7. Repositorio Git | Jaime Mariscal (verificación) / Equipo (corrección) | CERRADA | `CONTRIBUTORS.md` — afirmación falsa eliminada, reemplazada por referencia real al historial Git |
 | OBS-15 | Entrega 3 | Correo institucional de Jaime en commits | C7. Repositorio Git | Jaime Mariscal | CERRADA | `479961e`, `6658892`, `53d4146`, entre otros (verificados con `git log`, autor `jmariscalc@uteq.edu.ec`) |
 
 Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentación oficial de la Entrega 3, calificación individual de Jaime 7.80/10).
@@ -614,24 +614,13 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
 - **Fuente:** Retroalimentación oficial de la Entrega 3 (ver 5.1)
 - **Texto de la observación:** "`CONTRIBUTORS.md` no asignaba roles CRediT individualmente."
 - **Criterio relacionado:** Reconocimiento de autoría / CRediT (bloque E de la Guía).
-- **Verificación en este repositorio:** `CONTRIBUTORS.md` confirma la observación en su propio texto: la matriz de roles CRediT se aplica "a nivel de equipo" y no por persona, con la justificación explícita de que "el repositorio provisto no incluye historial de Git (`.git/`) ni metadatos de autoría por commit que permitan atribuir de forma verificable un rol a una persona específica" — justificación que, a su vez, contradice el estado real del repositorio (ver OBS-14, más de 200 commits con autoría diferenciada de los tres integrantes).
-- **Decisión del equipo:** Fase anterior documentó el hallazgo sin modificar
-  `CONTRIBUTORS.md` hasta tener acuerdo del equipo completo (Fred Beltrán y
-  Zaida Taipe, además de Jaime, son coautores del archivo). Ese acuerdo ya
-  se obtuvo: los tres integrantes confirmaron la corrección conjunta de
-  OBS-13 y OBS-14.
-- **Corrección realizada:** Se individualizó la matriz de roles CRediT en
-  `CONTRIBUTORS.md` contrastando cada rol contra la autoría real por
-  carpeta (`git log --author`, `Backend/`, `frontend/`, `db/`, `docs/`),
-  en vez de asignar los 14 roles al equipo completo sin distinción.
+- **Verificación previa (Fase 1/4):** `CONTRIBUTORS.md` confirmaba la observación en su propio texto: la matriz de roles CRediT se aplicaba "a nivel de equipo" y no por persona, con la justificación explícita de que "el repositorio provisto no incluye historial de Git (`.git/`) ni metadatos de autoría por commit que permitan atribuir de forma verificable un rol a una persona específica" — justificación que, a su vez, contradecía el estado real del repositorio (ver OBS-14).
+- **Corrección realizada (esta fase, con autorización explícita para editar `CONTRIBUTORS.md`):** Se reescribió la "Matriz de roles CRediT" de `CONTRIBUTORS.md` para asignar cada uno de los 14 roles **por persona** (Fred Beltrán, Jaime Mariscal, Zaida Taipe), basándose exclusivamente en evidencia real verificable: autoría de commits (`git shortlog -sne --all`, `git log --all --author=<correo> --name-only`), nombres de ramas de trabajo (`fred/f01-f05-sp-acceso-datos`, `fred/f06-f07-rendimiento-k6`, `fred/f08-f11-produccion-despliegue`, `fred/f17-f19-fair-software-provenance`, `jaime/data-dictionary`, `jaime/fix-ci-github-actions`, `jaime/observaciones-1a-1b`, `zaida/mascotas-crud-accesible`, `zaida/problemdetail-409-accesibilidad-login`, entre otras) y archivos concretos del repositorio. Donde no se encontró evidencia diferenciada de que una persona ejerció un rol especifico, la celda se dejó en blanco (`—`) para esa persona en vez de marcarla por defecto — no se atribuyó ningún trabajo sin sustento. Se agregó además el correo institucional de cada integrante (`fbeltranm@uteq.edu.ec`, `jmariscalc@uteq.edu.ec`, `ztaipem@uteq.edu.ec`) junto a su nombre en la sección "Equipo". Johan Carvajal y Michael Fajardo, revisores cruzados históricos de Unidad IV (ver `README.md`, sección "Autoría e historial del repositorio"), no se incluyeron como autores, consistente con `git shortlog` (2-3 commits cada uno, fuera del equipo de PFC).
 - **Archivos involucrados:** `CONTRIBUTORS.md`.
-- **Commit o commits:** PENDIENTE (corrección lista para commitear; el hash
-  se agrega cuando el equipo lo suba a `main`).
-- **Responsable:** Equipo completo (Fred Beltrán, Jaime Mariscal, Zaida Taipe).
+- **Commit o commits:** PENDIENTE (cambio realizado en el árbol de trabajo de esta fase; no se ejecutó ningún commit).
+- **Responsable:** Equipo completo (Fred Beltrán, Jaime Mariscal, Zaida Taipe); Jaime coordina el cierre.
 - **Estado:** CERRADA
-- **Justificación del estado:** La corrección de contenido está hecha y
-  acordada por los tres integrantes; solo falta el commit formal en el
-  repositorio, que no cambia el contenido ya validado.
+- **Justificación del estado:** `CONTRIBUTORS.md` ya no asigna los 14 roles CRediT de forma colectiva e indiferenciada: cada rol se asigna ahora por persona, con evidencia real y verificable (commits, ramas, archivos) citada explícitamente por celda, y sin inventar ni exagerar ninguna atribución. La observación pedía exactamente eso ("asignar roles CRediT individualmente"), y ya está hecho.
 
 ---
 
@@ -643,58 +632,44 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
 - **Fuente:** Retroalimentación oficial de la Entrega 3 (ver 5.1)
 - **Texto de la observación original:** "La documentación afirmaba que no existía historial Git pese a existir más de 200 commits."
 - **Criterio relacionado:** C7 — Repositorio Git; consistencia interna de la documentación.
-- **Búsqueda global realizada en esta fase** (`git grep`, sobre todo el árbol versionado, no solo el archivo ya señalado por la Fase 1):
+- **Búsqueda global previa (Fase 1/4)** (`git grep`, sobre todo el árbol versionado):
   ```
   git grep -niE "no incluye historial|no existe historial|sin historial de (git|commits)|no hay historial|no posee historial|carece de historial"
   CONTRIBUTORS.md:18:repositorio provisto no incluye historial de Git (`.git/`) ni metadatos de
-
-  git grep -niE "historial de git|historial de commits"
-  CONTRIBUTORS.md:18:repositorio provisto no incluye historial de Git (`.git/`) ni metadatos de
-  README.md:115:Este repositorio fue creado tomando como base la rama `main` del repositorio final de BIOPET y **conservando intencionalmente su historial de Git**.
+  ```
+  Esa búsqueda confirmó que la **única** afirmación contradictoria real en
+  todo el repositorio era `CONTRIBUTORS.md:18` (`README.md:115` ya
+  afirmaba correctamente lo contrario — que el historial se conserva — y
+  no requería corrección).
+- **Corrección realizada (esta fase, con autorización explícita para editar `CONTRIBUTORS.md`):** Se eliminó de `CONTRIBUTORS.md` la frase "el repositorio provisto no incluye historial de Git (`.git/`) ni metadatos de autoría por commit que permitan atribuir de forma verificable un rol a una persona específica". La nueva "Matriz de roles CRediT (individual)" del archivo declara en su lugar, correctamente, que el repositorio **sí** conserva su historial de Git completo, y cita el propio mecanismo real de verificación usado (`git shortlog -sne --all`, `git log --all --author=...`) — sin exagerar la autoría individual más allá de lo que esa evidencia realmente sustenta (ver cierre de OBS-13, mismo archivo).
+- **Verificación posterior a la corrección (esta fase, evidencia real):**
+  ```
+  git grep -niE "no incluye historial|no existe historial|sin historial de (git|commits)|no hay historial|no posee historial|carece de historial" -- CONTRIBUTORS.md
+  (sin resultados)
 
   git rev-list --count HEAD
-  270
+  314
+
+  git log --merges --oneline | wc -l
+  73
+
+  git tag --list
+  v0.1.0-entrega-1b
+  v0.7.0
+  v0.7.1
+  v0.9.0-rc
   ```
-  La búsqueda global confirma que la **única** afirmación contradictoria
-  real en todo el repositorio sigue siendo `CONTRIBUTORS.md:18`. La mención
-  de `README.md:115` no es un error: afirma correctamente que el historial
-  de Git se conserva, en sentido opuesto al error señalado por la
-  observación — no requiere corrección. El historial real, verificado
-  ahora mismo, es de **270 commits** (`git rev-list --count HEAD`), con
-  **62 merges** (`git log --merges --oneline | wc -l`) y 4 tags anotados
-  publicados (`v0.1.0-entrega-1b`, `v0.7.0`, `v0.7.1`, `v0.9.0-rc`).
-- **Bloqueo (ya resuelto):** la única afirmación falsa que corregir vivía
-  en `CONTRIBUTORS.md`, línea 18. Una fase anterior había incluido
-  `CONTRIBUTORS.md` en su lista "NO TOCAR" (sección 6) hasta obtener
-  acuerdo del equipo completo; ese acuerdo ya se obtuvo y el bloqueo ya no
-  aplica. Se dejaba antes constancia del conflicto entre la
-  instrucción de "corregir únicamente los documentos donde exista
-  realmente esa afirmación" y la prohibición explícita de tocar
-  `CONTRIBUTORS.md` en esta fase. Se resuelve a favor de la prohibición
-  explícita (más específica y más reciente en el propio enunciado de esta
-  tarea): **no se edita `CONTRIBUTORS.md` en esta fase**, por lo que la
-  afirmación falsa sigue presente en el repositorio y OBS-14 no puede
-  cerrarse todavía sin faltar a la instrucción "no marques nada como
-  cerrado antes de demostrarlo" (aquí, demostrar exigiría que ya no quede
-  ninguna afirmación contradictoria relevante, y sigue quedando una).
-- **Decisión del equipo:** Con el acuerdo del equipo completo ya obtenido
-  (mismo acuerdo que cierra OBS-13), se corrigió la afirmación falsa en
-  `CONTRIBUTORS.md:18`.
-- **Corrección realizada:** Se reemplazó la frase que negaba la existencia
-  de historial Git por una que confirma su conservación (170+ commits en
-  el checkout usado para esta corrección, ramas de los tres integrantes
-  fusionadas a `main`) y que explica que la atribución individual ahora se
-  contrasta contra `git log --author`, no que se declare imposible.
+  El historial creció de 270 a 314 commits (62 a 73 merges) entre la
+  verificación de la Fase 1/4 y este cierre, por el trabajo real posterior
+  del equipo — consistente con que el repositorio nunca dejó de tener
+  historial de Git, exactamente lo contrario de lo que afirmaba la frase
+  ya eliminada.
 - **Archivos involucrados:** `CONTRIBUTORS.md`.
-- **Commit o commits:** PENDIENTE (corrección lista para commitear junto
-  con OBS-13; el hash se agrega cuando el equipo lo suba a `main`).
-- **Responsable:** Jaime Mariscal (verificación); corrección conjunta del
-  equipo completo.
+- **Commit o commits:** PENDIENTE (cambio realizado en el árbol de trabajo de esta fase; no se ejecutó ningún commit).
+- **Responsable:** Jaime Mariscal (verificación); corrección de
+  `CONTRIBUTORS.md` realizada por el equipo completo junto con OBS-13.
 - **Estado:** CERRADA
-- **Justificación del estado:** La afirmación falsa ya no está presente en
-  el borrador corregido de `CONTRIBUTORS.md`, acordado por los tres
-  integrantes; solo falta el commit formal, que no altera el contenido ya
-  validado.
+- **Justificación del estado:** La única afirmación falsa detectada en todo el repositorio (búsqueda global `git grep`, no solo el archivo ya señalado) vivía en `CONTRIBUTORS.md:18` y ya fue eliminada; el archivo ahora refleja correctamente que el historial de Git existe y se usó como evidencia real para individualizar los roles CRediT (OBS-13). No se reescribió el historial de Git ni se usó `.mailmap`; la corrección es puramente documental, sobre el único archivo que contenía la afirmación errónea.
 
 ---
 
@@ -780,8 +755,8 @@ Ver Parte 5 para el detalle completo de OBS-09 a OBS-15 (fuente: retroalimentaci
 | OBS-10 | Software no archivado en Zenodo, DOI pendiente | ABIERTA | Publicación manual en Zenodo (fuera de alcance de esta tarea) |
 | OBS-11 | Evidencia Lighthouse faltante | CERRADA | Verificada con `git show` sobre `9ea0ccb`; ver nota independiente sobre corridas mobile/desktop y umbral SEO pendientes |
 | OBS-12 | Calidad no enmarcada en ISO/IEC 25010 | CERRADA | `docs/arquitectura/ISO-25010.md` (nuevo), rutas de evidencia verificadas |
-| OBS-13 | `CONTRIBUTORS.md` sin roles CRediT individuales | ABIERTA | Acuerdo de equipo + edición de `CONTRIBUTORS.md` (prohibida en esta fase) |
-| OBS-14 | Documentación afirma ausencia de historial Git pese a 270 commits | ABIERTA | Edición de `CONTRIBUTORS.md` (misma prohibición que OBS-13; único archivo con la afirmación falsa) |
+| OBS-13 | `CONTRIBUTORS.md` sin roles CRediT individuales | CERRADA | `CONTRIBUTORS.md` — matriz CRediT individualizada por persona con evidencia real |
+| OBS-14 | Documentación afirma ausencia de historial Git pese a 270 commits | CERRADA | `CONTRIBUTORS.md` — afirmación falsa eliminada |
 | OBS-15 | Correo institucional de Jaime en commits | CERRADA | Commits reales verificados con `git log` (`jmariscalc@uteq.edu.ec`) |
 
 De estas siete observaciones, **OBS-09, OBS-11, OBS-12 y OBS-15** se
@@ -803,13 +778,15 @@ el árbol de trabajo real. OBS-15: `git log` confirma múltiples commits
 reales de la Entrega Final firmados `Jaime Mariscal
 <jmariscalc@uteq.edu.ec>`, incluidos dos merges de pull request, sin
 reescribir el historial previo. No se usa el estado ambiguo "CERRADA
-PARCIALMENTE" en ninguno de los cuatro casos; el pendiente sobre corridas
+PARCIALMENTE" en ninguno de los casos; el pendiente sobre corridas
 mobile/desktop y el umbral SEO de OBS-11 se registra como nota
-independiente dentro de su propio bloque, sin condicionar su cierre. Las
-tres restantes (OBS-10, OBS-13, OBS-14) permanecen ABIERTAS: OBS-10
-requiere publicar en Zenodo (fuera de alcance); OBS-13 y OBS-14 requieren
-editar `CONTRIBUTORS.md`, explícitamente prohibido en esta fase — ver el
-bloqueo detallado documentado en el propio bloque de OBS-14.
+independiente dentro de su propio bloque, sin condicionar su cierre.
+OBS-13 y OBS-14 (`CONTRIBUTORS.md` sin roles CRediT individuales /
+afirmación falsa sobre ausencia de historial Git) fueron cerradas en una
+fase posterior, una vez autorizada explícitamente la edición de
+`CONTRIBUTORS.md` — ver el detalle en sus propios bloques. Solo OBS-10
+permanece ABIERTA: requiere publicar en Zenodo, fuera de alcance de este
+repositorio (acción manual del dueño del repositorio).
 
 ---
 
@@ -919,23 +896,21 @@ porcentaje de cierre = observaciones CERRADAS / 8 × 100
 ## Estado global — Entrega 3 (OBS-09 a OBS-15)
 
 - **Total de observaciones de Entrega 3:** 7
-- **CERRADAS:** 4 (OBS-09 — tag `v0.9.0-rc` reconstruido y publicado en `origin` sobre el commit histórico real `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`; OBS-11 — evidencia Lighthouse verificada con `git show` sobre `9ea0ccb`, ver nota independiente sobre corridas mobile/desktop y umbral SEO pendientes; OBS-12 — marco ISO/IEC 25010 documentado en `docs/arquitectura/ISO-25010.md`, evidencia real verificada; OBS-15 — commits reales con `jmariscalc@uteq.edu.ec` verificados con `git log`)
+- **CERRADAS:** 6 (OBS-09 — tag `v0.9.0-rc` reconstruido y publicado en `origin` sobre el commit histórico real `ffd3c073d026a1b1d9dbdf5f53c1316df5388fc3`; OBS-11 — evidencia Lighthouse verificada con `git show` sobre `9ea0ccb`, ver nota independiente sobre corridas mobile/desktop y umbral SEO pendientes; OBS-12 — marco ISO/IEC 25010 documentado en `docs/arquitectura/ISO-25010.md`, evidencia real verificada; OBS-13 — `CONTRIBUTORS.md` con roles CRediT individualizados por persona con evidencia real; OBS-14 — afirmación falsa sobre ausencia de historial Git eliminada de `CONTRIBUTORS.md`; OBS-15 — commits reales con `jmariscalc@uteq.edu.ec` verificados con `git log`)
 - **CERRADAS PARCIALMENTE:** 0 (estado no utilizado en esta actualización)
-- **ABIERTAS:** 3 (OBS-10, OBS-13, OBS-14)
+- **ABIERTAS:** 1 (OBS-10)
 - **NO VERIFICABLES:** 0
 
-Las tres restantes quedan sin cerrar por diseño de esta tarea: OBS-10
-depende de publicar en Zenodo (fuera de alcance); OBS-13 y OBS-14 dependen
-de editar `CONTRIBUTORS.md`, explícitamente prohibido en esta fase — ver
-el bloqueo documentado en el propio bloque de OBS-14. Ver Parte 5.2 para
-el detalle por observación.
+Solo OBS-10 queda sin cerrar: depende de publicar en Zenodo, una acción
+manual de archivado fuera del alcance de cambios en este repositorio. Ver
+Parte 5.2 para el detalle por observación.
 
 ## Estado global combinado (OBS-01 a OBS-15)
 
 - **Total de observaciones registradas en este documento:** 15
-- **CERRADAS:** 12 (OBS-01 a OBS-08, Entregas 1A/1B; más OBS-09, OBS-11, OBS-12 y OBS-15, Entrega 3)
+- **CERRADAS:** 14 (OBS-01 a OBS-08, Entregas 1A/1B; más OBS-09, OBS-11, OBS-12, OBS-13, OBS-14 y OBS-15, Entrega 3)
 - **CERRADAS PARCIALMENTE:** 0
-- **ABIERTAS:** 3 (OBS-10, OBS-13, OBS-14)
+- **ABIERTAS:** 1 (OBS-10)
 
 ## Observaciones que aún bloquean `v0.7.1`
 
@@ -951,20 +926,27 @@ Ninguna acción pendiente derivada de las observaciones de las Entregas 1A y
 1B. El Bloque 0 de la Guía de la Tercera Entrega queda con evidencia
 completa (100 % de cierre).
 
-Pendientes derivados de la Entrega 3 (OBS-09 a OBS-15). OBS-09, OBS-12 y
-OBS-15 ya no aparecen en esta lista: el tag `v0.9.0-rc` fue reconstruido y
-publicado en `origin` (OBS-09, ver Parte 5); el marco ISO/IEC 25010 quedó
-documentado en `docs/arquitectura/ISO-25010.md` (OBS-12, ver Parte 5); y
+Pendientes derivados de la Entrega 3 (OBS-09 a OBS-15). OBS-09, OBS-12,
+OBS-13, OBS-14 y OBS-15 ya no aparecen en esta lista: el tag `v0.9.0-rc`
+fue reconstruido y publicado en `origin` (OBS-09, ver Parte 5); el marco
+ISO/IEC 25010 quedó documentado en `docs/arquitectura/ISO-25010.md`
+(OBS-12, ver Parte 5); `CONTRIBUTORS.md` ya asigna roles CRediT
+individualizados por persona con evidencia real y ya no afirma la
+ausencia de historial Git (OBS-13 y OBS-14, ver sus bloques arriba); y
 existen commits reales con el correo institucional, verificados con
-`git log` (OBS-15, ver Parte 5) — las tres quedan **CERRADA**. Decidir si
+`git log` (OBS-15, ver Parte 5) — las cinco quedan **CERRADA**. Decidir si
 se reconstruye también `v0.7.1` sigue siendo una decisión de alcance del
-equipo, no una limitación de evidencia (ver Parte 8). Los siguientes
-pendientes de Entrega 3 continúan explícitamente fuera del alcance de esta
-tarea:
+equipo, no una limitación de evidencia (ver Parte 8). El único pendiente
+de Entrega 3 que continúa explícitamente fuera del alcance de cambios en
+este repositorio:
 
-- Archivar el software en Zenodo y obtener el DOI — OBS-10.
-- Ejecutar las corridas Lighthouse definitivas en perfil mobile y desktop, y corregir el umbral SEO (82/100 frente a ≥ 90) — nota independiente de OBS-11 (OBS-11 en sí ya está CERRADA; esto es trabajo de calidad pendiente, no una condición de cierre de la observación histórica).
-- Editar `CONTRIBUTORS.md` para asignar roles CRediT de forma individual, y corregir en el mismo archivo la afirmación falsa sobre ausencia de historial Git — OBS-13, OBS-14. Ambas quedan bloqueadas en esta fase porque `CONTRIBUTORS.md` está explícitamente prohibido de editar (ver sección "NO TOCAR" de esta tarea); requieren una fase futura que autorice explícitamente su edición.
+- Archivar el software en Zenodo y obtener el DOI — OBS-10 (acción manual del dueño del repositorio, no requiere ni admite cambios de código/documentación adicionales para cerrarse).
+
+Nota de calidad independiente, no ligada a ninguna observación abierta:
+ejecutar las corridas Lighthouse definitivas en perfil mobile y desktop, y
+corregir el umbral SEO (82/100 frente a ≥ 90) — OBS-11 en sí ya está
+CERRADA; esto es trabajo de calidad pendiente, no una condición de cierre
+de ninguna observación de esta bitácora.
 
 ## Evidencia JaCoCo de esta fase (Entrega Final)
 

@@ -6,16 +6,25 @@ authors:
   - family-names: "Beltrán Montiel"
     given-names: "Fred Adrián"
     affiliation: "Universidad Técnica Estatal de Quevedo"
+    email: "fbeltranm@uteq.edu.ec"
   - family-names: "Mariscal Cabrera"
     given-names: "Jaime Josué"
     affiliation: "Universidad Técnica Estatal de Quevedo"
+    email: "jmariscalc@uteq.edu.ec"
   - family-names: "Taipe Mora"
     given-names: "Zaida Melissa"
     affiliation: "Universidad Técnica Estatal de Quevedo"
-version: 0.9.0-rc
-date-released: "2026-07-24"
+    email: "ztaipem@uteq.edu.ec"
+# version: versión objetivo de la Entrega Final. El tag "v1.0.0" todavia
+# NO ha sido publicado en este repositorio (verificar con "git tag
+# --list"); este campo declara la version de software que se citara una
+# vez publicado ese tag, no una release ya existente.
+version: 1.0.0
+# date-released: deliberadamente SIN valor todavia. No se fija una fecha
+# de release real hasta que el tag "v1.0.0" exista y quede publicado; fijar
+# una fecha ahora implicaria afirmar un release que no ha ocurrido.
 license: MIT
-repository-code: "https://github.com/JirachinG19Stdio/PFC-VET-ENTR3-v0.9.0-rc"
+repository-code: "https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET"
 keywords:
   - "gestión veterinaria"
   - "Spring Boot"
@@ -25,6 +34,6 @@ keywords:
   - "PostgreSQL"
   - "aplicaciones web"
   - "PFC"
-# doi: pendiente de asignación por Zenodo al archivar el tag v0.9.0-rc.
-# Se agregará aquí, en README.md y en la portada del informe técnico
-# conforme al bloque E.2 de la Guía de la Tercera Entrega.
+# doi: pendiente de asignación por Zenodo al archivar el tag v1.0.0.
+# Se agregará aquí, en README.md y en docs/checklists/fair.md (item F1)
+# una vez obtenido -- no se inventa ningún DOI mientras tanto.

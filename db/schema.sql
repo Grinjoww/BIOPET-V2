@@ -1,4 +1,13 @@
 -- db/schema.sql
+-- HISTORICO / NO se monta automaticamente en docker-entrypoint-initdb.d
+-- (ver docker-compose.yml). Se conserva como documentacion del esquema
+-- V1, pero ya no se ejecuta al inicializar Postgres: precargarlo antes de
+-- Flyway en un volumen "nuevo" enmascaraba V1 detras de
+-- "baseline-on-migrate: true" (Flyway baseline-aba la version 1 sin
+-- ejecutarla de verdad) y quedaba desfasado frente a V2-V6, exactamente
+-- el riesgo que ya advertia esta nota. Flyway (V1__schema_inicial.sql) es
+-- ahora la unica fuente real de este esquema.
+--
 -- Copia del esquema aplicado por Flyway (V1__schema_inicial.sql), usada para que
 -- Docker pueda inicializar la base de datos sin depender de que el backend arranque.
 -- IMPORTANTE: si en el futuro se crea V2__, V3__, etc. en Flyway, este archivo debe

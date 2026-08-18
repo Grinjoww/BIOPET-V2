@@ -6,7 +6,7 @@
 -- Tablas que toca (solo lectura): mascotas, usuarios, consultas, vacunas, citas.
 -- Parametros:
 --   IN  p_mascota_id BIGINT - id de la mascota a consultar (obligatorio).
--- Salida (RETURNS TABLE):
+-- Salida: OUT p_cursor refcursor, con columnas
 --   mascota VARCHAR, especie VARCHAR, raza VARCHAR, duenio VARCHAR,
 --   nConsultas BIGINT, ultimaConsulta TIMESTAMPTZ, ultimaVacuna VARCHAR,
 --   proximaVacuna DATE, nCitas BIGINT.
@@ -14,60 +14,59 @@
 -- proyeccion JPA HistorialClinico.
 -- Sin SQL dinamico ni concatenacion.
 -- Ejemplo de invocacion:
---   SELECT * FROM fn_historial_clinico_mascota(1);
+--   BEGIN;
+--   CALL fn_historial_clinico_mascota(1, NULL);
+--   -- el driver JDBC/JPA obtiene el ResultSet directamente del parametro
+--   -- OUT refcursor; en psql: FETCH ALL FROM "<nombre_cursor>";
+--   COMMIT;
+--
+-- Reclasificada de FUNCTION a PROCEDURE con OUT refcursor (F02, cierre de
+-- acceso JPA formal): ver la nota completa en
+-- fn_resumen_mascotas_por_especie.sql.
 
-CREATE OR REPLACE FUNCTION fn_historial_clinico_mascota(
-    p_mascota_id BIGINT
+CREATE OR REPLACE PROCEDURE fn_historial_clinico_mascota(
+    IN p_mascota_id BIGINT,
+    OUT p_cursor refcursor
 )
-RETURNS TABLE (
-    mascota VARCHAR,
-    especie VARCHAR,
-    raza VARCHAR,
-    duenio VARCHAR,
-    nConsultas BIGINT,
-    ultimaConsulta TIMESTAMPTZ,
-    ultimaVacuna VARCHAR,
-    proximaVacuna DATE,
-    nCitas BIGINT
-)
+LANGUAGE plpgsql
 AS $$
 BEGIN
-    RETURN QUERY
-    SELECT m.nombre AS mascota,
-           m.especie,
-           m.raza,
-           u.nombre AS duenio,
-           COALESCE(cstats.n_consultas, 0) AS nConsultas,
-           cstats.ultima_consulta AS ultimaConsulta,
-           vstats.ultima_vacuna AS ultimaVacuna,
-           vstats.proxima_vacuna AS proximaVacuna,
-           COALESCE(cistats.n_citas, 0) AS nCitas
-    FROM mascotas m
-    JOIN usuarios u ON u.id = m.duenio_id
-    LEFT JOIN (
-        SELECT c.mascota_id,
-               COUNT(*)::BIGINT AS n_consultas,
-               MAX(c.fecha_consulta) AS ultima_consulta
-        FROM consultas c
-        WHERE c.activo = TRUE
-        GROUP BY c.mascota_id
-    ) cstats ON cstats.mascota_id = m.id
-    LEFT JOIN (
-        SELECT v.mascota_id,
-               (ARRAY_AGG(v.tipo ORDER BY v.fecha_aplicacion DESC))[1] AS ultima_vacuna,
-               MIN(v.proxima_fecha) AS proxima_vacuna
-        FROM vacunas v
-        WHERE v.activo = TRUE
-        GROUP BY v.mascota_id
-    ) vstats ON vstats.mascota_id = m.id
-    LEFT JOIN (
-        SELECT ci.mascota_id,
-               COUNT(*)::BIGINT AS n_citas
-        FROM citas ci
-        WHERE ci.activo = TRUE
-        GROUP BY ci.mascota_id
-    ) cistats ON cistats.mascota_id = m.id
-    WHERE m.id = p_mascota_id
-      AND m.activo = TRUE;
+    OPEN p_cursor FOR
+        SELECT m.nombre AS mascota,
+               m.especie,
+               m.raza,
+               u.nombre AS duenio,
+               COALESCE(cstats.n_consultas, 0) AS nConsultas,
+               cstats.ultima_consulta AS ultimaConsulta,
+               vstats.ultima_vacuna AS ultimaVacuna,
+               vstats.proxima_vacuna AS proximaVacuna,
+               COALESCE(cistats.n_citas, 0) AS nCitas
+        FROM mascotas m
+        JOIN usuarios u ON u.id = m.duenio_id
+        LEFT JOIN (
+            SELECT c.mascota_id,
+                   COUNT(*)::BIGINT AS n_consultas,
+                   MAX(c.fecha_consulta) AS ultima_consulta
+            FROM consultas c
+            WHERE c.activo = TRUE
+            GROUP BY c.mascota_id
+        ) cstats ON cstats.mascota_id = m.id
+        LEFT JOIN (
+            SELECT v.mascota_id,
+                   (ARRAY_AGG(v.tipo ORDER BY v.fecha_aplicacion DESC))[1] AS ultima_vacuna,
+                   MIN(v.proxima_fecha) AS proxima_vacuna
+            FROM vacunas v
+            WHERE v.activo = TRUE
+            GROUP BY v.mascota_id
+        ) vstats ON vstats.mascota_id = m.id
+        LEFT JOIN (
+            SELECT ci.mascota_id,
+                   COUNT(*)::BIGINT AS n_citas
+            FROM citas ci
+            WHERE ci.activo = TRUE
+            GROUP BY ci.mascota_id
+        ) cistats ON cistats.mascota_id = m.id
+        WHERE m.id = p_mascota_id
+          AND m.activo = TRUE;
 END;
-$$ LANGUAGE plpgsql;
+$$;

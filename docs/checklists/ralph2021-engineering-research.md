@@ -39,7 +39,7 @@ Se inspeccionó, antes de seleccionar el estándar:
 | Diseño del artefacto | 6 ADR con alternativas consideradas; diagramas C4 (contexto, contenedores, componentes) | `docs/adr/`, `docs/diagrams/c4-*` |
 | Desarrollo del artefacto | Código fuente real del backend y frontend | `Backend/src/`, `frontend/src/` |
 | Evaluación de rendimiento | k6, 6 corridas, IC 95% con distribución t | `docs/mediciones/perf/REPORT.md` |
-| Evaluación de usabilidad | SUS, n=10 participantes, media 74.75/100 | `docs/mediciones/sus/REPORT.md`, `docs/mediciones/sus/sus-raw.csv` |
+| Evaluación de usabilidad | SUS, n=18 participantes, media 74.44/100, IC95% [63.33, 85.56] | `docs/mediciones/sus/REPORT.md`, `docs/mediciones/sus/sus-raw.csv` |
 | Evaluación de accesibilidad | Lighthouse, Accessibility=91/100 | `docs/mediciones/lighthouse/README.md` |
 | Evaluación de seguridad | OWASP (6 categorías), ZAP Baseline, SpotBugs/Find Security Bugs | `docs/mediciones/sec/` |
 | Cobertura de pruebas | JaCoCo, LINE 91.80%, BRANCH 79.39% | `docs/mediciones/jacoco/METRICS.md` |
@@ -65,7 +65,13 @@ recolectada" y "redacción académica pendiente".
 
 ## 4. Fecha de revisión
 
-2026-08-17.
+2026-08-17 (creación); reconciliado el mismo día tras integrarse desde
+`main` la muestra SUS ampliada de Zaida (n=10 → n=18, media 74.44/100,
+IC 95 % [63.33, 85.56] — ver `docs/mediciones/sus/REPORT.md`). Solo se
+actualizaron cifras de evidencia SUS y su interpretación prudente; ningún
+estado de ítem cambió por esta reconciliación (el aumento de muestra no
+satisface por sí solo ningún criterio adicional de Ralph et al. — ver
+detalle en cada ítem afectado, más abajo).
 
 ## 5. Checklist ítem por ítem
 
@@ -81,7 +87,7 @@ ACM SIGSOFT Empirical Standards (Ralph et al., 2021). Se listan los
 | E1 | Describe el artefacto propuesto con detalle adecuado | CUMPLE | SRS con 38 requisitos funcionales/no funcionales; 3 diagramas C4 (contexto, contenedores, componentes backend); 6 ADR con decisión y justificación técnica | `docs/requisitos/SRS.md`, `docs/diagrams/c4-contexto/`, `docs/diagrams/c4-contenedores/`, `docs/diagrams/c4-componentes-backend/`, `docs/adr/` | Ninguna |
 | E2 | Justifica la necesidad, utilidad o relevancia del artefacto | CUMPLE | SRS §1 (Propósito y Alcance); resumen ejecutivo del informe describe el propósito y las mejoras respecto a la entrega anterior | `docs/requisitos/SRS.md` (sección 1), `docs/informe/secciones/01-resumen-ejecutivo.tex` | Ninguna |
 | E3 | Evalúa conceptualmente el artefacto; discute fortalezas, debilidades y limitaciones | CUMPLE | Capítulo dedicado de amenazas a la validez (interna, externa, de constructo, de conclusión); limitaciones explícitas en cada documento de `docs/mediciones/sec/` (ej. TLS autofirmado, rate limiting no distribuido, ausencia de SIEM) | `docs/informe/secciones/09-amenazas-validez.tex`, `docs/mediciones/sec/*.md` (secciones "Limitaciones") | El capítulo de amenazas a la validez corresponde a la Entrega 3; requiere revisión para incorporar las mediciones nuevas de esta fase (JaCoCo 70%, ZAP, SpotBugs) — ver Brechas |
-| E4 | Evalúa empíricamente el artefacto usando uno de: investigación-acción, estudio de caso, experimento controlado, simulación cuantitativa, estudio de *benchmarking*, u otro método con justificación clara | CUMPLE | El diseño real corresponde a un **estudio de benchmarking técnico** (rendimiento k6 contra umbrales, cobertura JaCoCo contra umbral, seguridad ZAP/SpotBugs contra 0 hallazgos altos) combinado con una **encuesta de usabilidad de muestra pequeña** (SUS, n=10) — ambos métodos empíricos reconocidos, con datos crudos reales | `docs/mediciones/perf/`, `docs/mediciones/jacoco/`, `docs/mediciones/sec/zap/`, `docs/mediciones/sec/static-analysis/`, `docs/mediciones/sus/` | Ninguna |
+| E4 | Evalúa empíricamente el artefacto usando uno de: investigación-acción, estudio de caso, experimento controlado, simulación cuantitativa, estudio de *benchmarking*, u otro método con justificación clara | CUMPLE | El diseño real corresponde a un **estudio de benchmarking técnico** (rendimiento k6 contra umbrales, cobertura JaCoCo contra umbral, seguridad ZAP/SpotBugs contra 0 hallazgos altos) combinado con una **encuesta de usabilidad** (SUS, n=18) — ambos métodos empíricos reconocidos, con datos crudos reales | `docs/mediciones/perf/`, `docs/mediciones/jacoco/`, `docs/mediciones/sec/zap/`, `docs/mediciones/sec/static-analysis/`, `docs/mediciones/sus/` | Ninguna |
 | E5 | Indica claramente cuál de esas metodologías empíricas se usó | CUMPLE | El borrador metodológico de Jaime declara explícitamente, usando la taxonomía de Ralph et al., que el diseño empírico de BIOPET es un **estudio de *benchmarking* técnico** (rendimiento k6, cobertura JaCoCo, seguridad ZAP/SpotBugs) **combinado con una encuesta de usabilidad de muestra pequeña** (SUS), y explica por qué se descartaron *controlled experiment* y *case study* como alternativas | `docs/informe/borradores/jaime/metodologia-y-amenazas.md` (sección 1, "Enfoque metodológico") | El documento es un borrador de Jaime, listo para migrar a LaTeX, pero todavía no incorporado al informe maestro (`docs/informe/secciones/05-protocolo-experimental.tex`); esa migración queda fuera del alcance de esta fase |
 | E6 | Discute alternativas de estado del arte (fortalezas/debilidades), explica por qué no existen, o justifica por qué la comparación es impráctica | CUMPLE PARCIALMENTE | 5 de 6 ADR incluyen una sección explícita "Alternativas consideradas" (decisiones de tecnología/arquitectura, con ventajas/desventajas) | `docs/adr/ADR-002-pila-tecnologica.md`, `ADR-004-postgresql.md`, `ADR-005-despliegue.md`, `ADR-006-autenticacion-seguridad.md`, `ADR-007-acceso-datos.md` | Los ADR comparan alternativas de *diseño interno* (tecnologías, patrones), no alternativas de *artefactos externos* (otros sistemas de gestión veterinaria). No existe una comparación con sistemas competidores ni una justificación explícita de por qué esa comparación se omite |
 | E7 | Compara empíricamente con alternativas, compara con *benchmarks*, o justifica por qué la evaluación comparativa es impráctica | CUMPLE PARCIALMENTE | Comparación real contra umbrales/*benchmarks* técnicos: JaCoCo ≥70%, Lighthouse Accessibility ≥90, k6 error 0.0%, SUS contra el umbral de referencia de 68 puntos (Bangor et al., 2008) | `docs/mediciones/jacoco/METRICS.md`, `docs/mediciones/lighthouse/README.md`, `docs/mediciones/perf/REPORT.md`, `docs/mediciones/sus/REPORT.md` | Existe comparación contra *benchmarks* (umbrales), pero no contra artefactos alternativos (otros sistemas), y no hay una justificación explícita por escrito de por qué se omite esa comparación |
@@ -168,7 +174,7 @@ entorno de desarrollo local con Docker.
 |---|---|---|
 | Cobertura JaCoCo (LINE / BRANCH) | 91.80 % / 79.39 % | `docs/mediciones/jacoco/METRICS.md` |
 | k6 — tasa de error / throughput (ejemplo, corrida 3 caliente) | 0.0 % / ~92.34 req/s | `docs/mediciones/perf/REPORT.md` |
-| SUS — puntaje medio (n=10) | 74.75 / 100 | `docs/mediciones/sus/REPORT.md` |
+| SUS — puntaje medio (n=18) | 74.44 / 100, IC95% [63.33, 85.56] | `docs/mediciones/sus/REPORT.md` |
 | Lighthouse — Accessibility | 91 / 100 | `docs/mediciones/lighthouse/README.md` |
 | ZAP Baseline — alertas de riesgo alto | 0 | `docs/mediciones/sec/zap/README.md` |
 | SpotBugs/Find Security Bugs — hallazgos SQL | 0 de 66 hallazgos totales | `docs/mediciones/sec/static-analysis/README.md` |
@@ -199,11 +205,16 @@ Pendientes reales, clasificados sin asignarlos a ninguna persona:
   propios, no contra otros sistemas de gestión veterinaria existentes; no
   hay una justificación explícita por escrito de por qué se omite esa
   comparación.
-- **Tamaño muestral de SUS (n=10)** es el mínimo exigido por la guía de la
-  entrega, sin análisis estadístico más allá de media e intervalo de
-  confianza al 95 %; no se realizó un análisis de correlación entre
-  variables demográficas (edad, experiencia web, dispositivo) y el puntaje
-  SUS.
+- **Tamaño muestral de SUS ampliado a n=18** (actualización reciente,
+  integrada desde `main`; supera el mínimo de 15 exigido para la Entrega
+  Final, documentado en `docs/etica/ETHICS.md`), sin análisis estadístico
+  más allá de media e intervalo de confianza al 95 %; no se realizó un
+  análisis de correlación entre variables demográficas (edad, experiencia
+  web, dispositivo) y el puntaje SUS. Un tamaño muestral mayor reduce el
+  margen del intervalo de confianza, pero **no implica automáticamente
+  representatividad externa**: los participantes siguen siendo reclutados
+  por conveniencia (ver amenazas a la validez externa en
+  `docs/informe/borradores/jaime/metodologia-y-amenazas.md`).
 - **Entorno de evaluación limitado a una sola máquina de desarrollo**, sin
   entorno de *staging* o producción equivalente; ya documentado
   explícitamente como amenaza a la validez externa, pero sigue siendo una
