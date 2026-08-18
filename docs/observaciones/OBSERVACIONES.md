@@ -807,7 +807,7 @@ conserva aquí sin ocultarla.
 
 # Parte 7 — Fortalezas reconocidas por el docente
 
-### Entrega 1A
+## Entrega 1A
 
 - Descripción y alcance del sistema completos.
 - Arquitectura C4 Nivel 1 y Nivel 2.
@@ -817,7 +817,7 @@ conserva aquí sin ocultarla.
 - Referencias académicas verificadas.
 - Calidad alta de redacción conforme a ISO/IEC/IEEE 29148 (patrón "deberá", subcriterio D2 = 95 %, "EL MEJOR" según el propio texto del docente).
 
-### Entrega 1B
+## Entrega 1B
 
 - Autenticación JWT completa (registro, login, logout, refresh).
 - Redis real (`StringRedisTemplate`), no simulado.

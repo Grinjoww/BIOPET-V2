@@ -592,8 +592,13 @@ Correos, RF-07 recuperado)**
   superar 200 ms (p95) con caché caliente ni 500 ms (p95) con caché fría.
 - **Rationale:** heredado de RNF-01/RNF-WEB-04 de la Entrega 1A, con
   umbrales cuantitativos añadidos por el bloque C.1 de la Guía.
-- **Verificación:** k6 (50 VUs, 30 s), 3 corridas, `docs/mediciones/perf/`.
-- **Estado:** pendiente de evidencia empírica archivada (bloque C.1).
+- **Verificación:** k6, 5 corridas en caliente y 5 en frío,
+  `docs/mediciones/perf/` (archivos `k6-20260817T*-local-tls-v0.9.0-rc-*.json`
+  y `REPORT.md`).
+- **Estado:** verificado. `docs/mediciones/perf/REPORT.md` registra p95 entre
+  9.7 ms y 22.13 ms según la corrida, muy por debajo de los umbrales de 200 ms
+  (caché caliente) y 500 ms (caché fría) exigidos por este requisito, con
+  0.0 % de error en todas las corridas.
 
 **REQ-NF-002 — Comunicación cifrada obligatoria**
 - **Categoría:** Seguridad · **Prioridad:** Must
@@ -634,8 +639,13 @@ Correos, RF-07 recuperado)**
   Chrome DevTools a 320px, 768px y 1440px.
 - **Trazabilidad:** `frontend/src/app/features/mascotas.component.ts`
   (`.grid-mascotas` con `@media (max-width: 600px)`).
-- **Estado:** verificado parcialmente (pantalla de Mascotas); pendiente de
-  auditoría Lighthouse archivada.
+- **Estado:** verificado parcialmente. `docs/mediciones/lighthouse/` contiene
+  6 corridas oficiales (2026-08-01, perfil móvil simulado, Slow 4G) con
+  Performance 92–94 y Accessibility 91, sobre `/login` (`/mascotas` redirige
+  a `/login` sin sesión, ver `docs/mediciones/lighthouse/README.md`). **No
+  se auditó todavía un perfil de escritorio** ni la vista autenticada de
+  Mascotas; ambas cosas quedan pendientes de una corrida adicional (ver
+  Observaciones, sección 7).
 
 **REQ-NF-006 — Compatibilidad de navegadores**
 - **Categoría:** Compatibilidad · **Prioridad:** Should
@@ -674,9 +684,11 @@ Correos, RF-07 recuperado)**
   el bloque C.2 de la Guía; ausente en el SRS original. Verificado
   directamente en `AuthenticationAuditService.java`.
 - **Verificación:** `AuthenticationAuditServiceTest`; captura de log real
-  para el bloque C.2 (`docs/mediciones/sec/`).
-- **Estado:** verificado en código; pendiente de evidencia archivada
-  (captura de log de producción/staging).
+  en `docs/mediciones/sec/A09-logging.md`.
+- **Estado:** verificado. `docs/mediciones/sec/A09-logging.md` incluye
+  líneas reales de log (`AUTH_AUDIT event=LOGIN_SUCCESS`,
+  `LOGIN_FAILURE`, `LOGIN_RATE_LIMITED`, con IP, timestamp UTC y sujeto) y
+  documenta la sanitización contra log forging.
 
 **REQ-NF-010 — Limitación de intentos de login (OWASP A07)**
 - **Categoría:** Seguridad · **Prioridad:** Must
@@ -688,9 +700,13 @@ Correos, RF-07 recuperado)**
   el bloque C.2 de la Guía; ausente en el SRS original. Verificado
   directamente en `LoginRateLimiterService.java`
   (`security.rate-limit.login.max-attempts`, `.window`, `.block-duration`).
-- **Verificación:** `LoginRateLimiterServiceTest`.
-- **Estado:** verificado en código; pendiente de evidencia curl archivada
-  (bloque C.2, control A07).
+- **Verificación:** `LoginRateLimiterServiceTest`; evidencia HTTP real en
+  `docs/mediciones/sec/A07-authentication.md`.
+- **Estado:** verificado. `docs/mediciones/sec/A07-authentication.md`
+  registra los 5 primeros fallos respondiendo `401`, el 6º respondiendo
+  `429` con `ProblemDetail` (`type=urn:biopet:error:rate-limited`) y
+  cabecera `Retry-After: 900` real, capturada con `curl`, no solo con la
+  prueba JUnit.
 
 **REQ-NF-011 — Arquitectura en capas**
 - **Categoría:** Mantenibilidad · **Prioridad:** Must
@@ -713,10 +729,14 @@ Correos, RF-07 recuperado)**
   `ADR-003-jwt-redis.md`; llevado a requisito no funcional explícito exigido
   por el bloque A.1 de la Guía.
 - **Verificación:** inspección de `application.yml`
-  (`spring.cache.redis.time-to-live`); medición de hit ratio en
-  `docs/mediciones/perf/`.
-- **Estado:** verificado en configuración; pendiente de evidencia de hit
-  ratio archivada.
+  (`spring.cache.redis.time-to-live`); evidencia cruda en
+  `docs/mediciones/redis/`.
+- **Estado:** verificado parcialmente. `docs/mediciones/redis/` confirma el
+  TTL real de la clave de caché (195 s, mediante `TTL`) y su existencia
+  bajo carga (`DBSIZE`, `KEYS mascotas::*`). **No hay todavía una medición
+  explícita de hit ratio** (aciertos/total); solo se verificó que la clave
+  existe con el TTL configurado, no su tasa de aciertos a lo largo del
+  tiempo. Esto queda pendiente (ver Observaciones, sección 7).
 
 **REQ-NF-013 — Estrategia híbrida de acceso a datos (ORM + procedimientos
 almacenados)**
@@ -852,28 +872,58 @@ como observación abierta en la sección 7.
 
 ## 7. Observaciones e información pendiente
 
-Sin inventar contenido, se documenta explícitamente lo que la Guía exige y
-que aún no existe con evidencia verificable en el repositorio al momento de
-escribir este documento:
+Esta sección se revisó contra el estado real del repositorio (v1.0.0). Se
+mantiene el mismo principio que en versiones anteriores: no se marca nada
+como resuelto sin evidencia verificable, y no se inventa contenido para
+cerrar un pendiente.
 
-- **Bitácora de observaciones** (`docs/observaciones/OBSERVACIONES.md`,
-  bloque 0 de la Guía): no verificada en este documento; corresponde a otro
-  bloque de trabajo del equipo.
-- **ADR de cambio de pila tecnológica**: `ADR-002-pila-tecnologica.md` existe
-  en el repositorio; se recomienda verificar que documente explícitamente el
-  cambio desde ASP.NET Core (Entrega 1A) hacia Java/Spring Boot, con
-  alternativas consideradas y consecuencias, para cerrar el señalamiento que
-  traía este SRS desde `CAMBIOS-SRS.md`.
-- **Evidencia empírica del bloque C** (k6, curl OWASP, SUS, Lighthouse,
-  JaCoCo): los requisitos REQ-NF-001, 002, 005, 006, 009, 010, 012 dependen
-  de archivos crudos en `docs/mediciones/` que deben generarse con las
-  herramientas reales, no simularse.
-- **Wireframes actualizados de la pantalla de Mascotas** (sección 6): la
-  Entrega 1A solo documentó wireframes de login y dashboard genérico: no
-  existe un wireframe específico de la pantalla real de gestión de mascotas
-  con paginación y formularios. Se recomienda generarlo para la Entrega
-  Final si el criterio de rúbrica lo exige.
-- **Wireframes de los módulos pendientes** (historial clínico, citas,
-  facturación): los wireframes de la Entrega 1A (`Figura 5` y `Figura 6` del
-  documento original) describen intención de diseño, no un contrato de
-  implementación; deben revalidarse cuando esos módulos se desarrollen.
+**Resuelto desde la versión anterior de este documento:**
+
+- **ADR de cambio de pila tecnológica** — CERRADO. `docs/adr/ADR-002-pila-tecnologica.md`
+  existe, está en estado "Aceptado" y documenta explícitamente la migración
+  de ASP.NET Core 8 (ADR-001, Entrega 1A) a Java 21 / Spring Boot 3.2, con
+  contexto, evidencia verificable en `Backend/pom.xml` y alternativas
+  consideradas. El señalamiento que traía `CAMBIOS-SRS.md` ya no aplica.
+- **Evidencia empírica de rendimiento (REQ-NF-001)** — CERRADO. 10 corridas
+  k6 reales (5 caliente, 5 frío) en `docs/mediciones/perf/`, con p95 entre
+  9.7 ms y 22.13 ms, muy por debajo del umbral de 200/500 ms.
+- **Evidencia OWASP A07/A09 (REQ-NF-009, REQ-NF-010)** — CERRADO.
+  `docs/mediciones/sec/A07-authentication.md` y `A09-logging.md` contienen
+  capturas HTTP (`curl`) y de log reales, no solo pruebas JUnit.
+- **Bitácora de observaciones** (`docs/observaciones/OBSERVACIONES.md`):
+  existe, cubre OBS-01 a OBS-15 con fuente primaria (capturas SGA) y
+  verificación cruzada contra `git log`. OBS-13 y OBS-14 (CRediT individual
+  y afirmación falsa sobre ausencia de historial Git en `CONTRIBUTORS.md`)
+  quedaron cerradas al corregirse `CONTRIBUTORS.md` con acuerdo del equipo
+  completo.
+
+**Sigue pendiente, con acción concreta requerida del equipo (no ejecutable
+solo con lo que ya existe en el repositorio):**
+
+- **Lighthouse — perfil de escritorio y vista autenticada.** Las 6 corridas
+  oficiales existentes (`docs/mediciones/lighthouse/`, 2026-08-01) solo
+  cubren perfil móvil simulado y, por la redirección de `authGuard`, solo
+  auditan efectivamente `/login`. **SEO quedó en 82/100 frente al umbral de
+  90** por dos causas concretas identificadas en el propio reporte
+  (`docs/mediciones/lighthouse/raw/*.report.json`, categoría `seo`):
+  1. `meta-description` ausente en `frontend/src/index.html` — **ya
+     corregido** en este cierre (se agregó una meta descripción).
+  2. `robots.txt` inválido/inexistente — **ya corregido** en este cierre
+     (se creó `frontend/public/robots.txt` y se registró `public/` como
+     `assets` en `angular.json` para que Angular lo sirva en la raíz).
+  Falta que alguien del equipo con acceso al entorno Docker corra
+  `make up && make lighthouse` de nuevo (con `lighthouserc.js` ajustado
+  para incluir un perfil `desktop` además del móvil) para confirmar que
+  SEO llega a ≥90 con estos dos cambios y para obtener, además, la primera
+  corrida real de escritorio.
+- **Hit ratio de caché Redis (REQ-NF-012).** Solo se verificó TTL (195 s) y
+  existencia de la clave bajo carga; falta una medición real de
+  aciertos/total (por ejemplo, `INFO stats` de Redis antes/después de una
+  corrida k6, comparando `keyspace_hits` y `keyspace_misses`).
+- **REQ-NF-006 (compatibilidad de navegadores).** No hay evidencia
+  archivada de ejecución manual en Chrome/Firefox/Edge; requiere que
+  alguien del equipo lo ejecute y documente capturas o notas.
+- **Wireframes de la pantalla de Mascotas y de los módulos pendientes**
+  (historial clínico, citas, facturación): siguen siendo los de la Entrega
+  1A (login y dashboard genérico); no existe wireframe específico de la
+  pantalla real de gestión de mascotas con paginación y formularios.
