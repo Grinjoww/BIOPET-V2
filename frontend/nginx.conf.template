@@ -40,15 +40,29 @@ server {
 
     location /api/ {
         proxy_pass ${BACKEND_URL}/api/;
-        proxy_set_header Host $host;
+        # Host debe identificar al UPSTREAM (backend), no al frontend.
+        # $host es el Host que el navegador envio a ESTE servidor
+        # (biopet-v2-frontend.onrender.com); reenviarlo tal cual al backend
+        # hace que el edge de Render, que enruta por Host, vea ese hostname
+        # y despache la peticion otra vez al frontend -- bucle infinito
+        # devuelto como "508 Loop Detected". $proxy_host es el host:puerto
+        # real de destino de proxy_pass (derivado de BACKEND_URL), que es
+        # lo que el edge de Render necesita para enrutar al backend.
+        proxy_set_header Host $proxy_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        # Preserva el hostname original del frontend para observabilidad
+        # (logs/debug), sin afectar el enrutamiento del backend.
+        proxy_set_header X-Forwarded-Host $host;
         # Necesario cuando BACKEND_URL es un destino HTTPS por nombre
         # (p.ej. Render, detras de un edge con SNI): sin esto, nginx no
         # envia el SNI correcto en el handshake TLS hacia el backend y la
         # conexion puede fallar. Sin efecto cuando BACKEND_URL es HTTP
-        # (Docker Compose local).
+        # (Docker Compose local). proxy_ssl_name no se fija explicitamente:
+        # su default ya es $proxy_host, igual que el Host de arriba, asi
+        # que el SNI enviado coincide con el Host HTTP -- consistente para
+        # el TLS/routing del edge de Render.
         proxy_ssl_server_name on;
     }
 }
