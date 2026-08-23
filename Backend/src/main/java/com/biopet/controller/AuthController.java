@@ -24,8 +24,10 @@ public class AuthController {
     }
 
     @PostMapping("/registro")
-    public ResponseEntity<UsuarioResponse> registro(@Valid @RequestBody RegistroRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registrar(request));
+    public ResponseEntity<UsuarioResponse> registro(@Valid @RequestBody RegistroRequest request,
+                                                       HttpServletRequest servletRequest) {
+        UsuarioResponse creado = authService.registrar(request, servletRequest.getRemoteAddr());
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
     @PostMapping("/login")

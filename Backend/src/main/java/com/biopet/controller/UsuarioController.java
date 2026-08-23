@@ -2,6 +2,7 @@ package com.biopet.controller;
 
 import com.biopet.dto.UsuarioRequest;
 import com.biopet.dto.UsuarioResponse;
+import com.biopet.dto.UsuarioSeleccionableResponse;
 import com.biopet.service.AuthService;
 import com.biopet.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -13,6 +14,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -36,6 +39,29 @@ public class UsuarioController {
         return usuarioService.listar(pageable);
     }
 
+    /**
+     * Selector de solo lectura para poblar el campo "dueño" en formularios de
+     * mascota (MascotaRequest.duenioId). No es el CRUD administrativo: no
+     * expone password/passwordHash/activo ni ningún otro rol distinto de
+     * ROLE_DUENO. ROLE_DUENO no lo necesita (nunca crea mascotas) y recibe 403.
+     */
+    @GetMapping("/duenios")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR')")
+    public List<UsuarioSeleccionableResponse> duenios() {
+        return usuarioService.listarDuenios();
+    }
+
+    /**
+     * Selector de solo lectura para poblar el campo "veterinario" en
+     * formularios de cita/consulta/vacuna (veterinarioId). Mismas
+     * restricciones y misma audiencia que /duenios.
+     */
+    @GetMapping("/veterinarios")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR')")
+    public List<UsuarioSeleccionableResponse> veterinarios() {
+        return usuarioService.listarVeterinarios();
+    }
+
     @GetMapping("/{id:\\d+}")
     @PreAuthorize("hasRole('ADMIN')")
     public UsuarioResponse buscar(@PathVariable Long id) {
@@ -57,8 +83,8 @@ public class UsuarioController {
 
     @DeleteMapping("/{id:\\d+}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        usuarioService.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+        usuarioService.eliminar(id, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
 }

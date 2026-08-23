@@ -1,17 +1,15 @@
 import { Component } from '@angular/core';
-import { RouterOutlet, RouterLink } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
 
+/**
+ * Raíz de la aplicación: solo enruta. El chrome visual (marca,
+ * navegación, sesión) vive en AppShellComponent, montado por las rutas
+ * autenticadas en app.routes.ts — /login queda fuera de ese shell.
+ */
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink],
-  template: `
-    <header>
-      <h1>BIOPET</h1>
-      <p>Entrega 1B — JWT + Spring Data JPA</p>
-      <nav><a routerLink="/login">Login</a> · <a routerLink="/mascotas">Mascotas</a> · <a routerLink="/vacunas">Vacunas</a></nav>
-    </header>
-    <router-outlet />
-  `
+  imports: [RouterOutlet],
+  template: `<router-outlet />`,
 })
 export class AppComponent {}

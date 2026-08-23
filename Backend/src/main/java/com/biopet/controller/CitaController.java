@@ -28,6 +28,18 @@ public class CitaController {
         return citaService.listar(pageable, userDetails.getUsername());
     }
 
+    /**
+     * Para la pestaña "Citas" de la ficha de mascota. Es de solo lectura:
+     * los mismos 4 roles que pueden leer /api/citas pueden leerlo, y no
+     * cambia en nada quién puede crear/actualizar/eliminar citas.
+     */
+    @GetMapping("/mascota/{mascotaId:\\d+}")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')")
+    public Page<CitaResponse> listarPorMascota(@PathVariable Long mascotaId, Pageable pageable,
+                                                @AuthenticationPrincipal UserDetails userDetails) {
+        return citaService.listarPorMascota(mascotaId, pageable, userDetails.getUsername());
+    }
+
     @GetMapping("/{id:\\d+}")
     @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')")
     public CitaResponse buscar(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {

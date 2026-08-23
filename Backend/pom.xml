@@ -69,6 +69,25 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+            <!--
+              Fija pgJDBC a 42.7.11 (Spring Boot 3.2.12 gestiona por defecto
+              42.6.2). Bug real confirmado en esta fase: 42.6.2 lanza
+              "Can't change resolved type for param: 3 from 2278 to 1790"
+              en cuanto una conexión reutiliza la llamada a
+              fn_reporte_dashboard (parámetro OUT refcursor) más allá del
+              prepareThreshold por defecto (5 ejecuciones) — determinista,
+              siempre en la 5ª llamada, nunca antes. Corregido en pgJDBC
+              agregando `|| paramTypes[index - 1] == Oid.VOID` a la
+              condición de sobrescritura permitida en
+              SimpleParameterList.setResolvedType (confirmado comparando
+              el código fuente 42.6.2 vs 42.7.4/42.7.11). Ver
+              ProcedimientosBiopetIntegrationTest.
+              reporteDashboard_15InvocacionesConsecutivasEnLaMismaConexion_...
+              y DashboardControllerIntegrationTest.
+              quinceLlamadasSeguidasAlEndpoint_... (regresión reproducida
+              y verificada con esta misma versión revertida).
+            -->
+            <version>42.7.11</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -127,6 +146,28 @@
 
     <build>
         <plugins>
+            <plugin>
+                <!--
+                    JWT_SECRET solo para la JVM de "mvn test"/"mvn verify" (nunca se
+                    empaqueta en el jar de runtime, ni se agrega a application.yml).
+                    Necesario porque security.jwt.secret ya NO tiene fallback en
+                    application.yml (P0-1: un secreto conocido en el repo no es un
+                    default valido) y varios @SpringBootTest de integracion (los que
+                    usan Testcontainers de Postgres sin @ActiveProfiles("test"), p.ej.
+                    ProcedimientosBiopetIntegrationTest) cargan el contexto completo
+                    -incluyendo JwtService- bajo el perfil por defecto, no bajo
+                    application-test.yml. Se reutiliza el mismo secreto de prueba ya
+                    versionado en application-test.yml (64 hex = 256 bits), no uno
+                    nuevo.
+                -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <environmentVariables>
+                        <JWT_SECRET>9c8f9a7d6e5b4c3a2d1f0e9c8b7a6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c</JWT_SECRET>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

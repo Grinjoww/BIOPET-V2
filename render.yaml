@@ -4,14 +4,25 @@
 # real esta versionado en este archivo.
 #
 # Como usar (resumen, ver docs/despliegue/DEPLOYMENT.md):
-#   1. Conectar el repositorio https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET
+#   1. Conectar el repositorio https://github.com/Grinjoww/BIOPET-V2
 #      en Render (New -> Blueprint).
 #   2. Render lee este archivo y crea: biopet-backend (web docker),
 #      biopet-frontend (web docker), biopet-cache (key value) y
 #      biopet-db (Postgres).
 #   3. Completar en el dashboard las variables marcadas con sync: false
-#      (JWT_SECRET, CORS_ALLOWED_ORIGINS, TLS_KEYSTORE_*).
+#      (JWT_SECRET, CORS_ALLOWED_ORIGINS, ADMIN_SEED_EMAIL,
+#      ADMIN_SEED_PASSWORD, BACKEND_URL, TLS_KEYSTORE_*).
 #   4. El healthcheck del backend usa /actuator/health (HTTP 200 = UP).
+#   5. B-2 (pendiente): BACKEND_URL del frontend queda sin valor hasta
+#      desplegar primero biopet-backend y conocer su URL publica real
+#      (ver el bloque "envVars" de biopet-frontend mas abajo).
+#   6. Bootstrap del primer ADMIN (B-1): ADMIN_SEED_ENABLED nace en "false"
+#      (value: mas abajo, no sync:false) para que el Blueprint aplique sin
+#      crear ninguna cuenta. Para el primer deploy real, editar esa
+#      variable a "true" en el dashboard (junto con ADMIN_SEED_EMAIL /
+#      ADMIN_SEED_PASSWORD ya completados) y volver a "false" despues de
+#      confirmar que el admin quedo creado (ver DataInitializer y
+#      docs/despliegue/DEPLOYMENT.md seccion 7).
 
 services:
   # ------------------------------------------------------------------
@@ -20,7 +31,7 @@ services:
   - type: web
     name: biopet-backend
     runtime: docker
-    repo: https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET
+    repo: https://github.com/Grinjoww/BIOPET-V2
     rootDir: Backend
     plan: free
     # NO usar una expresion "sh -c '...'" embebida como string aqui: Render
@@ -108,6 +119,24 @@ services:
         value: biopet-frontend
       - key: CACHE_TTL_MS
         value: "300000"
+      # B-1: bootstrap opcional del primer ADMIN (ver DataInitializer y
+      # Backend/src/main/resources/application.yml, app.admin-seed.*).
+      # ADMIN_SEED_ENABLED nace deshabilitado (value fijo, no sync:false)
+      # para que el Blueprint se pueda aplicar sin crear ninguna cuenta;
+      # el operador lo cambia a "true" en el dashboard SOLO para el deploy
+      # de bootstrap y lo vuelve a poner en "false" despues. EMAIL/PASSWORD
+      # son sync:false -- sin ningun valor ni fallback en este archivo: se
+      # completan en el dashboard con datos reales antes de habilitar el
+      # seed. NUNCA usar aqui la credencial de desarrollo (Admin123*) de
+      # .env.example / db/seed.sql.
+      - key: ADMIN_SEED_ENABLED
+        value: "false"
+      - key: ADMIN_SEED_EMAIL
+        sync: false
+      - key: ADMIN_SEED_PASSWORD
+        sync: false
+      - key: ADMIN_SEED_NAME
+        value: "Administrador BIOPET"
 
   # ------------------------------------------------------------------
   # Frontend Angular (docker + nginx). El proxy /api hacia el backend se
@@ -115,28 +144,46 @@ services:
   # + nginx.conf.template), usando BACKEND_URL definido abajo.
   #
   # NO se usa el hostname privado de Render (fromService/property: host)
-  # aqui: verificado en un deploy real que el plan Free de Web Services
-  # de Render puede ENVIAR trafico por la red privada pero NO puede
-  # RECIBIRLO (el backend biopet-backend, tambien Free, no admite
-  # conexiones entrantes por esa red desde el frontend) -- el intento
-  # anterior fallo con "host not found in upstream 'biopet-backend-dh5e'".
-  # Se usa en su lugar la URL HTTPS publica real del backend, ya
-  # desplegado y verificado accesible.
+  # aqui: verificado en un deploy real (instancia V1/academica) que el plan
+  # Free de Web Services de Render puede ENVIAR trafico por la red privada
+  # pero NO puede RECIBIRLO (el backend biopet-backend, tambien Free, no
+  # admite conexiones entrantes por esa red desde el frontend) -- el
+  # intento fallo entonces con "host not found in upstream". Por eso
+  # BACKEND_URL debe ser la URL HTTPS PUBLICA real del backend ya
+  # desplegado, no el hostname privado de Render.
+  #
+  # B-2 (pendiente, deliberado): a diferencia de la instancia V1 -donde
+  # este valor quedaba hardcodeado aqui con "value:"-, BACKEND_URL es ahora
+  # sync:false SIN ningun valor ni fallback en este archivo. Motivo: el
+  # backend V2 (biopet-backend, arriba) todavia no fue desplegado, asi que
+  # su URL publica real todavia no se conoce; dejar aqui la URL del backend
+  # ACADEMICO (V1, https://biopet-backend-dh5e.onrender.com) habria hecho
+  # que un "Blueprint Apply" del frontend V2 sirviera trafico real contra
+  # el backend academico sin que nadie lo pidiera. Con sync:false, Render
+  # exige completar el valor en el dashboard antes de poder desplegar
+  # biopet-frontend -no hay URL por defecto que se pueda "olvidar
+  # cambiar". Flujo correcto: desplegar primero biopet-backend, copiar su
+  # URL publica real (Dashboard -> biopet-backend -> URL), pegarla como
+  # BACKEND_URL de biopet-frontend, y recien entonces desplegar el
+  # frontend (o redeploy si ya se habia intentado).
   # ------------------------------------------------------------------
   - type: web
     name: biopet-frontend
     runtime: docker
-    repo: https://github.com/Grinjoww/ENTREGA-FINAL-BIOPET
+    repo: https://github.com/Grinjoww/BIOPET-V2
     rootDir: frontend
     plan: free
     healthCheckPath: /
     envVars:
-      # URL publica real y verificada del servicio biopet-backend en esta
-      # instancia de Render (no es un secreto: es la URL publica del
-      # propio backend, igual de visible que cualquier request HTTP a
-      # ella). Sin puerto (HTTPS publico de Render siempre en 443).
+      # Sin valor ni fallback: se completa en el dashboard de Render con la
+      # URL publica HTTPS real de biopet-backend (sin puerto, HTTPS publico
+      # de Render siempre en 443) una vez que ese servicio ya este
+      # desplegado. No es un secreto (es una URL publica), pero SI debe
+      # quedar sync:false para que Render no permita desplegar el frontend
+      # sin que un humano la haya fijado explicitamente -ver nota B-2
+      # arriba.
       - key: BACKEND_URL
-        value: "https://biopet-backend-dh5e.onrender.com"
+        sync: false
 
   # ------------------------------------------------------------------
   # Redis / Valkey gestionado (cache)

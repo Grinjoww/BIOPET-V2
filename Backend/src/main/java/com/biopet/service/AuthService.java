@@ -10,6 +10,7 @@ import com.biopet.repository.UsuarioRepository;
 import com.biopet.security.AuthenticationAuditService;
 import com.biopet.security.JwtService;
 import com.biopet.security.LoginRateLimiterService;
+import com.biopet.security.RegistroRateLimiterService;
 import com.biopet.security.TokenBlacklistService;
 import io.jsonwebtoken.JwtException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,6 +31,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final TokenBlacklistService blacklistService;
     private final LoginRateLimiterService loginRateLimiterService;
+    private final RegistroRateLimiterService registroRateLimiterService;
     private final AuthenticationAuditService authenticationAuditService;
 
     public AuthService(UsuarioRepository usuarioRepository,
@@ -38,6 +40,7 @@ public class AuthService {
                        JwtService jwtService,
                        TokenBlacklistService blacklistService,
                        LoginRateLimiterService loginRateLimiterService,
+                       RegistroRateLimiterService registroRateLimiterService,
                        AuthenticationAuditService authenticationAuditService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
@@ -45,11 +48,19 @@ public class AuthService {
         this.jwtService = jwtService;
         this.blacklistService = blacklistService;
         this.loginRateLimiterService = loginRateLimiterService;
+        this.registroRateLimiterService = registroRateLimiterService;
         this.authenticationAuditService = authenticationAuditService;
     }
 
     @Transactional
-    public UsuarioResponse registrar(RegistroRequest request) {
+    public UsuarioResponse registrar(RegistroRequest request, String ip) {
+        try {
+            registroRateLimiterService.verificarPermitidoYRegistrarIntento(ip);
+        } catch (RateLimitExcedidoException ex) {
+            authenticationAuditService.registroBloqueado(ip, request.email());
+            throw ex;
+        }
+
         if (usuarioRepository.existsByEmail(request.email())) {
             throw new EmailDuplicadoException(request.email());
         }

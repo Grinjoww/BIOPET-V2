@@ -27,10 +27,15 @@ export class ProblemDetailService {
         return problem?.detail ?? 'Ya existe un registro con esos datos (por ejemplo, un correo duplicado).';
       case 422:
         return this.mensajeValidacion(problem) ?? problem?.detail ?? 'Hay campos con datos inválidos.';
-      case 429:
+      case 429: {
         // El backend aún no implementa el rate limiting general (solo login),
         // pero se deja el caso preparado como pide el punto 3 del encargo.
-        return problem?.detail ?? 'Demasiados intentos. Intenta nuevamente más tarde.';
+        // Cuando el backend envía Retry-After (LoginRateLimiterService sí lo
+        // hace), se incorpora el tiempo real en vez de un "más tarde" vago.
+        const base = problem?.detail ?? 'Demasiados intentos.';
+        const segundos = this.segundosDeReintento(err);
+        return segundos != null ? `${base} Intenta de nuevo en ${segundos} segundos.` : `${base} Intenta nuevamente más tarde.`;
+      }
       default:
         return problem?.detail ?? 'No se pudo completar la operación. Intenta nuevamente.';
     }
@@ -69,5 +74,19 @@ export class ProblemDetailService {
     const errores = this.erroresPorCampo(err);
     const mensajes = errores?.[campo];
     return mensajes && mensajes.length ? mensajes[0] : null;
+  }
+
+  /**
+   * Lee el header Retry-After real que GlobalExceptionHandler.demasiadosIntentos
+   * añade al 429 de login. Solo es legible porque el tráfico es same-origin
+   * (proxy en desarrollo, nginx en producción): un 429 cross-origin real
+   * necesitaría "Retry-After" en spring.cors Access-Control-Expose-Headers,
+   * que hoy no lo incluye.
+   */
+  private segundosDeReintento(err: HttpErrorResponse): number | null {
+    const valor = err.headers?.get('Retry-After');
+    if (!valor) return null;
+    const segundos = Number(valor);
+    return Number.isFinite(segundos) ? segundos : null;
   }
 }

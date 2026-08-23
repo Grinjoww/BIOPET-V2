@@ -1,66 +1,1518 @@
-body { margin: 0; font-family: Arial, sans-serif; background: #f4f7f7; color: #1f2937; }
-.container { max-width: 980px; margin: 32px auto; padding: 24px; background: white; border-radius: 16px; box-shadow: 0 10px 28px rgba(0,0,0,.08); }
-header { background: linear-gradient(135deg, #37c7b4, #2f80ed); color: white; padding: 24px; }
-button { padding: 10px 16px; border: none; border-radius: 8px; background: #37c7b4; color: white; cursor: pointer; }
-input, select { padding: 10px; margin: 6px 0; width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 8px; }
-.card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 12px 0; }
-.error { color: #b91c1c; }
+/* ============================================================
+   BIOPET V2 — «Carné Clínico»
+   Sistema de tokens + estilos base.
 
-/* ---------- Accesibilidad ---------- */
-a:focus-visible, button:focus-visible, input:focus-visible,
-select:focus-visible, textarea:focus-visible {
-  outline: 3px solid #1d4ed8;
-  outline-offset: 2px;
+   Metáfora: expediente/carné clínico. Vive en la jerarquía, las fechas,
+   las líneas y la organización de la información — NUNCA en textura de
+   papel, bordes gastados, sellos "vintage" ni tipografía de máquina de
+   escribir. Todo debe leerse limpio, digital y actual.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Tipografía — @font-face (plantilla, inactiva)
+   ------------------------------------------------------------
+   Las familias aprobadas (Archivo, IBM Plex Sans, IBM Plex Mono) no
+   están todavía embebidas en el repositorio: no hay binarios de fuente
+   en frontend/public/ y la CSP del backend (default-src 'self') impide
+   enlazar Google Fonts en producción. Los tokens de --font-* de abajo
+   ya nombran estas familias primero, así que en cuanto los archivos
+   .woff2 se añadan a public/fonts/ (ver informe de la fase para las
+   rutas exactas), basta con descomentar este bloque: nada más en el
+   sistema de diseño necesita cambiar.
+
+@font-face {
+  font-family: 'Archivo';
+  src: url('/fonts/Archivo-Variable.woff2') format('woff2-variations');
+  font-weight: 400 700;
+  font-display: swap;
 }
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('/fonts/IBMPlexSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('/fonts/IBMPlexSans-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/IBMPlexMono-Regular.woff2') format('woff2');
+  font-weight: 400 500;
+  font-display: swap;
+}
+   ------------------------------------------------------------ */
+
+:root {
+  /* ---------- Color: paleta aprobada «Carné» ---------- */
+  --color-background: #F3F2EE;
+  --color-surface: #FFFFFF;
+  --color-surface-sunken: #EDEBE5;
+
+  --color-primary: #15304D;
+  --color-primary-strong: #0E2338;
+  --color-primary-contrast: #FFFFFF;
+  --color-secondary: #4A6B7C;
+
+  /* El sello: marca de registro/validación clínica. Uso mínimo y
+     deliberado — nunca color de fondo, nunca decorativo. */
+  --color-accent: #C43B26;
+  --color-accent-contrast: #FFFFFF;
+
+  --color-text: #16202B;
+  --color-muted: #5E6B78;
+  --color-border: #DEDCD5;
+  --color-border-strong: #C7C4BA;
+
+  --color-success: #2E6B4F;
+  --color-success-bg: #E7F1EC;
+  --color-success-border: #B9D8C7;
+
+  --color-warning: #B9761C;
+  --color-warning-bg: #FBF1E3;
+  --color-warning-border: #E8D2AE;
+
+  --color-danger: #B02A20;
+  --color-danger-bg: #FBEAE8;
+  --color-danger-border: #EBBFB9;
+
+  --color-info: #2C5C8A;
+  --color-info-bg: #E8F0F7;
+  --color-info-border: #C0D6E9;
+
+  --color-neutral-bg: #EEEDE8;
+  --color-neutral-border: #DAD8D0;
+
+  /* ---------- Tipografía ----------
+     Escala V2.1: ratio display/body = 36/15 = 2.4 (era 28/14 = 2.0 en la
+     Fase 2.0 — la razón medible de por qué el QA visual la percibió
+     "encogida"). Los nombres de los tokens no cambian, solo sus valores;
+     ningún selector que ya los consume necesita tocarse. */
+  --font-display: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, 'Cascadia Code', Consolas, 'Liberation Mono', monospace;
+
+  --text-display-lg: 700 2.75rem/1.1 var(--font-display);   /* 44px — marca en login */
+  --text-display: 600 2.25rem/1.15 var(--font-display);      /* 36px — h1 de pantalla */
+  --text-heading: 600 1.375rem/1.3 var(--font-display);       /* 22px — título de panel */
+  --text-subheading: 600 1.0625rem/1.4 var(--font-body);      /* 17px */
+  --text-body: 400 0.9375rem/1.6 var(--font-body);            /* 15px */
+  --text-small: 400 0.875rem/1.5 var(--font-body);            /* 14px */
+  --text-label: 600 0.75rem/1.4 var(--font-body);             /* 12px — etiquetas de campo (sans, no mono) */
+  --text-eyebrow: 600 0.75rem/1.4 var(--font-mono);           /* 12px mono — categorías de sección (PACIENTES, ADMINISTRACIÓN…) */
+  --text-data: 500 0.9375rem/1.4 var(--font-mono);            /* 15px mono tabular — fechas, horas, IDs, EXP- */
+
+  --letter-spacing-label: 0.04em;
+  --letter-spacing-eyebrow: 0.09em;
+  --letter-spacing-display: -0.02em;
+
+  /* ---------- Espaciado (escala base 4) ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* ---------- Radio ---------- */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* ---------- Elevación ----------
+     flat: por defecto (paneles, tablas, formularios) — solo borde.
+     raised: elementos que se superponen a contenido (dropdown, popover).
+     overlay: solo modales / drawer.
+     Sin cambios en esta fase — el QA no señaló las sombras como problema
+     y CLAUDE.md pide explícitamente no añadir sombras decorativas. */
+  --elevation-raised: 0 1px 2px rgba(21, 48, 77, 0.06);
+  --elevation-overlay: 0 12px 32px rgba(21, 48, 77, 0.18);
+
+  /* ---------- Layout ---------- */
+  --sidebar-width: 260px;
+  --sidebar-width-collapsed: 72px;
+  --sidebar-brand-height: 80px;
+  --topbar-height: 56px;
+  --nav-item-height: 44px;
+  --content-max-width: 1440px;
+  --content-padding-x: var(--space-8);
+  --content-padding-y: var(--space-10);
+  --page-band-padding-x: var(--space-10);
+  --page-band-padding-y: var(--space-8);
+  --panel-padding: var(--space-8);
+  --row-height: 52px;
+
+  /* ---------- Controles ---------- */
+  --control-height: 42px;
+  --control-height-sm: 36px;
+  --control-height-icon: 38px;
+  --input-height: 46px;
+
+  /* ---------- Foco ---------- */
+  --focus-ring: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary);
+  --focus-ring-color: var(--color-primary);
+}
+
+/* ------------------------------------------------------------
+   Reset mínimo
+   ------------------------------------------------------------ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-background);
+  color: var(--color-text);
+  font: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+h1 { font: var(--text-display); }
+h2 { font: var(--text-heading); }
+h3 { font: var(--text-subheading); }
+
+p {
+  margin: 0 0 var(--space-3);
+}
+
+a {
+  color: var(--color-primary);
+}
+
+ul, ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+svg {
+  display: block;
+}
+
+/* Cifras, fechas, horas e IDs: siempre en mono tabular. */
+.data,
+time,
+.data-value {
+  font: var(--text-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font: var(--text-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* ------------------------------------------------------------
+   Identidad BIOPET
+   ------------------------------------------------------------
+   Los tres elementos que dan a BIOPET una identidad propia más allá de
+   "sidebar azul + fondo beige" (diagnóstico del QA visual): el eyebrow
+   (categoría de sección, en mono), la regla de registro (el sello
+   convertido en estructura — único uso sistemático del bermellón fuera
+   de estados de error) y la superficie de expediente (el lomo de la
+   carpeta clínica). Se usan con moderación: solo en cabeceras de página
+   y datos de paciente reales, nunca dentro de cada componente pequeño.
+   ------------------------------------------------------------ */
+.eyebrow {
+  display: block;
+  font: var(--text-eyebrow);
+  letter-spacing: var(--letter-spacing-eyebrow);
+  text-transform: uppercase;
+  color: var(--color-secondary);
+}
+
+.registration-rule {
+  display: block;
+  width: 40px;
+  height: 2px;
+  background: var(--color-accent);
+  border: none;
+  margin: var(--space-2) 0 0;
+}
+
+.record-surface {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+}
+
 .sr-only {
-  position: absolute; width: 1px; height: 1px;
-  padding: 0; margin: -1px; overflow: hidden;
-  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
-button:disabled { opacity: .6; cursor: not-allowed; }
-button.secundario { background: #64748b; }
-button.peligro { background: #b91c1c; }
 
-.alerta { padding: 12px 16px; border-radius: 10px; margin: 12px 0; }
-.alerta-error { background: #fee2e2; color: #7f1d1d; border: 1px solid #fca5a5; }
-.alerta-exito { background: #dcfce7; color: #14532d; border: 1px solid #86efac; }
+.skip-link {
+  position: absolute;
+  top: -48px;
+  left: var(--space-3);
+  z-index: 100;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font: var(--text-small);
+  transition: top .15s ease;
+}
+.skip-link:focus {
+  top: var(--space-3);
+}
 
-.campo { margin-bottom: 14px; }
-.campo label { display: block; font-weight: 600; margin-bottom: 4px; }
-.campo-error { color: #b91c1c; font-size: .9em; margin: 4px 0 0; }
-input[aria-invalid="true"] { border-color: #b91c1c; }
+/* ------------------------------------------------------------
+   Foco visible — nunca se suprime
+   ------------------------------------------------------------ */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
 
-.toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-.acciones-form { display: flex; gap: 8px; margin-top: 16px; }
-.acciones-card { display: flex; gap: 8px; margin-top: 10px; }
+/* ------------------------------------------------------------
+   Botones
+   ------------------------------------------------------------ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--control-height);
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font: var(--text-body);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+}
+.btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
 
-table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e5e7eb; }
+.btn--primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+.btn--primary:hover:not(:disabled) { background: var(--color-primary-strong); border-color: var(--color-primary-strong); }
 
-.grid-mascotas {
+.btn--secondary {
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-primary);
+}
+.btn--secondary:hover:not(:disabled) { background: var(--color-surface-sunken); }
+
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-secondary);
+}
+.btn--ghost:hover:not(:disabled) { background: var(--color-surface-sunken); color: var(--color-text); }
+
+.btn--danger {
+  background: transparent;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+.btn--danger:hover:not(:disabled) { background: var(--color-danger-bg); }
+
+.btn--danger-solid {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
+}
+.btn--danger-solid:hover:not(:disabled) { background: #8f2118; border-color: #8f2118; }
+
+.btn--sm {
+  height: var(--control-height-sm);
+  padding: 0 var(--space-4);
+  font-size: .875rem;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height-icon);
+  height: var(--control-height-icon);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-secondary);
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn-icon:hover:not(:disabled) { background: var(--color-surface-sunken); color: var(--color-text); }
+.btn-icon--danger:hover:not(:disabled) { background: var(--color-danger-bg); color: var(--color-danger); }
+.btn-icon--success:hover:not(:disabled) { background: var(--color-success-bg); color: var(--color-success); }
+.actions .btn-icon + .btn-icon { margin-left: var(--space-1); }
+
+/* ------------------------------------------------------------
+   Formularios
+   ------------------------------------------------------------ */
+.field {
+  margin-bottom: var(--space-4);
+}
+.field label {
+  display: block;
+  font: var(--text-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: var(--space-1);
+}
+.field .required-mark {
+  color: var(--color-accent);
+  margin-left: 2px;
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: var(--input-height);
+  padding: 12px 14px;
+  font: var(--text-body);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+  background: var(--color-surface-sunken);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+.field-hint {
+  margin: var(--space-1) 0 0;
+  font: var(--text-small);
+  color: var(--color-muted);
+}
+.field-error {
+  margin: var(--space-1) 0 0;
+  font: var(--text-small);
+  color: var(--color-danger);
+}
+.field textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+/* Campo de contraseña con botón Mostrar/Ocultar (Usuarios V2). Botón de
+   texto, no icono: evita añadir un par de iconos ojo/ojo-tachado solo
+   para este único uso. */
+.password-field {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+.password-field input {
+  flex: 1;
+  min-width: 0;
+}
+.password-field .btn {
+  flex-shrink: 0;
+}
+/* Divisor visual DENTRO de un formulario (p. ej. "Vacuna" / "Aplicación" /
+   "Notas" en el formulario de Vacunas). Reutiliza .label — mismo tamaño y
+   tracking que las etiquetas de campo — sin invocar la regla bermellón,
+   que se reserva para identidad de página, no para agrupar un formulario. */
+.form-section-label {
+  display: block;
+  margin: var(--space-2) 0 var(--space-3);
+}
+.form-section-label:first-of-type {
+  margin-top: 0;
+}
+
+/* Columna "Fecha y hora" de la agenda de Citas: fecha y hora apiladas en
+   vez de dos columnas separadas, para leerse como un volante de cita en
+   vez de una fila de spreadsheet. */
+.cita-fecha {
+  display: block;
+}
+.cita-hora {
+  display: block;
+  color: var(--color-muted);
+  font-size: .875rem;
+}
+
+/* ------------------------------------------------------------
+   Paneles / superficies planas
+   ------------------------------------------------------------ */
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--panel-padding);
+}
+.panel + .panel {
+  margin-top: var(--space-6);
+}
+.panel__title {
+  margin-bottom: var(--space-4);
+}
+/* Variante «expediente»: un panel que representa el registro de UNA
+   mascota concreta (formulario de crear/editar). Declarada justo después
+   de .panel para que su border-left gane en la cascada sin depender de
+   especificidad extra — .panel fija los 4 lados con el shorthand
+   `border`, así que el override tiene que venir después en el archivo. */
+.panel--record {
+  border-left: 3px solid var(--color-primary);
+}
+
+/* ------------------------------------------------------------
+   Alertas / feedback en línea
+   ------------------------------------------------------------ */
+.alert {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  font: var(--text-small);
+  margin-bottom: var(--space-4);
+}
+.alert--danger {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
+}
+.alert--success {
+  background: var(--color-success-bg);
+  border-color: var(--color-success-border);
+  color: var(--color-success);
+}
+.alert--info {
+  background: var(--color-info-bg);
+  border-color: var(--color-info-border);
+  color: var(--color-info);
+}
+.alert--warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning);
+}
+.alert strong {
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------
+   Panel — indicadores operativos (KPIs reales de fn_reporte_dashboard)
+   ------------------------------------------------------------ */
+/* Números como dato clínico (mono tabular), no como tarjeta SaaS
+   genérica: mismo principio que fechas/horas/IDs en el resto de BIOPET. */
+.panel-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8) var(--space-10);
+}
+.panel-stat__valor {
+  display: block;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 2.25rem;
+  line-height: 1.1;
+  color: var(--color-text);
+}
+.panel-stat__valor.skeleton-block {
+  height: 2.25rem;
+  width: 3ch;
+  border-radius: var(--radius-sm);
+}
+.panel-stat__etiqueta {
+  display: block;
+  margin-top: var(--space-2);
+  font: var(--text-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* Selector de rango: grupo de botones tipo segmented control. */
+.panel-rango {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+/* Lista compacta de "Consultas recientes": más ligera que .record-entry
+   completo (esa vive en /consultas), pensada para 5 filas dentro de un
+   solo panel, no para un registro clínico independiente. */
+.panel-actividad-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.panel-actividad-item:last-child {
+  border-bottom: none;
+}
+.panel-actividad-item__motivo {
+  color: var(--color-muted);
+  font: var(--text-small);
+}
+
+@media (max-width: 640px) {
+  .panel-stats { gap: var(--space-6); }
+  .panel-stat__valor { font-size: 1.875rem; }
+  .panel-actividad-item { flex-direction: column; gap: var(--space-1); }
+}
+
+/* ------------------------------------------------------------
+   Tabla clínica
+   ------------------------------------------------------------ */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.table-clinico {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table-clinico thead th {
+  text-align: left;
+  padding: var(--space-3) var(--space-6);
+  font: var(--text-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-muted);
+  border-bottom: 2px solid var(--color-border);
+  white-space: nowrap;
+}
+.table-clinico tbody td {
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  font: var(--text-body);
+  vertical-align: middle;
+}
+.table-clinico tbody tr:last-child td {
+  border-bottom: none;
+}
+/* "Selección por lomo": al pasar el cursor sobre una fila, el lomo de la
+   carpeta se insinúa como un borde izquierdo prusia — vía box-shadow
+   inset para que no desplace el contenido (una fila que "salta" al
+   pasar el mouse se sentiría peor que no tener el efecto). Solo la
+   primera celda lo dibuja; el resto de la fila solo cambia de tono. */
+.table-clinico tbody tr:hover:not(.table-clinico__empty-row) td {
+  background: var(--color-surface-sunken);
+}
+.table-clinico tbody tr:hover:not(.table-clinico__empty-row) td:first-child {
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+.table-clinico td.data,
+.table-clinico th.data {
+  font: var(--text-data);
+}
+.table-clinico td.actions {
+  text-align: right;
+  white-space: nowrap;
+}
+.record-link {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.record-link:hover {
+  text-decoration: underline;
+}
+.table-clinico tbody td.table-clinico__empty-cell {
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  background: transparent;
+  box-shadow: none;
+}
+.table-clinico__empty-title {
+  color: var(--color-text);
+  font: var(--text-subheading);
+  margin-bottom: var(--space-1);
+}
+.table-clinico__empty-text {
+  color: var(--color-muted);
+  font: var(--text-body);
+  max-width: 44ch;
+  margin: 0 auto var(--space-4);
+}
+/* Mismo estado vacío V2 (título + texto + CTA opcional), pero para una
+   sección que no es una tabla — p. ej. Consultas V2, que presenta cada
+   registro como una tarjeta clínica en vez de una fila. Reutiliza
+   .table-clinico__empty-title/-text tal cual, ya son clases genéricas. */
+.empty-record {
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+/* Cabecera de cada tarjeta de Consultas V2: mascota + fecha a la
+   izquierda, acciones (editar/dar de baja) a la derecha. */
+.record-entry__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.record-entry__titulo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.record-entry__titulo .record-link {
+  font: var(--text-subheading);
+}
+
+.skeleton-row td {
+  padding: var(--space-3) var(--space-4);
+}
+.skeleton-block {
+  height: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+  width: 70%;
+}
+
+@media (max-width: 640px) {
+  .table-clinico thead { display: none; }
+  .table-clinico, .table-clinico tbody, .table-clinico tr, .table-clinico td {
+    display: block;
+    width: 100%;
+  }
+  .table-clinico tbody tr {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin: var(--space-3);
+    padding: var(--space-1) var(--space-3);
+  }
+  .table-clinico tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--color-border);
+    text-align: right;
+  }
+  .table-clinico tbody tr td:last-child { border-bottom: none; }
+  .table-clinico tbody td::before {
+    content: attr(data-label);
+    font: var(--text-label);
+    letter-spacing: var(--letter-spacing-label);
+    text-transform: uppercase;
+    color: var(--color-muted);
+    text-align: left;
+  }
+  .table-clinico tbody td[data-label=""]::before { content: none; }
+  .table-clinico td.actions {
+    justify-content: flex-end;
+  }
+  .table-clinico tbody tr.table-clinico__empty-row {
+    border: none;
+    margin: 0;
+  }
+  .table-clinico tbody td.table-clinico__empty-cell {
+    display: block;
+    text-align: center;
+    border-bottom: none;
+  }
+}
+
+/* ------------------------------------------------------------
+   Paginación
+   ------------------------------------------------------------ */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  flex-wrap: wrap;
+  text-align: center;
+}
+.pagination__status {
+  font: var(--text-small);
+  color: var(--color-muted);
+}
+
+/* ------------------------------------------------------------
+   Modal
+   ------------------------------------------------------------ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 35, 56, .55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  z-index: 200;
+}
+.modal-panel {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  max-width: 420px;
+  width: 100%;
+  box-shadow: var(--elevation-overlay);
+}
+.modal-panel__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+/* ------------------------------------------------------------
+   Toolbar
+   ------------------------------------------------------------ */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-4) 0;
+}
+
+/* ------------------------------------------------------------
+   Estado vacío
+   ------------------------------------------------------------ */
+.empty-state {
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+  color: var(--color-muted);
+}
+.empty-state p:first-child {
+  color: var(--color-text);
+  font-weight: 600;
+  margin-bottom: var(--space-1);
+}
+
+/* ------------------------------------------------------------
+   Chips de estado (solo estados reales del backend)
+   ------------------------------------------------------------ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  font: var(--text-small);
+  font-weight: 600;
+  border: 1px solid;
+}
+.chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.chip--success { color: var(--color-success); background: var(--color-success-bg); border-color: var(--color-success-border); }
+.chip--warning { color: var(--color-warning); background: var(--color-warning-bg); border-color: var(--color-warning-border); }
+.chip--danger  { color: var(--color-danger);  background: var(--color-danger-bg);  border-color: var(--color-danger-border); }
+.chip--neutral { color: var(--color-muted);   background: var(--color-neutral-bg); border-color: var(--color-neutral-border); }
+.chip--info    { color: var(--color-info);    background: var(--color-info-bg);    border-color: var(--color-info-border); }
+
+/* ------------------------------------------------------------
+   Page header (título + descripción + acción principal)
+   ------------------------------------------------------------ */
+/* Banda a ancho completo del área de contenido: cancela el padding de
+   .shell__content con márgenes negativos exactamente iguales, y vuelve a
+   abrir su propio padding interno. Como .shell__content redefine estas
+   mismas custom properties en sus media queries (ver más abajo), el
+   cálculo sigue siendo correcto en cada rango de ancho sin que esta regla
+   necesite su propio media query. */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  margin: calc(-1 * var(--content-padding-y)) calc(-1 * var(--content-padding-x)) var(--content-padding-y);
+  padding: var(--page-band-padding-y) var(--page-band-padding-x);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.page-header__main {
+  min-width: 0;
+}
+.page-header__eyebrow {
+  margin-bottom: 0;
+}
+.page-header__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font: var(--text-small);
+  color: var(--color-muted);
+  margin: var(--space-3) 0 var(--space-1);
+}
+.page-header__breadcrumb a {
+  color: var(--color-secondary);
+  text-decoration: none;
+}
+.page-header__breadcrumb a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+.page-header__breadcrumb [aria-current="page"] {
+  color: var(--color-text);
+  font-weight: 600;
+}
+.page-header__title {
+  margin: var(--space-3) 0 0;
+}
+.page-header__description {
+  margin: var(--space-2) 0 0;
+  color: var(--color-muted);
+  font: var(--text-body);
+  max-width: 56ch;
+}
+.page-header__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  padding-top: var(--space-4);
+}
+
+/* ------------------------------------------------------------
+   Application shell
+   ------------------------------------------------------------ */
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.shell__sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  transition: width .15s ease;
+}
+.shell__sidebar--collapsed {
+  width: var(--sidebar-width-collapsed);
+}
+
+.shell__brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  height: var(--sidebar-brand-height);
+  border-bottom: 1px solid rgba(255,255,255,.12);
+}
+.shell__brand-mark {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: #fff;
+  text-decoration: none;
+  min-width: 0;
+}
+.shell__wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 0.01em;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.shell__collapse-btn {
+  color: rgba(255,255,255,.75);
+  flex-shrink: 0;
+}
+.shell__collapse-btn:hover { color: #fff; background: rgba(255,255,255,.1); }
+
+.shell__nav {
+  flex: 1;
+  padding: var(--space-4) var(--space-3);
+  overflow-y: auto;
+}
+.shell__nav-group + .shell__nav-group {
+  margin-top: var(--space-6);
+}
+.shell__nav-group-label {
+  color: rgba(255,255,255,.48);
+  padding: 0 var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.shell__nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--nav-item-height);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: rgba(255,255,255,.8);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.shell__nav-item svg { flex-shrink: 0; }
+.shell__nav-item:hover {
+  background: rgba(255,255,255,.08);
+  color: #fff;
+}
+.shell__nav-item.is-active {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+.shell__sidebar--collapsed .shell__nav-group-label,
+.shell__sidebar--collapsed .shell__nav-item span:not(.sr-only) {
+  display: none;
+}
+.shell__sidebar--collapsed .shell__nav-item {
+  justify-content: center;
+  padding: 0;
+}
+
+.shell__footer {
+  padding: var(--space-3);
+  border-top: 1px solid rgba(255,255,255,.14);
+}
+.shell__user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: rgba(255,255,255,.06);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+}
+.shell__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.16);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--text-label);
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+.shell__user-info {
+  min-width: 0;
+  overflow: hidden;
+}
+.shell__user-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shell__user-role {
+  font: var(--text-small);
+  color: rgba(255,255,255,.65);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shell__logout-btn {
+  width: 100%;
+  justify-content: flex-start;
+  color: rgba(255,255,255,.78);
+}
+.shell__logout-btn:hover { background: rgba(255,255,255,.08); color: #fff; }
+.shell__sidebar--collapsed .shell__user {
+  justify-content: center;
+  padding: var(--space-2);
+}
+.shell__sidebar--collapsed .shell__user-info,
+.shell__sidebar--collapsed .shell__logout-btn span:not(.sr-only) {
+  display: none;
+}
+.shell__sidebar--collapsed .shell__logout-btn {
+  justify-content: center;
+}
+
+.shell__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.shell__content {
+  flex: 1;
+  padding: var(--content-padding-y) var(--content-padding-x);
+  max-width: var(--content-max-width);
+  width: 100%;
+}
+
+/* Topbar móvil: solo visible bajo 1024px */
+.shell__mobile-topbar {
+  display: none;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--topbar-height);
+  padding: 0 var(--space-4);
+  background: var(--color-primary);
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+.shell__mobile-topbar .shell__wordmark { font-size: 1.0625rem; }
+
+.shell__drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 35, 56, .55);
+  z-index: 90;
+}
+.shell__drawer {
+  position: fixed;
+  top: 0; left: 0;
+  bottom: 0;
+  width: min(300px, 84vw);
+  background: var(--color-primary);
+  color: #fff;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--elevation-overlay);
+}
+.shell__drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  height: var(--sidebar-brand-height);
+  border-bottom: 1px solid rgba(255,255,255,.12);
+}
+.shell__drawer-close {
+  color: rgba(255,255,255,.8);
+}
+.shell__drawer-close:hover { color: #fff; background: rgba(255,255,255,.1); }
+
+@media (min-width: 1024px) {
+  .shell__mobile-topbar { display: none; }
+}
+
+/* Tablet (768–1023px): el sidebar NO desaparece, se fuerza a modo
+   compacto (solo iconos) — sigue habiendo navegación permanente, propio
+   del uso en consulta/mostrador con tablet. El botón de colapso manual
+   deja de tener sentido aquí porque el estado ya está forzado. */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .shell__sidebar {
+    display: flex;
+    width: var(--sidebar-width-collapsed);
+  }
+  .shell__sidebar .shell__wordmark,
+  .shell__sidebar .shell__nav-group-label,
+  .shell__sidebar .shell__nav-item span:not(.sr-only),
+  .shell__sidebar .shell__user-info,
+  .shell__sidebar .shell__logout-btn span:not(.sr-only) {
+    display: none;
+  }
+  .shell__sidebar .shell__nav-item { justify-content: center; padding: 0; }
+  .shell__sidebar .shell__user { justify-content: center; padding: var(--space-2); }
+  .shell__sidebar .shell__logout-btn { justify-content: center; }
+  .shell__collapse-btn { visibility: hidden; }
+  .shell__content {
+    --content-padding-x: var(--space-4);
+    --content-padding-y: var(--space-4);
+    padding: var(--content-padding-y) var(--content-padding-x);
+  }
+  .page-header { padding: var(--space-6) var(--space-4); }
+}
+
+/* Mobile (<768px): el sidebar desaparece del todo; la topbar + el drawer
+   accesible asumen la navegación por completo. */
+@media (max-width: 767px) {
+  .shell__sidebar { display: none; }
+  .shell__mobile-topbar { display: flex; }
+}
+@media (max-width: 640px) {
+  .shell__content {
+    --content-padding-x: var(--space-3);
+    --content-padding-y: var(--space-3);
+    padding: var(--content-padding-y) var(--content-padding-x);
+  }
+  .page-header {
+    padding: var(--space-4) var(--space-3);
+  }
+  .page-header__actions {
+    width: 100%;
+  }
+  .page-header__actions .btn {
+    width: 100%;
+  }
+}
+
+/* ------------------------------------------------------------
+   Ficha de mascota — cabecera de paciente
+   ------------------------------------------------------------ */
+/* Cada entrada sellada de la pestaña Consultas (una tarjeta por consulta). */
+.record-entry {
+  margin-bottom: var(--space-4);
+}
+.record-entry:last-child {
+  margin-bottom: 0;
+}
+.record-header {
+  display: flex;
+  gap: var(--space-6);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+/* Tesela de retrato del paciente. Hoy siempre muestra las iniciales (el
+   backend no expone ningún campo de foto — ver auditoría en
+   MascotaDetalleComponent); el tamaño, la proporción cuadrada y
+   `overflow: hidden` ya están pensados para admitir una <img
+   style="object-fit:cover"> el día que exista esa fuente de datos, sin
+   tener que rehacer este bloque. */
+.record-header__avatar {
+  width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+}
+.record-header__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.record-meta-grid {
+  flex: 1;
+  min-width: 240px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-4) var(--space-6);
+  margin: 0;
 }
-@media (max-width: 600px) {
-  .grid-mascotas { grid-template-columns: 1fr; }
-  .toolbar { flex-direction: column; }
-  .toolbar button { width: 100%; }
+.record-meta-grid dt {
+  font: var(--text-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: var(--space-1);
+}
+.record-meta-grid dd {
+  margin: 0;
+  font: var(--text-body);
+  color: var(--color-text);
+}
+.record-meta-grid dd.data {
+  font: var(--text-data);
 }
 
-.paginacion {
-  display: flex; align-items: center; justify-content: center;
-  gap: 16px; margin-top: 20px; flex-wrap: wrap; text-align: center;
+/* ------------------------------------------------------------
+   Tabs (WAI-ARIA tabs pattern)
+   ------------------------------------------------------------ */
+.tabs {
+  margin-top: var(--space-8);
+}
+.tabs__list {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-muted);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.tab-btn:hover { color: var(--color-text); }
+.tab-btn[aria-selected="true"] {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-accent);
+}
+.tab-panel {
+  padding-top: var(--space-6);
 }
 
-.modal-fondo {
-  position: fixed; inset: 0;
-  background: rgba(15, 23, 42, .55);
-  display: flex; align-items: center; justify-content: center;
-  padding: 16px; z-index: 50;
+/* ------------------------------------------------------------
+   Estado "no disponible" elegante — para dependencias externas o
+   secciones pendientes de backend. Nunca un error rojo crudo.
+   ------------------------------------------------------------ */
+.unavailable-card {
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+  background: var(--color-surface-sunken);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--color-muted);
 }
-.modal {
-  background: white; border-radius: 14px; padding: 24px;
-  max-width: 420px; width: 100%;
-  box-shadow: 0 20px 40px rgba(0,0,0,.25);
+.unavailable-card__title {
+  color: var(--color-text);
+  font-weight: 600;
+  margin-bottom: var(--space-1);
+}
+.unavailable-card__note {
+  font: var(--text-small);
+  margin: var(--space-3) auto 0;
+  max-width: 48ch;
+}
+
+@media (max-width: 640px) {
+  .record-header { gap: var(--space-4); }
+  .record-meta-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3) var(--space-4); }
+}
+
+/* ------------------------------------------------------------
+   Login / registro
+   ------------------------------------------------------------
+   Composición asimétrica 38/62 (marca/acceso) — no 50/50: el acceso es
+   la tarea real de esta pantalla, la marca no necesita la mitad del
+   espacio para comunicarse. El reglado del panel de marca es un
+   repeating-linear-gradient geométrico al 6% de opacidad — CSS puro, sin
+   imagen ni textura, evoca las líneas de un expediente sin ser literal. */
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(320px, 38fr) minmax(0, 62fr);
+}
+.auth-shell__brand {
+  position: relative;
+  background-color: var(--color-primary);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.06) 0,
+    rgba(255, 255, 255, 0.06) 1px,
+    transparent 1px,
+    transparent 40px
+  );
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-16) var(--space-12);
+}
+.auth-shell__brand-mark {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-1);
+}
+.auth-shell__wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.75rem;
+  letter-spacing: 0.01em;
+}
+.auth-shell__tagline {
+  font: var(--text-body);
+  color: rgba(255,255,255,.82);
+  max-width: 32ch;
+}
+.auth-shell__tagline--secondary {
+  margin-top: var(--space-3);
+}
+.auth-shell__panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  background: var(--color-background);
+}
+.auth-form {
+  width: 100%;
+  max-width: 420px;
+}
+.auth-form__eyebrow {
+  margin-bottom: 0;
+}
+.auth-form h1 {
+  margin: var(--space-3) 0 var(--space-1);
+}
+.auth-form__lead {
+  color: var(--color-muted);
+  font: var(--text-body);
+  margin-bottom: var(--space-8);
+}
+.auth-form .btn {
+  width: 100%;
+  height: var(--input-height);
+  margin-top: var(--space-2);
+  font-size: 1rem;
+}
+
+@media (max-width: 900px) {
+  .auth-shell { grid-template-columns: 1fr; }
+  .auth-shell__brand {
+    padding: var(--space-8) var(--space-6);
+    text-align: center;
+    align-items: center;
+    background-image: none;
+  }
+  .auth-shell__brand-mark { justify-content: center; }
+  .auth-shell__tagline { max-width: none; }
+  .auth-shell__tagline--secondary { display: none; }
+  .auth-shell__panel { background: var(--color-background); }
+}
+
+/* ------------------------------------------------------------
+   Perfil V2 — identidad de cuenta, deliberadamente distinta del
+   lenguaje de "expediente clínico" (sin panel--record, sin lomo
+   bermellón): esta pantalla es administración de la propia cuenta,
+   no un registro de paciente.
+   ------------------------------------------------------------ */
+.profile-content {
+  max-width: 640px;
+}
+.profile-panel {
+  padding: var(--space-6);
+}
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+.profile-identity__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.375rem;
+  flex-shrink: 0;
+}
+.profile-identity__nombre {
+  margin: 0;
+  font: var(--text-heading);
+  color: var(--color-text);
+}
+.profile-identity__email {
+  margin: 2px 0 var(--space-2);
+  color: var(--color-muted);
+  font: var(--text-body);
+}
+.profile-info__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.profile-info__row:last-child {
+  border-bottom: none;
+}
+.profile-info__row dd {
+  margin: 0;
+  color: var(--color-text);
+  font: var(--text-body);
+  text-align: right;
+}
+.panel__title-inline {
+  margin: 0 0 var(--space-2);
+  font: var(--text-subheading);
+  color: var(--color-text);
+}
+.profile-panel__texto {
+  margin: 0 0 var(--space-4);
+}
+
+@media (max-width: 640px) {
+  .profile-panel {
+    padding: var(--space-4);
+  }
+  .profile-identity {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .profile-panel .btn {
+    width: 100%;
+  }
 }

@@ -26,6 +26,20 @@ security:
     refresh-name: refresh_token
     secure: true
     same-site: Strict
+  rate-limit:
+    # H-1: a diferencia del limitador de login (que solo cuenta FALLOS y se
+    # reinicia en cada login exitoso), el de registro cuenta toda solicitud,
+    # exitosa o no -por diseño, para no permitir alta masiva de cuentas desde
+    # una misma IP. Eso significa que NO se autorreinicia entre tests: los
+    # controller tests (@SpringBootTest) de este módulo registran decenas de
+    # usuarios de prueba, todos desde el mismo remoteAddr por defecto de
+    # MockMvc ("127.0.0.1"), dentro de la misma clase/contexto. Se eleva el
+    # límite solo en este perfil para no bloquear esos registros legítimos de
+    # fixtures; el comportamiento real del límite (bajo, por defecto en
+    # producción) se cubre con RegistroRateLimiterServiceTest, que instancia
+    # el servicio directamente sin pasar por este YAML.
+    registro:
+      max-attempts: 100000
 
 app:
   cors:

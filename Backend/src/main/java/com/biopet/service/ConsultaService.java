@@ -37,11 +37,25 @@ public class ConsultaService {
     public Page<ConsultaResponse> listar(Pageable pageable, String email) {
         Usuario usuario = usuarioActual(email);
         if (usuario.getRol() == Rol.ROLE_DUENO) {
-            // Un dueño solo ve consultas de sus propias mascotas
-            return consultaRepository.findAllByActivoTrue(pageable)
-                    .map(this::toResponse); // filtrado real de propiedad se aplica en buscar(); aquí listamos y filtramos abajo si se requiere endpoint dedicado
+            return consultaRepository.findAllByMascota_Duenio_IdAndActivoTrue(usuario.getId(), pageable)
+                    .map(this::toResponse);
         }
         return consultaRepository.findAllByActivoTrue(pageable).map(this::toResponse);
+    }
+
+    /**
+     * GET /api/consultas/mascota/{mascotaId}. Misma regla de propiedad que
+     * el resto del servicio (ROLE_DUENO solo si es su mascota; roles
+     * clínicos sin restricción adicional), aplicada aquí a nivel de
+     * mascota porque puede no existir ninguna Consulta todavía (página
+     * vacía legítima, no un 403).
+     */
+    @Transactional(readOnly = true)
+    public Page<ConsultaResponse> listarPorMascota(Long mascotaId, Pageable pageable, String email) {
+        Usuario usuario = usuarioActual(email);
+        Mascota mascota = mascotaActiva(mascotaId);
+        verificarAccesoMascota(usuario, mascota);
+        return consultaRepository.findAllByMascotaIdAndActivoTrue(mascotaId, pageable).map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -111,6 +125,11 @@ public class ConsultaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
     }
 
+    private Mascota mascotaActiva(Long mascotaId) {
+        return mascotaRepository.findByIdAndActivoTrue(mascotaId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Mascota no encontrada: " + mascotaId));
+    }
+
     private Usuario resolverVeterinario(Long veterinarioId) {
         Usuario veterinario = usuarioRepository.findById(veterinarioId)
                 .filter(Usuario::isActivo)
@@ -122,10 +141,19 @@ public class ConsultaService {
     }
 
     private void verificarAcceso(Usuario usuario, Consulta consulta) {
+        verificarAccesoMascota(usuario, consulta.getMascota());
+    }
+
+    /**
+     * Extraída de verificarAcceso(Usuario, Consulta) para reutilizarla en
+     * listarPorMascota(), donde todavía no hay ninguna Consulta concreta
+     * sobre la que comprobar propiedad (puede haber cero).
+     */
+    private void verificarAccesoMascota(Usuario usuario, Mascota mascota) {
         boolean accesoGlobal = usuario.getRol() == Rol.ROLE_ADMIN
                 || usuario.getRol() == Rol.ROLE_VETERINARIO
                 || usuario.getRol() == Rol.ROLE_AUXILIAR;
-        boolean esDuenioDeLaMascota = consulta.getMascota().getDuenio().getId().equals(usuario.getId());
+        boolean esDuenioDeLaMascota = mascota.getDuenio().getId().equals(usuario.getId());
         if (!accesoGlobal && !esDuenioDeLaMascota) {
             throw new AccessDeniedException("No tiene permisos para acceder a esta consulta.");
         }

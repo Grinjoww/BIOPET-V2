@@ -210,6 +210,50 @@ class ProcedimientosBiopetIntegrationTest {
         assertThat(r.getVacunasEnRango()).isZero();
     }
 
+    /**
+     * Regresión de un bug real de pgJDBC 42.6.2 (versión que traía Spring
+     * Boot 3.2.12 por defecto): {@code fn_reporte_dashboard} tiene un
+     * parámetro OUT {@code refcursor} (índice 3). En su primera resolución
+     * de tipo, pgJDBC lo describe como OID 2278 ({@code void}); al
+     * reutilizar la misma conexión (mismo texto SQL) más allá del
+     * {@code prepareThreshold} por defecto (5 ejecuciones), pgJDBC
+     * gradúa la sentencia a "server-side prepared" y vuelve a resolver
+     * el tipo del parámetro, esta vez como OID 1790 ({@code refcursor}
+     * real) — y la versión 42.6.2 de {@code SimpleParameterList.
+     * setResolvedType} solo permite sobrescribir un tipo {@code UNSPECIFIED},
+     * nunca uno ya resuelto a {@code VOID}, así que lanza
+     * {@code IllegalArgumentException("Can't change resolved type for
+     * param: 3 from 2278 to 1790")} exactamente en la 5ª invocación en
+     * adelante sobre la misma conexión. Reproducido de forma 100%
+     * determinista (fallaba siempre en la llamada #5, nunca antes) antes
+     * de fijar la versión de postgresql-jdbc a 42.7.11 en el pom (esa
+     * versión agrega exactamente `|| paramTypes[index - 1] == Oid.VOID`
+     * a la condición de sobrescritura permitida — verificado comparando
+     * el código fuente de 42.6.2 contra 42.7.4/42.7.11).
+     * <p>
+     * Esta prueba hace 15 invocaciones consecutivas en la MISMA
+     * transacción/conexión (la clase es {@code @Transactional}) para
+     * cruzar de sobra el umbral de graduación de pgJDBC y detectar una
+     * regresión si alguna vez se revierte la versión del driver.
+     */
+    @Test
+    void reporteDashboard_15InvocacionesConsecutivasEnLaMismaConexion_noLanzaYDevuelveDatosConsistentes() {
+        Usuario duenio = guardarUsuario("duenio-repeticion@biopet.ec", Rol.ROLE_DUENO);
+        guardarMascota(duenio, "Rex");
+
+        for (int i = 1; i <= 15; i++) {
+            List<ReporteDashboard> resultado = procedimientoBiopetRepository.reporteDashboard(
+                    LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+            assertThat(resultado)
+                    .as("invocación #%d de fn_reporte_dashboard sobre la misma conexión", i)
+                    .hasSize(1);
+            ReporteDashboard r = resultado.get(0);
+            assertThat(r.getMascotasActivas()).as("invocación #%d", i).isEqualTo(1);
+            assertThat(r.getMascotasSinConsulta()).as("invocación #%d", i).isEqualTo(1);
+        }
+    }
+
     @Test
     void siguienteNumeroFicha_formatoYSecuencia() {
         String a = procedimientoBiopetRepository.siguienteNumeroFicha("FICHA");

@@ -244,6 +244,176 @@ class CitaControllerTest {
                 .andExpect(jsonPath("$.content[0].mascotaId").value(mascotaId));
     }
 
+    // ---------- listar por mascota (ficha de mascota) ----------
+
+    @Test
+    void adminListaCitasPorMascota() throws Exception {
+        crearCitaYObtenerId(mascotaId, veterinarioId);
+        crearCitaYObtenerId(mascotaId, veterinarioId);
+
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN),
+                "access_token"
+        );
+
+        mockMvc.perform(get("/api/citas/mascota/" + mascotaId)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].mascotaId").value(mascotaId));
+    }
+
+    @Test
+    void veterinarioListaCitasPorMascota() throws Exception {
+        crearCitaYObtenerId(mascotaId, veterinarioId);
+
+        String tokenVeterinario = extractCookieValue(
+                iniciarSesion("vet.principal@biopet.com", "ClaveVet123*"),
+                "access_token"
+        );
+
+        mockMvc.perform(get("/api/citas/mascota/" + mascotaId)
+                        .header("Authorization", "Bearer " + tokenVeterinario))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    void auxiliarListaCitasPorMascota() throws Exception {
+        crearCitaYObtenerId(mascotaId, veterinarioId);
+        crearUsuarioConRol("aux.mascota@biopet.com", "ClaveAux123*", Rol.ROLE_AUXILIAR);
+
+        String tokenAuxiliar = extractCookieValue(
+                iniciarSesion("aux.mascota@biopet.com", "ClaveAux123*"),
+                "access_token"
+        );
+
+        mockMvc.perform(get("/api/citas/mascota/" + mascotaId)
+                        .header("Authorization", "Bearer " + tokenAuxiliar))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    void duenoListaCitasDeSuPropiaMascota() throws Exception {
+        crearCitaYObtenerId(mascotaId, veterinarioId);
+
+        String tokenDueno = extractCookieValue(
+                iniciarSesion("dueno.principal@biopet.com", "ClaveDueno123*"),
+                "access_token"
+        );
+
+        mockMvc.perform(get("/api/citas/mascota/" + mascotaId)
+                        .header("Authorization", "Bearer " + tokenDueno))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].mascotaId").value(mascotaId));
+    }
+
+    @Test
+    void duenoNoPuedeListarCitasDeMascotaAjenaPorMascotaDevuelve403() throws Exception {
+        Long otroDuenoId = crearUsuarioConRolYObtenerId(
+                "otro.dueno.citas403@biopet.com", "ClaveDueno456*", Rol.ROLE_DUENO
+        );
+        Long otraMascotaId = crearMascotaYObtenerId(otroDuenoId, "Michi");
+        crearCitaYObtenerId(otraMascotaId, veterinarioId);
+
+        String tokenDueno = extractCookieValue(
+                iniciarSesion("dueno.principal@biopet.com", "ClaveDueno123*"),
+                "access_token"
+        );
+
+        mockMvc.perform(get("/api/citas/mascota/" + otraMascotaId)
+                        .header("Authorization", "Bearer " + tokenDueno))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType("application/problem+json;charset=UTF-8"))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:forbidden"));
+    }
+
+    @Test
+    void mascotaSinCitasDevuelvePaginaVacia() throws Exception {
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN),
+                "access_token"
+        );
+
+        mockMvc.perform(get("/api/citas/mascota/" + mascotaId)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0))
+                .andExpect(jsonPath("$.content.length()").value(0));
+    }
+
+    @Test
+    void citaDadaDeBajaNoApareceEnListadoPorMascota() throws Exception {
+        Long citaId = crearCitaYObtenerId(mascotaId, veterinarioId);
+
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN),
+                "access_token"
+        );
+        mockMvc.perform(delete("/api/citas/" + citaId)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/citas/mascota/" + mascotaId)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    void paginacionRealDeCitasPorMascota() throws Exception {
+        crearCitaYObtenerId(mascotaId, veterinarioId);
+        crearCitaYObtenerId(mascotaId, veterinarioId);
+        crearCitaYObtenerId(mascotaId, veterinarioId);
+
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN),
+                "access_token"
+        );
+
+        mockMvc.perform(get("/api/citas/mascota/" + mascotaId)
+                        .param("page", "0")
+                        .param("size", "2")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalPages").value(2));
+    }
+
+    @Test
+    void rutaMascotaDeCitasNoColisionaConBusquedaPorId() throws Exception {
+        Long citaId = crearCitaYObtenerId(mascotaId, veterinarioId);
+
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN),
+                "access_token"
+        );
+
+        // /mascota/{mascotaId} devuelve una Page, nunca una única
+        // CitaResponse — confirma que no se coló por /{id}.
+        mockMvc.perform(get("/api/citas/mascota/" + mascotaId)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.estado").doesNotExist());
+
+        // Y /{id} sigue funcionando exactamente igual que antes.
+        mockMvc.perform(get("/api/citas/" + citaId)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(citaId))
+                .andExpect(jsonPath("$.content").doesNotExist());
+
+        mockMvc.perform(get("/api/citas/mascota/999999")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Mascota no encontrada: 999999"));
+    }
+
     // ---------- crear ----------
 
     @Test

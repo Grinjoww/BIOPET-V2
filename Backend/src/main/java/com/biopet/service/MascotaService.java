@@ -105,9 +105,14 @@ public class MascotaService {
         Usuario usuarioAutenticado = usuarioRepository.findByEmailAndActivoTrue(emailAutenticado)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + emailAutenticado));
 
-        Long duenioIdEfectivo = (usuarioAutenticado.getRol() == Rol.ROLE_ADMIN)
-                ? duenioIdSolicitado
-                : usuarioAutenticado.getId();
+        // ADMIN: respeta el duenioId solicitado (o global si no se envía).
+        // VETERINARIO/AUXILIAR: acceso clínico global, un duenioId de cliente se ignora.
+        // DUENO: siempre su propio id, nunca el de un duenioId ajeno enviado por el cliente.
+        Long duenioIdEfectivo = switch (usuarioAutenticado.getRol()) {
+            case ROLE_ADMIN -> duenioIdSolicitado;
+            case ROLE_VETERINARIO, ROLE_AUXILIAR -> null;
+            case ROLE_DUENO -> usuarioAutenticado.getId();
+        };
 
         return procedimientoBiopetRepository.resumenPorEspecie(duenioIdEfectivo).stream()
                 .map(r -> new ResumenEspecieResponse(r.getEspecie(), r.getTotal()))

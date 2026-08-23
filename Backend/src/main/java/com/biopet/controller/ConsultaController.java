@@ -28,6 +28,20 @@ public class ConsultaController {
         return consultaService.listar(pageable, userDetails.getUsername());
     }
 
+    /**
+     * Para la pestaña "Consultas" de la ficha de mascota. La restricción
+     * `\\d+` en /{id} y el path fijo "/mascota/{mascotaId}" no colisionan:
+     * Spring MVC prioriza la coincidencia exacta de segmento de ruta sobre
+     * un patrón con variable, así que "/mascota/7" nunca se interpreta
+     * como /{id} con id="mascota".
+     */
+    @GetMapping("/mascota/{mascotaId:\\d+}")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')")
+    public Page<ConsultaResponse> listarPorMascota(@PathVariable Long mascotaId, Pageable pageable,
+                                                     @AuthenticationPrincipal UserDetails userDetails) {
+        return consultaService.listarPorMascota(mascotaId, pageable, userDetails.getUsername());
+    }
+
     @GetMapping("/{id:\\d+}")
     @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')")
     public ConsultaResponse buscar(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {

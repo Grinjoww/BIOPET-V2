@@ -71,11 +71,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RateLimitExcedidoException.class)
     public ResponseEntity<ProblemDetail> demasiadosIntentos(RateLimitExcedidoException ex, HttpServletRequest request) {
+        String detail = (ex.getRecurso() == RateLimitExcedidoException.Recurso.REGISTRO)
+                ? "Se ha excedido el número máximo de solicitudes de registro. Intente nuevamente más tarde."
+                : "Se ha excedido el número máximo de intentos fallidos de inicio de sesión. Intente nuevamente más tarde.";
         ProblemDetail problemDetail = ProblemDetailFactory.build(
                 HttpStatus.TOO_MANY_REQUESTS,
                 ProblemType.RATE_LIMITED,
                 "Demasiados intentos",
-                "Se ha excedido el número máximo de intentos fallidos de inicio de sesión. Intente nuevamente más tarde.",
+                detail,
                 request
         );
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)

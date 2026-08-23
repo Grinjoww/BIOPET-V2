@@ -5,7 +5,10 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/biopet_db}
     username: ${DB_APP_USER:biopet_app}
-    password: ${DB_APP_PASSWORD:biopet_app_dev_pass}
+    # Sin fallback: una contrasena de aplicacion es un secreto, no un valor de
+    # ejemplo. Si DB_APP_PASSWORD no esta definida, el arranque debe fallar
+    # (ver .env.example para el valor de desarrollo documentado).
+    password: ${DB_APP_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -21,7 +24,8 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     user: ${DB_USER:biopet_user}
-    password: ${DB_PASSWORD:biopet_pass}
+    # Sin fallback: misma razon que spring.datasource.password arriba.
+    password: ${DB_PASSWORD}
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -34,7 +38,10 @@ spring:
 
 security:
   jwt:
-    secret: ${JWT_SECRET:9c8f9a7d6e5b4c3a2d1f0e9c8b7a6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c}
+    # Sin fallback: un secreto HMAC conocido en el repositorio no es un
+    # secreto. Si JWT_SECRET no esta definida, el arranque debe fallar
+    # (JwtService ademas exige >=256 bits una vez resuelta la variable).
+    secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:3600000}
     refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
     issuer: ${JWT_ISSUER:biopet-api}
@@ -48,6 +55,24 @@ security:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+  external-api:
+    # APP_EXTERNAL_API_KEY ya se resolvia por relaxed binding de Spring
+    # (SystemEnvironmentPropertySource) aunque esta clave no estuviera
+    # declarada aqui; se declara explicitamente solo por documentacion/
+    # descubribilidad. Sigue siendo opcional (default vacio): la API
+    # externa (Animal API Ninjas) no es un requisito para arrancar BIOPET.
+    key: ${APP_EXTERNAL_API_KEY:}
+  admin-seed:
+    # B-1: bootstrap opcional y explicito del primer ADMIN (ver
+    # DataInitializer). Default deshabilitado -sin ADMIN_SEED_ENABLED=true no
+    # se crea ninguna cuenta. Sin fallback de email/password: si el seed esta
+    # habilitado, ambas son obligatorias (mismo criterio "sin secreto
+    # hardcodeado" que security.jwt.secret / spring.datasource.password de
+    # arriba).
+    enabled: ${ADMIN_SEED_ENABLED:false}
+    email: ${ADMIN_SEED_EMAIL:}
+    password: ${ADMIN_SEED_PASSWORD:}
+    name: ${ADMIN_SEED_NAME:Administrador BIOPET}
 
 springdoc:
   api-docs:
@@ -60,4 +85,14 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        # M-2: /actuator/info y /actuator/metrics no tienen ningun cliente,
+        # monitor ni configuracion real que los consuma en BIOPET V2 (grep
+        # sobre todo el repo sin resultados) y quedaban accesibles a
+        # cualquier usuario autenticado (SecurityConfig solo declara
+        # /actuator/health como publico; el resto cae bajo
+        # anyRequest().authenticated(), sin restriccion adicional por rol).
+        # Se exponen solo los endpoints realmente necesarios para el primer
+        # deploy: health, que Render usa como healthCheckPath (ver
+        # render.yaml) y que SecurityConfig ya mantiene publico y sin
+        # autenticacion.
+        include: health

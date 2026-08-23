@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -68,7 +69,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
-        } catch (JwtException | IllegalArgumentException ex) {
+        } catch (JwtException | IllegalArgumentException | UsernameNotFoundException ex) {
+            // UsernameNotFoundException: la cuenta paso a activo=false (o fue
+            // eliminada) DESPUES de emitido el JWT -findByEmailAndActivoTrue,
+            // vuelto a ejecutar en cada request via loadUserByUsername(), ya
+            // no la encuentra- aunque el token siga siendo criptograficamente
+            // valido y no haya expirado. Sin este catch, UsernameNotFoundException
+            // (subclase de AuthenticationException) escapa de este filtro sin
+            // capturar: ExceptionTranslationFilter solo atrapa excepciones de
+            // filtros POSTERIORES en la cadena (este filtro corre antes,
+            // via addFilterBefore(..., UsernamePasswordAuthenticationFilter.class)),
+            // asi que nunca llega a traducirla. Se trata igual que un JWT
+            // invalido: se limpia el contexto y se deja que la cadena siga sin
+            // autenticacion, para que ProblemAuthenticationEntryPoint responda
+            // con el mismo 401 ProblemDetail que los demas casos "no autenticado".
             SecurityContextHolder.clearContext();
         }
 

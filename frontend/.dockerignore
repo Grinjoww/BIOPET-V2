@@ -1,0 +1,29 @@
+# M-1: excluye del contexto de build de Docker lo que no hace falta para
+# compilar/servir el frontend -reduce el tamaño del contexto enviado al
+# daemon y evita que archivos locales (node_modules ya instalado, builds
+# previos, cobertura de tests) contaminen el "npm ci" / "npm run build"
+# dentro del contenedor. NO excluye nada que el build realmente necesite:
+# src/, angular.json, tsconfig*, package.json, package-lock.json, la config
+# de nginx ni docker-entrypoint.sh.
+
+node_modules
+.angular
+coverage
+dist
+
+# Logs locales
+npm-debug.log*
+*.log
+
+# Archivos de entorno/editor locales, nunca necesarios dentro de la imagen
+.env
+.env.*
+.vscode
+.idea
+*.swp
+
+# Control de versiones y metadata del propio Docker
+.git
+.gitignore
+.dockerignore
+Dockerfile

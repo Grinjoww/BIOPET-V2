@@ -9,17 +9,19 @@ import { AuthService } from './auth.service';
  * antes. En su lugar, confirma la sesión contra el backend real
  * (GET /api/usuarios/me), que es quien valida la cookie firmada.
  *
- * Nota de UX: esto agrega una llamada de red antes de cada navegación
- * protegida. Es el costo correcto de mover el token fuera del alcance de
- * JS (mitigación XSS); si en el futuro se requiere evitar el round-trip,
- * se podría cachear el resultado por unos segundos en auth.service, pero
- * eso queda fuera del alcance de esta tarea.
+ * Usa AuthService.sesionActual(), que reutiliza el estado ya resuelto en
+ * memoria en vez de repetir la petición en cada navegación protegida (la
+ * versión anterior de este guard llamaba a cargarPerfil() —sin caché—
+ * en cada cambio de ruta). El backend sigue siendo la autoridad real:
+ * cada petición HTTP posterior se valida de forma independiente contra la
+ * cookie, esta caché solo evita un round-trip redundante para decidir si
+ * se puede pintar la pantalla.
  */
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  return auth.cargarPerfil().pipe(
+  return auth.sesionActual().pipe(
     map((usuario) => {
       if (usuario) return true;
       router.navigate(['/login']);

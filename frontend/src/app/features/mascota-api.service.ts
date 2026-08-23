@@ -66,6 +66,15 @@ export class MascotaApiService {
     return this.http.get<PageResponse<Mascota>>(this.base, { params });
   }
 
+  /**
+   * GET /api/mascotas/{id}. El backend aplica la misma verificación de
+   * propiedad que en listar(): un ROLE_DUENO pidiendo una mascota ajena
+   * recibe 403, no la ficha de otro cliente.
+   */
+  buscar(id: number): Observable<Mascota> {
+    return this.http.get<Mascota>(`${this.base}/${id}`);
+  }
+
   crear(payload: MascotaRequestPayload): Observable<Mascota> {
     return this.http.post<Mascota>(this.base, payload);
   }

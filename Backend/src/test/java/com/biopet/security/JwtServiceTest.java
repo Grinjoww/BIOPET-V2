@@ -137,6 +137,21 @@ class JwtServiceTest {
         assertFalse(jwtService.isAccessToken(refresh));
     }
 
+    @Test
+    void secretoMenorA256BitsLanzaIllegalArgumentException() {
+        String secretoCorto = "demasiado-corto"; // 15 bytes UTF-8 < 32
+
+        assertThrows(IllegalArgumentException.class, () ->
+                new JwtService(secretoCorto, EXPIRATION_MS, REFRESH_EXPIRATION_MS, ISSUER, AUDIENCE));
+    }
+
+    @Test
+    void secretoDeExactamente32BytesNoLanzaExcepcion() {
+        String secreto32Bytes = "a".repeat(32);
+
+        assertNotNull(new JwtService(secreto32Bytes, EXPIRATION_MS, REFRESH_EXPIRATION_MS, ISSUER, AUDIENCE));
+    }
+
     private String construirTokenFirmadoCon(String issuer, String audience) {
         SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
         Instant now = Instant.now();

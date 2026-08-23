@@ -5,6 +5,14 @@ Backend/target/
 # Node
 frontend/node_modules/
 frontend/dist/
+# Cache local de Angular CLI/Vite (se regenera solo con "ng serve"/"ng build"/"ng test";
+# no es código fuente ni configuración - nunca debe versionarse). Ver sección
+# "ACCIONES MANUALES" del informe de higiene: hay ~27 archivos de este directorio
+# ya trackeados de antes que esta regla no destrackea por sí sola.
+frontend/.angular/
+# Salida de "ng test --code-coverage" (HTML/lcov generados, se regenera en cada
+# corrida de la suite; no aporta nada versionado).
+frontend/coverage/
 # Env
 .env
 *.log
@@ -17,6 +25,11 @@ Backend/certs/*
 .idea/
 .vscode/
 *.iml
+# Claude Code: archivos de estado/local del propio asistente, no del producto.
+# .claude/skills/ (p. ej. biopet-ui/SKILL.md) SÍ debe versionarse -es guía de
+# proyecto real-, por eso no se ignora ".claude/" completo, solo estos dos.
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
 # OS
 .DS_Store
 Thumbs.db

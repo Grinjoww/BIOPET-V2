@@ -1,7 +1,12 @@
 FROM node:20-alpine AS build
 WORKDIR /app
-COPY package.json ./
-RUN npm install
+# M-1: se copian package.json Y package-lock.json (antes solo package.json,
+# con "npm install") para que la build sea reproducible -"npm ci" instala
+# exactamente las versiones fijadas en el lockfile, en vez de resolverlas de
+# nuevo en cada build, y falla si package.json y el lockfile quedan
+# desincronizados en vez de reescribirlo silenciosamente.
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
 RUN npm run build
 

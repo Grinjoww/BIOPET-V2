@@ -10,5 +10,9 @@ import java.util.Optional;
 public interface CitaRepository extends JpaRepository<Cita, Long> {
     Page<Cita> findAllByActivoTrue(Pageable pageable);
     Page<Cita> findAllByMascota_Duenio_IdAndActivoTrue(Long duenioId, Pageable pageable);
+
+    /** Para GET /api/citas/mascota/{mascotaId} (CitaService.listarPorMascota). */
+    Page<Cita> findAllByMascotaIdAndActivoTrue(Long mascotaId, Pageable pageable);
+
     Optional<Cita> findByIdAndActivoTrue(Long id);
 }

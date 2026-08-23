@@ -255,6 +255,42 @@ class UsuarioControllerTest {
     }
 
     @Test
+    void adminNoPuedeDarseDeBajaASiMismo() throws Exception {
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+        Long adminId = usuarioRepository.findByEmail(EMAIL_ADMIN).orElseThrow().getId();
+
+        mockMvc.perform(delete("/api/usuarios/" + adminId)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType("application/problem+json;charset=UTF-8"))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:forbidden"));
+
+        Usuario adminSinCambios = usuarioRepository.findByEmail(EMAIL_ADMIN).orElseThrow();
+        org.junit.jupiter.api.Assertions.assertTrue(adminSinCambios.isActivo());
+
+        // Sigue pudiendo autenticarse: el rechazo no lo dejó fuera del sistema.
+        mockMvc.perform(get("/api/usuarios")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void adminPuedeDarDeBajaAOtroAdmin() throws Exception {
+        Long otroAdminId = registrarUsuarioYObtenerId("otro.admin@biopet.com", "ClaveAdmin123*", Rol.ROLE_ADMIN);
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+
+        mockMvc.perform(delete("/api/usuarios/" + otroAdminId)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isNoContent());
+
+        Usuario otroAdminDadoDeBaja = usuarioRepository.findById(otroAdminId).orElseThrow();
+        assertFalse(otroAdminDadoDeBaja.isActivo());
+
+        Usuario adminQueEjecutoLaAccion = usuarioRepository.findByEmail(EMAIL_ADMIN).orElseThrow();
+        org.junit.jupiter.api.Assertions.assertTrue(adminQueEjecutoLaAccion.isActivo());
+    }
+
+    @Test
     void accesoSinAutenticacionDevuelve401() throws Exception {
         mockMvc.perform(get("/api/usuarios"))
                 .andExpect(status().isUnauthorized())
@@ -299,6 +335,223 @@ class UsuarioControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(EMAIL_ADMIN))
                 .andExpect(jsonPath("$.rol").value("ROLE_ADMIN"));
+    }
+
+    // ---------- /api/usuarios/duenios y /api/usuarios/veterinarios (Corrección B) ----------
+
+    @Test
+    void auxiliarObtieneDueniosSeleccionables() throws Exception {
+        registrarUsuarioYObtenerId("aux.duenios@biopet.com", "ClaveAux123*", Rol.ROLE_AUXILIAR);
+        Long duenoId = registrarUsuarioYObtenerId("sel.dueno1@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
+        String tokenAuxiliar = extractCookieValue(iniciarSesion("aux.duenios@biopet.com", "ClaveAux123*"), "access_token");
+
+        mockMvc.perform(get("/api/usuarios/duenios")
+                        .header("Authorization", "Bearer " + tokenAuxiliar))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(duenoId))
+                .andExpect(jsonPath("$[0].email").value("sel.dueno1@biopet.com"))
+                .andExpect(jsonPath("$[0].rol").value("ROLE_DUENO"));
+    }
+
+    @Test
+    void auxiliarObtieneVeterinariosSeleccionables() throws Exception {
+        registrarUsuarioYObtenerId("aux.vets@biopet.com", "ClaveAux123*", Rol.ROLE_AUXILIAR);
+        Long vetId = registrarUsuarioYObtenerId("sel.vet1@biopet.com", "ClaveVet123*", Rol.ROLE_VETERINARIO);
+        String tokenAuxiliar = extractCookieValue(iniciarSesion("aux.vets@biopet.com", "ClaveAux123*"), "access_token");
+
+        mockMvc.perform(get("/api/usuarios/veterinarios")
+                        .header("Authorization", "Bearer " + tokenAuxiliar))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(vetId))
+                .andExpect(jsonPath("$[0].email").value("sel.vet1@biopet.com"))
+                .andExpect(jsonPath("$[0].rol").value("ROLE_VETERINARIO"));
+    }
+
+    @Test
+    void veterinarioAccedeAAmbosListadosSeleccionables() throws Exception {
+        registrarUsuarioYObtenerId("vet.selector@biopet.com", "ClaveVet123*", Rol.ROLE_VETERINARIO);
+        registrarUsuarioYObtenerId("sel.dueno2@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
+        registrarUsuarioYObtenerId("sel.vet2@biopet.com", "ClaveVet123*", Rol.ROLE_VETERINARIO);
+        String tokenVeterinario = extractCookieValue(iniciarSesion("vet.selector@biopet.com", "ClaveVet123*"), "access_token");
+
+        mockMvc.perform(get("/api/usuarios/duenios")
+                        .header("Authorization", "Bearer " + tokenVeterinario))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/usuarios/veterinarios")
+                        .header("Authorization", "Bearer " + tokenVeterinario))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void adminAccedeAAmbosListadosSeleccionables() throws Exception {
+        registrarUsuarioYObtenerId("sel.dueno3@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
+        registrarUsuarioYObtenerId("sel.vet3@biopet.com", "ClaveVet123*", Rol.ROLE_VETERINARIO);
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+
+        mockMvc.perform(get("/api/usuarios/duenios")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/usuarios/veterinarios")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void duenoNoPuedeAccederAListadosSeleccionablesDevuelve403() throws Exception {
+        registrarUsuarioYObtenerId("sel.dueno.bloqueado@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
+        String tokenDueno = extractCookieValue(iniciarSesion("sel.dueno.bloqueado@biopet.com", "ClaveDueno123*"), "access_token");
+
+        mockMvc.perform(get("/api/usuarios/duenios")
+                        .header("Authorization", "Bearer " + tokenDueno))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType("application/problem+json;charset=UTF-8"))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:forbidden"));
+
+        mockMvc.perform(get("/api/usuarios/veterinarios")
+                        .header("Authorization", "Bearer " + tokenDueno))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType("application/problem+json;charset=UTF-8"))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:forbidden"));
+    }
+
+    @Test
+    void usuarioNoAutenticadoRecibe401EnSeleccionables() throws Exception {
+        mockMvc.perform(get("/api/usuarios/duenios"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType("application/problem+json;charset=UTF-8"))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:unauthorized"));
+
+        mockMvc.perform(get("/api/usuarios/veterinarios"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentType("application/problem+json;charset=UTF-8"))
+                .andExpect(jsonPath("$.type").value("urn:biopet:error:unauthorized"));
+    }
+
+    @Test
+    void seleccionablesExcluyenUsuariosInactivos() throws Exception {
+        Long duenoInactivoId = registrarUsuarioYObtenerId("sel.dueno.inactivo@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
+        Usuario duenoInactivo = usuarioRepository.findById(duenoInactivoId).orElseThrow();
+        duenoInactivo.setActivo(false);
+        usuarioRepository.save(duenoInactivo);
+
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+
+        mockMvc.perform(get("/api/usuarios/duenios")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void dueniosSoloContieneRolDueno() throws Exception {
+        registrarUsuarioYObtenerId("filtro.dueno@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
+        registrarUsuarioYObtenerId("filtro.vet@biopet.com", "ClaveVet123*", Rol.ROLE_VETERINARIO);
+        registrarUsuarioYObtenerId("filtro.aux@biopet.com", "ClaveAux123*", Rol.ROLE_AUXILIAR);
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+
+        mockMvc.perform(get("/api/usuarios/duenios")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].rol").value("ROLE_DUENO"));
+    }
+
+    @Test
+    void veterinariosSoloContieneRolVeterinario() throws Exception {
+        registrarUsuarioYObtenerId("filtro2.dueno@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
+        registrarUsuarioYObtenerId("filtro2.vet@biopet.com", "ClaveVet123*", Rol.ROLE_VETERINARIO);
+        registrarUsuarioYObtenerId("filtro2.aux@biopet.com", "ClaveAux123*", Rol.ROLE_AUXILIAR);
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+
+        mockMvc.perform(get("/api/usuarios/veterinarios")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].rol").value("ROLE_VETERINARIO"));
+    }
+
+    @Test
+    void seleccionablesNuncaExponenAdminNiAuxiliar() throws Exception {
+        Long adminId = usuarioRepository.findByEmail(EMAIL_ADMIN).orElseThrow().getId();
+        Long auxiliarId = registrarUsuarioYObtenerId("no.enumerable.aux@biopet.com", "ClaveAux123*", Rol.ROLE_AUXILIAR);
+        registrarUsuarioYObtenerId("no.enumerable.dueno@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
+        registrarUsuarioYObtenerId("no.enumerable.vet@biopet.com", "ClaveVet123*", Rol.ROLE_VETERINARIO);
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+
+        mockMvc.perform(get("/api/usuarios/duenios")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(adminId.intValue()))))
+                .andExpect(jsonPath("$[*].id", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(auxiliarId.intValue()))));
+
+        mockMvc.perform(get("/api/usuarios/veterinarios")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(adminId.intValue()))))
+                .andExpect(jsonPath("$[*].id", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(auxiliarId.intValue()))));
+    }
+
+    @Test
+    void jsonDeSeleccionablesNoExponePasswordNiActivo() throws Exception {
+        registrarUsuarioYObtenerId("sel.sinpassword@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+
+        mockMvc.perform(get("/api/usuarios/duenios")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].password").doesNotExist())
+                .andExpect(jsonPath("$[0].passwordHash").doesNotExist())
+                .andExpect(jsonPath("$[0].activo").doesNotExist());
+    }
+
+    @Test
+    void dueniosSeleccionablesOrdenadosPorNombreAscendente() throws Exception {
+        crearUsuarioConNombreYRol("Zoe Andrade", "orden.zoe@biopet.com", Rol.ROLE_DUENO);
+        crearUsuarioConNombreYRol("Ana Torres", "orden.ana@biopet.com", Rol.ROLE_DUENO);
+        crearUsuarioConNombreYRol("Miguel Ruiz", "orden.miguel@biopet.com", Rol.ROLE_DUENO);
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+
+        mockMvc.perform(get("/api/usuarios/duenios")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[0].nombre").value("Ana Torres"))
+                .andExpect(jsonPath("$[1].nombre").value("Miguel Ruiz"))
+                .andExpect(jsonPath("$[2].nombre").value("Zoe Andrade"));
+    }
+
+    @Test
+    void rutaDueniosNoColisionaConBusquedaPorId() throws Exception {
+        registrarUsuarioYObtenerId("sel.dueno.ruta@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+
+        // "duenios" y "veterinarios" no son dígitos, así que nunca deben
+        // resolverse contra GET /api/usuarios/{id:\d+}; deben devolver un
+        // array, no un único UsuarioResponse ni un 404 de "id no encontrado".
+        mockMvc.perform(get("/api/usuarios/duenios")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+
+        mockMvc.perform(get("/api/usuarios/veterinarios")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    private Long crearUsuarioConNombreYRol(String nombre, String email, Rol rol) {
+        Usuario usuario = Usuario.builder()
+                .nombre(nombre)
+                .email(email)
+                .passwordHash(passwordEncoder.encode("ClavePrueba123*"))
+                .rol(rol)
+                .activo(true)
+                .build();
+        return usuarioRepository.save(usuario).getId();
     }
 
     private Long registrarUsuarioYObtenerId(String email, String password, Rol rol) {

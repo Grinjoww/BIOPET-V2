@@ -199,10 +199,31 @@ Encrypt automaticamente (Caddyfile en `docs/despliegue/`).
 
 ## 7. Credenciales de acceso inicial
 
-- La app crea el admin inicial (`admin@biopet.ec`) via `DataInitializer` al
-  primer arranque (solo si no existe). La contrasena inicial la define el
-  codigo de desarrollo; en produccion debe cambiarse inmediatamente
-  (ver RUNBOOK.md).
+- B-1: `DataInitializer` (`CommandLineRunner "seedAdmin"`) ya NO trae ninguna
+  contrasena hardcodeada ni crea admin alguno por defecto. El bootstrap del
+  primer ADMIN es opt-in via 3 variables de entorno, sin ningun fallback de
+  contrasena en el codigo:
+  - `ADMIN_SEED_ENABLED=true`
+  - `ADMIN_SEED_EMAIL=<email real controlado por el operador>`
+  - `ADMIN_SEED_PASSWORD=<secret fuerte, generado en el dashboard de Render
+    o con `openssl rand -base64 24`>`
+  - `ADMIN_SEED_NAME` (opcional; por defecto "Administrador BIOPET").
+
+  Si `ADMIN_SEED_ENABLED=true` y falta `ADMIN_SEED_EMAIL` o
+  `ADMIN_SEED_PASSWORD`, el arranque falla explicitamente (fail-fast): nunca
+  se crea un admin con contrasena vacia o conocida.
+
+  Flujo recomendado para una BD de produccion nueva: definir las 3
+  variables en el dashboard de Render (o en el `.env` del VPS) antes del
+  primer deploy, arrancar la app una vez para que se cree la cuenta, y
+  luego -opcionalmente- volver a poner `ADMIN_SEED_ENABLED=false` (el seed
+  es idempotente: si el admin ya existe, un restart posterior con
+  `ADMIN_SEED_ENABLED=true` no lo duplica ni le resetea la contrasena, pero
+  desactivarlo evita reevaluar esas variables en cada arranque).
+
+  En desarrollo local (`docker-compose.yml`), `.env.example` ya trae las 3
+  variables con un email/contrasena ficticios de desarrollo -copiar a `.env`
+  reproduce el mismo admin de siempre sin pasos adicionales.
 
 ## 8. Referencias
 

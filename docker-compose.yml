@@ -21,7 +21,11 @@ services:
       #   - db/seed.sql (redundante: Backend/.../config/DataInitializer.java,
       #     CommandLineRunner "seedAdmin", crea el mismo admin de forma
       #     idempotente DESPUES de que Flyway corre, sin depender de
-      #     docker-entrypoint-initdb.d);
+      #     docker-entrypoint-initdb.d -B-1: ese seed es ahora opt-in via
+      #     ADMIN_SEED_ENABLED=true, ADMIN_SEED_EMAIL y ADMIN_SEED_PASSWORD;
+      #     .env.example ya trae esas 3 variables para desarrollo local, asi
+      #     que "docker compose up" con un .env copiado desde .env.example
+      #     sigue creando el mismo admin de siempre sin cambios de flujo);
       #   - db/procs/ y db/init-procs.sh (db/procs/*.sql ya representa el
       #     estado FINAL v1.0.0 de las 6 rutinas -- todas PROCEDURE --;
       #     precargarlas en un volumen nuevo hace que la migracion V5

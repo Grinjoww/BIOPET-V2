@@ -52,6 +52,20 @@ public class CitaService {
         return citaRepository.findAllByActivoTrue(pageable).map(this::toResponse);
     }
 
+    /**
+     * GET /api/citas/mascota/{mascotaId}. Solo lectura: usa
+     * verificarAccesoLecturaMascota (misma regla que buscar()), nunca la
+     * regla de escritura de actualizar() — este endpoint no amplía qué
+     * citas puede modificar un VETERINARIO, solo cuáles puede leer.
+     */
+    @Transactional(readOnly = true)
+    public Page<CitaResponse> listarPorMascota(Long mascotaId, Pageable pageable, String email) {
+        Usuario usuario = usuarioActual(email);
+        Mascota mascota = resolverMascota(mascotaId);
+        verificarAccesoLecturaMascota(usuario, mascota);
+        return citaRepository.findAllByMascotaIdAndActivoTrue(mascotaId, pageable).map(this::toResponse);
+    }
+
     @Transactional(readOnly = true)
     public CitaResponse buscar(Long id, String email) {
         Usuario usuario = usuarioActual(email);
@@ -129,7 +143,16 @@ public class CitaService {
     }
 
     private void verificarAccesoLectura(Usuario usuario, Cita cita) {
-        if (!tieneAccesoGlobal(usuario.getRol()) && !cita.getMascota().getDuenio().getId().equals(usuario.getId())) {
+        verificarAccesoLecturaMascota(usuario, cita.getMascota());
+    }
+
+    /**
+     * Extraída de verificarAccesoLectura(Usuario, Cita) para reutilizarla en
+     * listarPorMascota(), donde todavía no hay ninguna Cita concreta sobre
+     * la que comprobar propiedad (puede haber cero).
+     */
+    private void verificarAccesoLecturaMascota(Usuario usuario, Mascota mascota) {
+        if (!tieneAccesoGlobal(usuario.getRol()) && !mascota.getDuenio().getId().equals(usuario.getId())) {
             throw new AccessDeniedException("No tiene permisos para acceder a esta cita.");
         }
     }

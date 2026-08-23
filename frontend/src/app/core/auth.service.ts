@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of, tap } from 'rxjs';
+import { Observable, catchError, finalize, map, of, shareReplay, switchMap, tap } from 'rxjs';
+import { RolBiopet } from './roles';
 
 /** Refleja AuthSessionResponse del backend: YA NO trae accessToken/refreshToken. */
 export interface AuthSessionResponse {
@@ -12,7 +13,8 @@ export interface UsuarioResponse {
   id: number;
   nombre: string;
   email: string;
-  rol: string;
+  rol: RolBiopet;
+  activo: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -28,17 +30,37 @@ export class AuthService {
    */
   readonly usuarioActual = signal<UsuarioResponse | null>(null);
 
+  /**
+   * Petición /me en curso, compartida entre llamadas concurrentes a
+   * sesionActual() (p. ej. el guard resolviendo varias rutas hijas casi
+   * al mismo tiempo). Evita disparar la misma petición dos veces.
+   */
+  private sesionEnCurso$: Observable<UsuarioResponse | null> | null = null;
+
   constructor(private http: HttpClient) {}
 
   /**
    * Login: el backend setea las cookies access/refresh en la respuesta.
    * El body de respuesta solo trae expiresIn; no hay nada que guardar
    * en el cliente aparte de refrescar el estado de usuarioActual.
+   *
+   * IMPORTANTE: se ENCADENA cargarPerfil() con switchMap (no un
+   * `tap(() => this.cargarPerfil().subscribe())` disparado en paralelo,
+   * como antes de esta fase). Con tap+subscribe suelto, el GET
+   * /api/usuarios/me queda en curso pero el observable devuelto por
+   * login() ya emitía "completado" de inmediato -antes de que
+   * usuarioActual() se hubiera actualizado-, así que cualquier código que
+   * decidiera algo según el rol justo al recibir el login (como el
+   * aterrizaje por rol de LoginComponent) podía leer un usuarioActual()
+   * todavía null/desactualizado. Con switchMap, login() solo emite
+   * DESPUÉS de que cargarPerfil() haya resuelto (éxito o error), así que
+   * usuarioActual() ya es fiable en el propio callback de éxito de quien
+   * llama a login().
    */
   login(email: string, password: string): Observable<AuthSessionResponse> {
     return this.http
       .post<AuthSessionResponse>(`${this.api}/auth/login`, { email, password })
-      .pipe(tap(() => this.cargarPerfil().subscribe()));
+      .pipe(switchMap((respuesta) => this.cargarPerfil().pipe(map(() => respuesta))));
   }
 
   /**
@@ -67,10 +89,11 @@ export class AuthService {
   }
 
   /**
-   * Pregunta al backend si la cookie de sesión actual es válida.
-   * Es la base del auth.guard: como el JWT ya no es legible desde JS,
-   * la única forma correcta de saber "¿hay sesión?" es preguntarle al
-   * servidor, no inspeccionar nada en el cliente.
+   * Pregunta SIEMPRE al backend si la cookie de sesión actual es válida
+   * (GET /api/usuarios/me) y actualiza usuarioActual con el resultado.
+   * Úsese cuando se necesita el estado más reciente con certeza (login,
+   * o una revalidación explícita). Para navegación normal dentro del
+   * shell, usar sesionActual() en su lugar.
    */
   cargarPerfil(): Observable<UsuarioResponse | null> {
     return this.http.get<UsuarioResponse>(`${this.api}/usuarios/me`).pipe(
@@ -80,6 +103,31 @@ export class AuthService {
         return of(null);
       })
     );
+  }
+
+  /**
+   * Resuelve la sesión reutilizando el estado en memoria cuando ya existe,
+   * en vez de repetir GET /api/usuarios/me en cada navegación protegida
+   * (que es lo que hacía authGuard antes de esta fase). Es exclusivamente
+   * una optimización de UI: el backend sigue validando la cookie en cada
+   * petición HTTP real de todas formas, así que esta caché nunca amplía lo
+   * que el usuario puede hacer — solo evita un viaje de red redundante
+   * para decidir qué pinta el sidebar.
+   *
+   * Tras un logout, usuarioActual queda en null y la siguiente llamada
+   * vuelve a preguntar al backend con normalidad.
+   */
+  sesionActual(): Observable<UsuarioResponse | null> {
+    const actual = this.usuarioActual();
+    if (actual) return of(actual);
+
+    if (!this.sesionEnCurso$) {
+      this.sesionEnCurso$ = this.cargarPerfil().pipe(
+        finalize(() => (this.sesionEnCurso$ = null)),
+        shareReplay(1)
+      );
+    }
+    return this.sesionEnCurso$;
   }
 
   /** Uso solo informativo/UI; NUNCA usar esto para decidir si hacer una
