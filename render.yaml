@@ -6,16 +6,24 @@
 # Como usar (resumen, ver docs/despliegue/DEPLOYMENT.md):
 #   1. Conectar el repositorio https://github.com/Grinjoww/BIOPET-V2
 #      en Render (New -> Blueprint).
-#   2. Render lee este archivo y crea: biopet-backend (web docker),
-#      biopet-frontend (web docker), biopet-cache (key value) y
-#      biopet-db (Postgres).
+#   2. Render lee este archivo y crea: biopet-v2-backend (web docker),
+#      biopet-v2-frontend (web docker), biopet-v2-cache (key value) y
+#      biopet-v2-db (Postgres). Nombres con sufijo "-v2-" a proposito: el
+#      BIOPET academico (V1) original sigue desplegado en el mismo
+#      workspace de Render con los nombres SIN sufijo (biopet-backend,
+#      biopet-frontend, biopet-cache, biopet-db) -- sufijar V2 evita
+#      colisionar o confundirse con esos recursos, que no deben tocarse.
 #   3. Completar en el dashboard las variables marcadas con sync: false
 #      (JWT_SECRET, CORS_ALLOWED_ORIGINS, ADMIN_SEED_EMAIL,
-#      ADMIN_SEED_PASSWORD, BACKEND_URL, TLS_KEYSTORE_*).
+#      ADMIN_SEED_PASSWORD, TLS_KEYSTORE_*). BACKEND_URL YA NO es sync:false
+#      -se resuelve solo (ver punto 5).
 #   4. El healthcheck del backend usa /actuator/health (HTTP 200 = UP).
-#   5. B-2 (pendiente): BACKEND_URL del frontend queda sin valor hasta
-#      desplegar primero biopet-backend y conocer su URL publica real
-#      (ver el bloque "envVars" de biopet-frontend mas abajo).
+#   5. BACKEND_URL del frontend se resuelve automaticamente via
+#      fromService/envVarKey: RENDER_EXTERNAL_URL apuntando a
+#      biopet-v2-backend (ver el bloque "envVars" de biopet-v2-frontend mas
+#      abajo) -- sin sync:false, sin URL hardcodeada, sin paso manual de
+#      "desplegar backend, copiar URL, pegarla en frontend". B-2 queda
+#      resuelto en su totalidad por este Blueprint.
 #   6. Bootstrap del primer ADMIN (B-1): ADMIN_SEED_ENABLED nace en "false"
 #      (value: mas abajo, no sync:false) para que el Blueprint aplique sin
 #      crear ninguna cuenta. Para el primer deploy real, editar esa
@@ -29,7 +37,7 @@ services:
   # Backend Spring Boot (docker)
   # ------------------------------------------------------------------
   - type: web
-    name: biopet-backend
+    name: biopet-v2-backend
     runtime: docker
     repo: https://github.com/Grinjoww/BIOPET-V2
     rootDir: Backend
@@ -54,34 +62,34 @@ services:
       # esto).
       - key: DB_HOST
         fromDatabase:
-          name: biopet-db
+          name: biopet-v2-db
           property: host
       - key: DB_PORT
         fromDatabase:
-          name: biopet-db
+          name: biopet-v2-db
           property: port
       - key: DB_NAME
         fromDatabase:
-          name: biopet-db
+          name: biopet-v2-db
           property: database
       # Usuario de aplicacion: rol con privilegios sobre las tablas.
       # En Render se usa el rol de la BD gestionada (ver DEPLOYMENT.md,
       # seccion "Rol de aplicacion").
       - key: DB_APP_USER
         fromDatabase:
-          name: biopet-db
+          name: biopet-v2-db
           property: user
       - key: DB_APP_PASSWORD
         fromDatabase:
-          name: biopet-db
+          name: biopet-v2-db
           property: password
       - key: DB_USER
         fromDatabase:
-          name: biopet-db
+          name: biopet-v2-db
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: biopet-db
+          name: biopet-v2-db
           property: password
       # Redis / Valkey gestionado de Render (Key Value). Render NO expone
       # "host"/"port" como propiedades separadas de un servicio "keyvalue"
@@ -102,7 +110,7 @@ services:
       - key: SPRING_DATA_REDIS_URL
         fromService:
           type: keyvalue
-          name: biopet-cache
+          name: biopet-v2-cache
           property: connectionString
       # Valores que el operador completa en el dashboard (sync: false)
       - key: JWT_SECRET
@@ -143,57 +151,51 @@ services:
   # resuelve en runtime dentro del contenedor (frontend/docker-entrypoint.sh
   # + nginx.conf.template), usando BACKEND_URL definido abajo.
   #
-  # NO se usa el hostname privado de Render (fromService/property: host)
+  # NO se usa el hostname PRIVADO de Render (fromService/property: host)
   # aqui: verificado en un deploy real (instancia V1/academica) que el plan
   # Free de Web Services de Render puede ENVIAR trafico por la red privada
-  # pero NO puede RECIBIRLO (el backend biopet-backend, tambien Free, no
-  # admite conexiones entrantes por esa red desde el frontend) -- el
-  # intento fallo entonces con "host not found in upstream". Por eso
-  # BACKEND_URL debe ser la URL HTTPS PUBLICA real del backend ya
-  # desplegado, no el hostname privado de Render.
+  # pero NO puede RECIBIRLO (un backend Free no admite conexiones entrantes
+  # por esa red desde otro servicio) -- el intento fallo entonces con "host
+  # not found in upstream". Por eso BACKEND_URL debe ser la URL HTTPS
+  # PUBLICA real del backend, no su hostname privado de Render.
   #
-  # B-2 (pendiente, deliberado): a diferencia de la instancia V1 -donde
-  # este valor quedaba hardcodeado aqui con "value:"-, BACKEND_URL es ahora
-  # sync:false SIN ningun valor ni fallback en este archivo. Motivo: el
-  # backend V2 (biopet-backend, arriba) todavia no fue desplegado, asi que
-  # su URL publica real todavia no se conoce; dejar aqui la URL del backend
-  # ACADEMICO (V1, https://biopet-backend-dh5e.onrender.com) habria hecho
-  # que un "Blueprint Apply" del frontend V2 sirviera trafico real contra
-  # el backend academico sin que nadie lo pidiera. Con sync:false, Render
-  # exige completar el valor en el dashboard antes de poder desplegar
-  # biopet-frontend -no hay URL por defecto que se pueda "olvidar
-  # cambiar". Flujo correcto: desplegar primero biopet-backend, copiar su
-  # URL publica real (Dashboard -> biopet-backend -> URL), pegarla como
-  # BACKEND_URL de biopet-frontend, y recien entonces desplegar el
-  # frontend (o redeploy si ya se habia intentado).
+  # B-2 (resuelto): BACKEND_URL se obtiene automaticamente, dentro de este
+  # mismo Blueprint, via fromService/envVarKey: RENDER_EXTERNAL_URL --
+  # RENDER_EXTERNAL_URL es una variable que Render inyecta a TODO Web
+  # Service con su propia URL publica HTTPS (sin puerto), disponible desde
+  # que el servicio se crea (no hace falta que termine de compilar/arrancar
+  # para que el valor exista). Referenciar aqui biopet-v2-backend (el
+  # servicio definido arriba, no el backend academico V1) hace que Render
+  # resuelva esta variable solo, sin sync:false, sin URL hardcodeada, y sin
+  # el paso manual "desplegar backend, copiar URL, pegarla en frontend": el
+  # Blueprint completo (Postgres + Redis + backend + frontend) se puede
+  # aplicar en una sola operacion. docker-entrypoint.sh/nginx.conf.template
+  # ya aceptan una URL completa "https://..." sin cambios (ver
+  # proxy_ssl_server_name para el SNI que ese esquema necesita).
   # ------------------------------------------------------------------
   - type: web
-    name: biopet-frontend
+    name: biopet-v2-frontend
     runtime: docker
     repo: https://github.com/Grinjoww/BIOPET-V2
     rootDir: frontend
     plan: free
     healthCheckPath: /
     envVars:
-      # Sin valor ni fallback: se completa en el dashboard de Render con la
-      # URL publica HTTPS real de biopet-backend (sin puerto, HTTPS publico
-      # de Render siempre en 443) una vez que ese servicio ya este
-      # desplegado. No es un secreto (es una URL publica), pero SI debe
-      # quedar sync:false para que Render no permita desplegar el frontend
-      # sin que un humano la haya fijado explicitamente -ver nota B-2
-      # arriba.
       - key: BACKEND_URL
-        sync: false
+        fromService:
+          type: web
+          name: biopet-v2-backend
+          envVarKey: RENDER_EXTERNAL_URL
 
   # ------------------------------------------------------------------
   # Redis / Valkey gestionado (cache)
   # ------------------------------------------------------------------
   - type: keyvalue
-    name: biopet-cache
+    name: biopet-v2-cache
     plan: free
     # Obligatorio para Render (Blueprint rechazado sin esto: "must
     # specify IP allow list"). Lista vacia = sin acceso publico por IP;
-    # solo alcanzable por la conexion interna de Render (biopet-backend,
+    # solo alcanzable por la conexion interna de Render (biopet-v2-backend,
     # mismo proyecto/region), via SPRING_DATA_REDIS_URL arriba.
     ipAllowList: []
 
@@ -203,7 +205,15 @@ services:
 # para datos de produccion permanentes usar plan starter o superior.
 # ------------------------------------------------------------------
 databases:
-  - name: biopet-db
+  # "name:" es el identificador del recurso Blueprint (dashboard/fromDatabase),
+  # distinto de "databaseName:"/"user:" -el nombre real de la base y el rol
+  # Postgres que Render crea. Solo se renombra "name:" (biopet-v2-db) para
+  # distinguir este recurso del Postgres academico en el mismo workspace de
+  # Render; "databaseName"/"user" quedan igual que siempre (biopet_db /
+  # biopet_user), sin relacion con Render y sin efecto funcional: son los
+  # mismos nombres que ya esperan Backend/src/main/resources/application.yml
+  # (defaults de desarrollo) y db/roles.sql (bootstrap local).
+  - name: biopet-v2-db
     databaseName: biopet_db
     user: biopet_user
     plan: free
