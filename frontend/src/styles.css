@@ -131,7 +131,8 @@
      raised: elementos que se superponen a contenido (dropdown, popover).
      overlay: solo modales / drawer.
      Sin cambios en esta fase — el QA no señaló las sombras como problema
-     y CLAUDE.md pide explícitamente no añadir sombras decorativas. */
+     y el criterio de diseño del proyecto pide explícitamente no añadir
+     sombras decorativas. */
   --elevation-raised: 0 1px 2px rgba(21, 48, 77, 0.06);
   --elevation-overlay: 0 12px 32px rgba(21, 48, 77, 0.18);
 

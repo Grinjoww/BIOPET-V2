@@ -46,7 +46,7 @@ export const ICONS: Record<IconName, IconShape> = {
   },
   mascotas: {
     // Huella minimalista: un único trazo funcional de navegación, no
-    // decoración repetida (ver CLAUDE.md — evitar "huellitas por todas
+    // decoración repetida (se evita a propósito el "huellitas por todas
     // partes"). Construida con los mismos círculos sin relleno que el
     // resto del set, para que no desentone con la línea de 1.5px.
     circles: [

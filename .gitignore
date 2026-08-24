@@ -25,11 +25,6 @@ Backend/certs/*
 .idea/
 .vscode/
 *.iml
-# Claude Code: archivos de estado/local del propio asistente, no del producto.
-# .claude/skills/ (p. ej. biopet-ui/SKILL.md) SÍ debe versionarse -es guía de
-# proyecto real-, por eso no se ignora ".claude/" completo, solo estos dos.
-.claude/settings.local.json
-.claude/scheduled_tasks.lock
 # OS
 .DS_Store
 Thumbs.db

@@ -19,7 +19,8 @@ import java.time.LocalDate;
  * admite ningún parámetro de dueño (a diferencia de
  * fn_resumen_mascotas_por_especie) — sus 5 columnas son agregados de
  * TODA la clínica. Exponerlo a ROLE_DUENO filtraría solo en el cliente,
- * exactamente el patrón que CLAUDE.md prohíbe (la propia Corrección A de
+ * exactamente el patrón que este proyecto evita — filtrar en el cliente
+ * lo que debe filtrarse en el backend (la propia Corrección A de
  * ConsultaService existe por esta misma razón), así que ROLE_DUENO
  * directamente no tiene acceso a este endpoint.
  */

@@ -17,7 +17,8 @@ import { IconComponent } from '../shared/icons/icon.component';
  *    AUXILIAR/DUENO recibiría 403 si esta pantalla intentara usarlo
  *    contra su propio id. Por eso Perfil V2 es de solo lectura para
  *    los 4 roles: mostrar un formulario "Guardar cambios" que el
- *    backend rechazaría sería exactamente lo que CLAUDE.md prohíbe.
+ *    backend rechazaría sería un botón sin función real, algo que
+ *    este proyecto evita a propósito.
  *  - GET /api/usuarios/me (sin restricción de rol, cualquier
  *    autenticado) ya alimenta `AuthService.usuarioActual`: es la única
  *    fuente de datos real de esta pantalla, la misma que ya usa el
