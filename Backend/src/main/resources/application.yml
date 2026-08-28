@@ -74,6 +74,28 @@ app:
     password: ${ADMIN_SEED_PASSWORD:}
     name: ${ADMIN_SEED_NAME:Administrador BIOPET}
 
+sri:
+  firma:
+    certificado:
+      # Ruta del PKCS#12 con la firma electronica de la clinica. Se monta como
+      # fichero secreto en el despliegue; NUNCA se guarda en PostgreSQL ni en el
+      # repositorio. Sin valor por defecto: un secreto con fallback no es un
+      # secreto.
+      path: ${SRI_CERT_PATH:}
+      password: ${SRI_CERT_PASSWORD:}
+      # Opcional: solo hace falta si el almacen contiene mas de una clave.
+      alias: ${SRI_CERT_ALIAS:}
+    # RSA_SHA1 es el perfil que describe la ficha tecnica del SRI. RSA_SHA256
+    # esta implementado y probado, pero que BIOPET pueda generarlo no significa
+    # que el SRI lo acepte: no se cambia sin comprobarlo antes contra CELCER.
+    algoritmo: ${SRI_FIRMA_ALGORITMO:RSA_SHA1}
+
+  # Las tres claves de arriba son OPCIONALES en el arranque a proposito: BIOPET
+  # debe poder levantar sin certificado (entornos de desarrollo, CI, o una
+  # clinica que aun no lo tiene). La ausencia se convierte en un error claro al
+  # intentar firmar, no en un fallo de arranque que dejaria el sistema entero
+  # inservible por no tener todavia el .p12.
+
 springdoc:
   api-docs:
     path: /api/openapi
