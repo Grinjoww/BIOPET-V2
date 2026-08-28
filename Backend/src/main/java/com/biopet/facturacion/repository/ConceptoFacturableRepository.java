@@ -12,5 +12,11 @@ public interface ConceptoFacturableRepository extends JpaRepository<ConceptoFact
     /** El codigo solo es unico entre los activos; de ahi el AND del nombre. */
     Optional<ConceptoFacturable> findByCodigoAndActivoTrue(String codigo);
 
+    /**
+     * Concepto activo por id. Vacio tanto si no existe como si fue dado de
+     * baja: para armar o emitir una linea, ambos casos son el mismo problema.
+     */
+    Optional<ConceptoFacturable> findByIdAndActivoTrue(Long id);
+
     List<ConceptoFacturable> findAllByTipoAndActivoTrue(TipoConceptoFacturable tipo);
 }

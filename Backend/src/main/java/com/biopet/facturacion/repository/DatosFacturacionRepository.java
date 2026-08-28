@@ -15,4 +15,12 @@ public interface DatosFacturacionRepository extends JpaRepository<DatosFacturaci
      * lista porque el indice unico parcial garantiza que como mucho hay una.
      */
     Optional<DatosFacturacion> findByUsuario_IdAndPredeterminadoTrueAndActivoTrue(Long usuarioId);
+
+    /**
+     * Identidad tributaria activa que pertenece a ese usuario. El id del usuario
+     * va en la consulta, no en un {@code if} posterior: asi no existe el camino
+     * en el que se cargan los datos de otro y alguien se olvida de comprobar el
+     * duenio.
+     */
+    Optional<DatosFacturacion> findByIdAndUsuario_IdAndActivoTrue(Long id, Long usuarioId);
 }
