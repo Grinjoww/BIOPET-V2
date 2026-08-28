@@ -90,6 +90,60 @@ aprovecha la que ya arrastra xades4j.
 
 ---
 
+## SOAP: web services offline del SRI (Fase 7)
+
+Se declaran en el `pom.xml` tres artefactos; el resto llega por su árbol.
+
+| Biblioteca | Versión | Alcance | Licencia declarada | Para qué |
+|---|---|---|---|---|
+| `org.springframework.boot:spring-boot-starter-web-services` | 3.2.12 | compile | Apache-2.0 | Cliente SOAP tipado (`WebServiceTemplate`) |
+| `org.glassfish.jaxb:jaxb-runtime` | 4.0.5 | compile | EDL-1.0 / BSD de 3 cláusulas | Runtime de binding que necesita `Jaxb2Marshaller` |
+| `org.springframework.ws:spring-ws-test` | 4.0.11 | **test** | Apache-2.0 | `MockWebServiceServer`: la suite prueba el diálogo completo sin Internet |
+
+Versiones gestionadas por `spring-boot-dependencies`; ninguna se fija a mano.
+
+### Dependencias transitivas
+
+| Biblioteca | Versión | Licencia declarada | Para qué |
+|---|---|---|---|
+| `org.springframework.ws:spring-ws-core` | 4.0.11 | Apache-2.0 | Núcleo de Spring Web Services |
+| `org.springframework.ws:spring-xml` | 4.0.11 | Apache-2.0 | Utilidades XML de Spring-WS |
+| `org.springframework:spring-oxm` | 6.1.15 | Apache-2.0 | Abstracción de marshalling objeto/XML |
+| `com.sun.xml.messaging.saaj:saaj-impl` | 3.0.4 | EDL-1.0 | Implementación SAAJ (sobres SOAP) |
+| `jakarta.xml.soap:jakarta.xml.soap-api` | 3.0.2 | EDL-1.0 | API SAAJ |
+| `jakarta.xml.bind:jakarta.xml.bind-api` | 4.0.2 | EDL-1.0 | API de binding XML |
+| `org.glassfish.jaxb:jaxb-core` | 4.0.5 | EDL-1.0 | Núcleo del runtime JAXB |
+| `org.glassfish.jaxb:txw2` | 4.0.5 | EDL-1.0 | Escritura XML tipada, requerida por JAXB |
+| `jakarta.activation:jakarta.activation-api` | 2.1.3 | EDL-1.0 | Tipos MIME, requerida por JAXB y SAAJ |
+| `org.jvnet.staxex:stax-ex` | 2.1.0 | EDL-1.0 / BSD de 2 cláusulas | Extensiones StAX, requerida por SAAJ |
+
+Todo el árbol es Apache-2.0 o EDL-1.0 (licencia BSD de Eclipse, permisiva). No
+añade ninguna dependencia copyleft: la única del proyecto sigue siendo xades4j.
+
+**No se usa ningún generador de código a partir del WSDL.** Los bindings JAXB
+están escritos a mano en `com.biopet.facturacion.sri.ws`, de modo que el build
+no depende de que los servidores del SRI estén disponibles y no se añade ningún
+plugin de generación al ciclo de vida.
+
+---
+
+## WSDL del SRI versionados (solo en `test`)
+
+Artefactos de terceros redistribuidos, sin modificar, en
+`Backend/src/test/resources/sri/wsdl/`. Su procedencia, fecha de descarga y
+SHA-256 están en el `README.md` de ese directorio.
+
+| Artefacto | Origen |
+|---|---|
+| `RecepcionComprobantesOffline.wsdl` | Servicio de Rentas Internas (SRI), Ecuador — ambiente de pruebas (CELCER) |
+| `AutorizacionComprobantesOffline.wsdl` | Servicio de Rentas Internas (SRI), Ecuador — ambiente de pruebas (CELCER) |
+
+No se compilan ni generan código: los usa `SriBindingContraWsdlTest` para
+validar, sin red, que las respuestas simuladas de la suite tienen la forma del
+contrato oficial.
+
+---
+
 ## Esquemas XSD versionados
 
 No son bibliotecas, pero sí artefactos de terceros redistribuidos en

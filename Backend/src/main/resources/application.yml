@@ -96,6 +96,27 @@ sri:
   # intentar firmar, no en un fallo de arranque que dejaria el sistema entero
   # inservible por no tener todavia el .p12.
 
+  soap:
+    # Endpoints de los web services offline del SRI. Los DEFAULTS SON CELCER
+    # (ambiente de PRUEBAS) a proposito: un despliegue mal configurado debe
+    # fallar hacia pruebas, nunca emitir comprobantes con validez tributaria
+    # real por descuido. Produccion (cel.sri.gob.ec) se inyecta por variable de
+    # entorno, de forma explicita y deliberada, y SriSoapProperties deja
+    # constancia en el log con nivel WARN cuando detecta que apunta alli.
+    #
+    # Es la URL del ENDPOINT, sin el sufijo "?wsdl": ese devuelve el contrato,
+    # no una respuesta de negocio. El arranque lo rechaza si se cuela.
+    recepcion-url: ${SRI_SOAP_RECEPCION_URL:https://celcer.sri.gob.ec/comprobantes-electronicos-ws/RecepcionComprobantesOffline}
+    autorizacion-url: ${SRI_SOAP_AUTORIZACION_URL:https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline}
+    # Timeouts EXPLICITOS y finitos. Sin ellos HttpURLConnection espera
+    # indefinidamente: un SRI que acepta la conexion y no responde dejaria un
+    # hilo colgado para siempre. El de lectura es holgado porque la autorizacion
+    # del SRI es lenta en horas punta, pero acotado.
+    connect-timeout: ${SRI_SOAP_CONNECT_TIMEOUT:10s}
+    read-timeout: ${SRI_SOAP_READ_TIMEOUT:60s}
+    # Aqui no hay ningun secreto: los servicios offline del SRI no usan
+    # credenciales. La identidad la aporta la firma XAdES del comprobante.
+
 springdoc:
   api-docs:
     path: /api/openapi

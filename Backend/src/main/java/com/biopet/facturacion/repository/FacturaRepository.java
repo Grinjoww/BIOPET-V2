@@ -71,4 +71,23 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select f from Factura f where f.id = :id")
     Optional<Factura> bloquearParaGenerarDocumentos(@Param("id") Long id);
+
+    /**
+     * Mismo bloqueo de fila, para persistir el resultado de una llamada al SRI.
+     *
+     * <p>Tercera copia de la misma consulta, y por el mismo criterio que la
+     * anterior: el nombre de un metodo que toma un lock debe decir POR QUE lo
+     * toma. Aqui protege la coherencia del estado frente al SRI. Sin el, dos
+     * hilos que vuelven a la vez -uno de recepcion y otro de una sincronizacion
+     * manual- podrian leer la misma factura, decidir sobre la version antigua y
+     * escribir uno encima del otro; el peor caso es una consulta PPR tardia
+     * pisando un AUT que acababa de llegar.
+     *
+     * <p>El lock se toma DESPUES de la llamada SOAP, nunca antes: la fase entera
+     * se apoya en que ninguna transaccion siga abierta mientras se espera al
+     * SRI. Ver {@code FacturaSriEstadoService}.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select f from Factura f where f.id = :id")
+    Optional<Factura> bloquearParaSincronizarConSri(@Param("id") Long id);
 }

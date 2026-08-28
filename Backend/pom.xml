@@ -170,6 +170,37 @@
             <artifactId>xades4j</artifactId>
             <version>${xades4j.version}</version>
         </dependency>
+
+        <!--
+            ================== SOAP: WEB SERVICES OFFLINE DEL SRI ==================
+            Spring Web Services (WebServiceTemplate + Spring OXM/JAXB). Se elige
+            frente a JAX-WS por dos motivos concretos:
+
+              * el cliente se construye con objetos tipados y marshalling JAXB,
+                nunca concatenando Strings de SOAP a mano;
+              * MockWebServiceServer (spring-ws-test) permite probar el dialogo
+                completo -incluido un SOAP Fault- sin salir a Internet, que es
+                requisito de la suite.
+
+            El starter arrastra spring-ws-core, spring-oxm, la SAAJ de Jakarta y
+            su implementacion. jaxb-runtime se declara explicitamente porque el
+            starter solo trae la API de binding, no el runtime que necesita
+            Jaxb2Marshaller; la version la gestiona spring-boot-dependencies.
+            =========================================================================
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web-services</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ws</groupId>
+            <artifactId>spring-ws-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
