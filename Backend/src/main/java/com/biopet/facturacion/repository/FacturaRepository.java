@@ -2,6 +2,7 @@ package com.biopet.facturacion.repository;
 
 import com.biopet.facturacion.entity.EstadoFactura;
 import com.biopet.facturacion.entity.Factura;
+import com.biopet.facturacion.entity.OrigenDetalleFactura;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -90,4 +92,111 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select f from Factura f where f.id = :id")
     Optional<Factura> bloquearParaSincronizarConSri(@Param("id") Long id);
+
+    /**
+     * Fase 8A: listado paginado con los cuatro filtros simples que pidio la
+     * fase (estado, usuario, mascota, fecha), todos opcionales. Deliberadamente
+     * NO es un motor de busqueda: cuatro comparaciones exactas, cada una
+     * activada solo si su parametro no es nulo. Nada de texto libre, rangos
+     * complejos ni ordenacion configurable.
+     *
+     * <p>El filtro de ownership para DUENO (forzar {@code usuarioId} al propio
+     * y {@code estado} a AUTORIZADA) NO vive aqui: lo aplica
+     * {@code FacturaConsultaService} antes de llamar a este metodo,
+     * sustituyendo lo que el cliente haya pedido. Esta consulta no sabe quien
+     * la esta llamando. Tampoco la usa VETERINARIO: para el existe
+     * {@link #buscarRelacionadasConVeterinario}, con una restriccion distinta
+     * que no encaja en estos cuatro filtros.
+     */
+    @Query("""
+            select f from Factura f
+            where (:estado is null or f.estado = :estado)
+              and (:usuarioId is null or f.usuario.id = :usuarioId)
+              and (:mascotaId is null or f.mascota.id = :mascotaId)
+              and (:fechaEmision is null or f.fechaEmision = :fechaEmision)
+            order by f.fechaEmision desc, f.id desc
+            """)
+    Page<Factura> buscar(@Param("estado") EstadoFactura estado,
+                          @Param("usuarioId") Long usuarioId,
+                          @Param("mascotaId") Long mascotaId,
+                          @Param("fechaEmision") LocalDate fechaEmision,
+                          Pageable pageable);
+
+    /**
+     * Correccion pre-commit de la Fase 8A: facturas con al menos UNA linea cuyo
+     * origen clinico esta asignado a este veterinario.
+     *
+     * <h2>Por que solo CONSULTA y CITA</h2>
+     *
+     * <p>{@code Consulta.veterinario} y {@code Cita.veterinario} son
+     * {@code nullable = false}: toda fila de esas tablas tiene, sin ambiguedad,
+     * un veterinario responsable. {@code Vacuna.veterinario} es OPCIONAL en el
+     * modelo actual ({@code @JoinColumn} sin {@code nullable = false}): una
+     * vacuna puede no tener veterinario asignado, asi que "esta vacuna es de
+     * este veterinario" no siempre se puede demostrar. Ante esa ambiguedad se
+     * aplica la opcion conservadora que pide la fase: no conceder acceso por
+     * ese origen. Una factura sin origen clinico en ninguna linea (solo
+     * productos) tampoco es relacionada con ningun veterinario.
+     *
+     * <p>{@code distinct} porque una factura puede tener varias lineas con
+     * origen en la misma consulta/cita (no deberia duplicarse en el listado
+     * por eso). {@code countQuery} explicito porque el conteo derivado
+     * automaticamente de una consulta con {@code join} + {@code distinct}
+     * puede contar de mas si no se le pide tambien distinct.
+     */
+    @Query(value = """
+            select distinct f from Factura f
+            join f.detalles d
+            where (:estado is null or f.estado = :estado)
+              and (:mascotaId is null or f.mascota.id = :mascotaId)
+              and (:fechaEmision is null or f.fechaEmision = :fechaEmision)
+              and (
+                (d.origenTipo = :origenConsulta and d.origenId in
+                    (select c.id from Consulta c where c.veterinario.id = :veterinarioId))
+                or (d.origenTipo = :origenCita and d.origenId in
+                    (select ci.id from Cita ci where ci.veterinario.id = :veterinarioId))
+              )
+            order by f.fechaEmision desc, f.id desc
+            """,
+            countQuery = """
+            select count(distinct f) from Factura f
+            join f.detalles d
+            where (:estado is null or f.estado = :estado)
+              and (:mascotaId is null or f.mascota.id = :mascotaId)
+              and (:fechaEmision is null or f.fechaEmision = :fechaEmision)
+              and (
+                (d.origenTipo = :origenConsulta and d.origenId in
+                    (select c.id from Consulta c where c.veterinario.id = :veterinarioId))
+                or (d.origenTipo = :origenCita and d.origenId in
+                    (select ci.id from Cita ci where ci.veterinario.id = :veterinarioId))
+              )
+            """)
+    Page<Factura> buscarRelacionadasConVeterinario(@Param("estado") EstadoFactura estado,
+                                                    @Param("mascotaId") Long mascotaId,
+                                                    @Param("fechaEmision") LocalDate fechaEmision,
+                                                    @Param("veterinarioId") Long veterinarioId,
+                                                    @Param("origenConsulta") OrigenDetalleFactura origenConsulta,
+                                                    @Param("origenCita") OrigenDetalleFactura origenCita,
+                                                    Pageable pageable);
+
+    /**
+     * Igual que {@link #buscarRelacionadasConVeterinario}, pero para UNA
+     * factura concreta: la usa el detalle ({@code GET /{id}}) para decidir
+     * 403/200 sin traer nada mas que un booleano.
+     */
+    @Query("""
+            select case when count(d) > 0 then true else false end
+            from Factura f join f.detalles d
+            where f.id = :facturaId
+              and (
+                (d.origenTipo = :origenConsulta and d.origenId in
+                    (select c.id from Consulta c where c.veterinario.id = :veterinarioId))
+                or (d.origenTipo = :origenCita and d.origenId in
+                    (select ci.id from Cita ci where ci.veterinario.id = :veterinarioId))
+              )
+            """)
+    boolean existeRelacionConVeterinario(@Param("facturaId") Long facturaId,
+                                         @Param("veterinarioId") Long veterinarioId,
+                                         @Param("origenConsulta") OrigenDetalleFactura origenConsulta,
+                                         @Param("origenCita") OrigenDetalleFactura origenCita);
 }

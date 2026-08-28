@@ -11,6 +11,7 @@ public enum ProblemType {
     BAD_REQUEST("urn:biopet:error:bad-request"),
     RATE_LIMITED("urn:biopet:error:rate-limited"),
     BAD_GATEWAY("urn:biopet:error:external-service"),
+    GATEWAY_TIMEOUT("urn:biopet:error:external-service-timeout"),
     INTERNAL("urn:biopet:error:internal");
 
     private final URI uri;

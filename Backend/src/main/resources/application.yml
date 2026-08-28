@@ -75,6 +75,14 @@ app:
     name: ${ADMIN_SEED_NAME:Administrador BIOPET}
 
 sri:
+  # Ambiente fiscal EFECTIVO de este despliegue: PRUEBAS o PRODUCCION. NUNCA lo
+  # decide el cliente REST -ver SriAmbienteProperties-; el request de emision
+  # ya no acepta ningun campo "ambiente". Default PRUEBAS, igual criterio que
+  # sri.soap.*: un despliegue mal configurado falla hacia pruebas, nunca hacia
+  # produccion por omision. SriAmbienteProperties valida al arrancar que este
+  # valor sea coherente con los endpoints SOAP configurados abajo.
+  ambiente: ${SRI_AMBIENTE:PRUEBAS}
+
   firma:
     certificado:
       # Ruta del PKCS#12 con la firma electronica de la clinica. Se monta como
