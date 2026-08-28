@@ -530,6 +530,95 @@ class FacturaEmisionServiceIntegrationTest extends FacturaEscenarioTestBase {
     }
 
     // ==================================================================
+    // Configuracion del emisor que la BD acepta pero el XSD del SRI no
+    // ==================================================================
+
+    @Test
+    void unRucQueLaBdAceptaPeroElSriNoImpideEmitirYNoConsumeNumeracion() {
+        Escenario escenario = escenario();
+        Factura borrador = escenario.borradorCon("2", "20.000000", "46.00");
+
+        // 13 digitos: pasa el CHECK de V7. No termina en 001: el XSD lo rechaza.
+        // Se cambia por SQL para dejar constancia de que la BD lo admite.
+        jdbc.update("UPDATE emisor_fiscal SET ruc = '0999999999123' WHERE id = ?",
+                escenario.emisor.getId());
+        assertThat(jdbc.queryForObject("SELECT ruc FROM emisor_fiscal WHERE id = ?",
+                String.class, escenario.emisor.getId())).isEqualTo("0999999999123");
+
+        assertThatThrownBy(() -> emisionService.emitir(new EmitirFacturaCommand(
+                borrador.getId(), escenario.punto.getId(), AmbienteSri.PRUEBAS)))
+                .isInstanceOf(ConfiguracionFiscalInvalidaException.class)
+                .hasMessageContaining("RUC");
+
+        exigirBorradorIntacto(escenario, borrador);
+    }
+
+    @Test
+    void unAgenteRetencionNoNumericoImpideEmitirYNoConsumeNumeracion() {
+        Escenario escenario = escenario();
+        Factura borrador = escenario.borradorCon("2", "20.000000", "46.00");
+
+        // La columna es VARCHAR(20) libre; el XSD exige digitos y maximo 8.
+        jdbc.update("UPDATE emisor_fiscal SET agente_retencion_resolucion = 'RES-2024' WHERE id = ?",
+                escenario.emisor.getId());
+
+        assertThatThrownBy(() -> emisionService.emitir(new EmitirFacturaCommand(
+                borrador.getId(), escenario.punto.getId(), AmbienteSri.PRUEBAS)))
+                .isInstanceOf(ConfiguracionFiscalInvalidaException.class)
+                .hasMessageContaining("agente de retencion");
+
+        exigirBorradorIntacto(escenario, borrador);
+    }
+
+    @Test
+    void unContribuyenteEspecialInvalidoImpideEmitirYNoConsumeNumeracion() {
+        Escenario escenario = escenario();
+        Factura borrador = escenario.borradorCon("2", "20.000000", "46.00");
+
+        // "12" cabe en VARCHAR(13) pero el XSD exige minimo 3 alfanumericos.
+        jdbc.update("UPDATE emisor_fiscal SET contribuyente_especial = '12' WHERE id = ?",
+                escenario.emisor.getId());
+
+        assertThatThrownBy(() -> emisionService.emitir(new EmitirFacturaCommand(
+                borrador.getId(), escenario.punto.getId(), AmbienteSri.PRUEBAS)))
+                .isInstanceOf(ConfiguracionFiscalInvalidaException.class)
+                .hasMessageContaining("contribuyente especial");
+
+        exigirBorradorIntacto(escenario, borrador);
+    }
+
+    @Test
+    void unSaltoDeLineaEnLaRazonSocialImpideEmitirYNoConsumeNumeracion() {
+        Escenario escenario = escenario();
+        Factura borrador = escenario.borradorCon("2", "20.000000", "46.00");
+
+        jdbc.update("UPDATE emisor_fiscal SET razon_social = E'CLINICA\\nFICTICIA' WHERE id = ?",
+                escenario.emisor.getId());
+
+        assertThatThrownBy(() -> emisionService.emitir(new EmitirFacturaCommand(
+                borrador.getId(), escenario.punto.getId(), AmbienteSri.PRUEBAS)))
+                .isInstanceOf(ConfiguracionFiscalInvalidaException.class)
+                .hasMessageContaining("saltos de linea");
+
+        exigirBorradorIntacto(escenario, borrador);
+    }
+
+    /**
+     * Tras un rechazo por configuracion: ni un numero consumido, ni un rastro de
+     * numeracion en la factura, que sigue siendo un borrador editable.
+     */
+    private void exigirBorradorIntacto(Escenario escenario, Factura borrador) {
+        assertThat(ultimoSecuencial(escenario.punto, AmbienteSri.PRUEBAS)).isZero();
+
+        Factura releida = facturaRepository.findById(borrador.getId()).orElseThrow();
+        assertThat(releida.getEstado()).isEqualTo(EstadoFactura.BORRADOR);
+        assertThat(releida.getSecuencial()).isNull();
+        assertThat(releida.getClaveAcceso()).isNull();
+        assertThat(releida.getCodigoNumerico()).isNull();
+        assertThat(releida.getAmbiente()).isNull();
+    }
+
+    // ==================================================================
     // Escenario reutilizable
     // ==================================================================
 

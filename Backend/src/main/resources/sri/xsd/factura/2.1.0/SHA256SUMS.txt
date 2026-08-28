@@ -1,0 +1,2 @@
+5f2c37bc1a58bb40e8bbbc366cabe05d5dc199598aeea1561137370f8bd4eace *factura_V2.1.0.xsd
+35cf8197da812c85e40d57891b35c94187569ed474a2dac813ce5090dafcd35c *xmldsig-core-schema.xsd

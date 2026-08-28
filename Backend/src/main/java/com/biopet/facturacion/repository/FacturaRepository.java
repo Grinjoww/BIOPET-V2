@@ -51,4 +51,24 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select f from Factura f where f.id = :id")
     Optional<Factura> bloquearParaEmitir(@Param("id") Long id);
+
+    /**
+     * Mismo bloqueo de fila, para generar los documentos (XML, y mas adelante
+     * XML firmado y RIDE) de una factura ya emitida.
+     *
+     * <p>Es una consulta identica a {@link #bloquearParaEmitir(Long)} y la
+     * duplicacion es deliberada: son dos operaciones distintas que se serializan
+     * sobre la misma fila por motivos distintos, y un unico metodo llamado
+     * "bloquearParaEmitir" invocado desde la generacion de XML mentiria sobre lo
+     * que hace. El nombre de un metodo que toma un lock deberia decir por que lo
+     * toma.
+     *
+     * <p>Aqui protege la unicidad de {@code (factura_id, tipo)} en
+     * {@code factura_documentos}: dos peticiones simultaneas de generar el XML de
+     * la misma factura se serializan, y la segunda encuentra el documento ya
+     * guardado en lugar de chocar contra el indice unico.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select f from Factura f where f.id = :id")
+    Optional<Factura> bloquearParaGenerarDocumentos(@Param("id") Long id);
 }

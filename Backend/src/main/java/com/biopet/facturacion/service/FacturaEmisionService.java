@@ -21,6 +21,7 @@ import com.biopet.facturacion.exception.PagosFacturaInvalidosException;
 import com.biopet.facturacion.repository.FacturaRepository;
 import com.biopet.facturacion.repository.PuntoEmisionRepository;
 import com.biopet.facturacion.service.command.EmitirFacturaCommand;
+import com.biopet.facturacion.xml.EmisorFiscalSriValidator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,7 +44,8 @@ import java.util.List;
  * <pre>
  *   bloquear factura (FOR UPDATE)
  *   -> si ya no es BORRADOR: devolverla tal cual (idempotencia)
- *   -> validar titular, comprador, punto de emision y emisor
+ *   -> validar comprador, punto de emision y emisor (incluidos los facets
+ *      del XSD del SRI, que son mas estrictos que los CHECK de la BD)
  *   -> recalcular desde el catalogo y las tarifas vigentes
  *   -> validar que los pagos cuadren
  *   -> RESERVAR SECUENCIAL          <-- primer efecto irreversible
@@ -74,6 +76,7 @@ public class FacturaEmisionService {
     private final CalculoFacturaService calculoFacturaService;
     private final CodigoNumericoGenerator codigoNumericoGenerator;
     private final ClaveAccesoGenerator claveAccesoGenerator;
+    private final EmisorFiscalSriValidator emisorFiscalSriValidator;
 
     public FacturaEmisionService(FacturaRepository facturaRepository,
                                  PuntoEmisionRepository puntoEmisionRepository,
@@ -81,7 +84,8 @@ public class FacturaEmisionService {
                                  SecuencialService secuencialService,
                                  CalculoFacturaService calculoFacturaService,
                                  CodigoNumericoGenerator codigoNumericoGenerator,
-                                 ClaveAccesoGenerator claveAccesoGenerator) {
+                                 ClaveAccesoGenerator claveAccesoGenerator,
+                                 EmisorFiscalSriValidator emisorFiscalSriValidator) {
         this.facturaRepository = facturaRepository;
         this.puntoEmisionRepository = puntoEmisionRepository;
         this.facturaCalculador = facturaCalculador;
@@ -89,6 +93,7 @@ public class FacturaEmisionService {
         this.calculoFacturaService = calculoFacturaService;
         this.codigoNumericoGenerator = codigoNumericoGenerator;
         this.claveAccesoGenerator = claveAccesoGenerator;
+        this.emisorFiscalSriValidator = emisorFiscalSriValidator;
     }
 
     /**
@@ -138,6 +143,13 @@ public class FacturaEmisionService {
         validarComprador(factura);
         PuntoEmision puntoEmision = puntoEmisionValido(comando.puntoEmisionId());
         EmisorFiscal emisor = emisorValido(puntoEmision);
+
+        // La BD (V7) es mas permisiva que el XSD del SRI: acepta RUC de 13
+        // digitos cualesquiera y texto libre en varias columnas. Si no se
+        // comprobase aqui, una configuracion invalida se descubriria al generar
+        // el XML, cuando la factura ya estaria EMITIDA y habria consumido un
+        // numero de una serie que debe ser contigua. Se valida ANTES de reservar.
+        emisorFiscalSriValidator.validar(emisor, puntoEmision);
 
         // 4. Recalculo definitivo desde las fuentes vivas: precios del catalogo
         //    y tarifa vigente en la fecha de emision. Lo que guardo el borrador

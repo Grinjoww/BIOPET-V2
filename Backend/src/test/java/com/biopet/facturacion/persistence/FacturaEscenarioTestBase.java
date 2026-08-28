@@ -20,6 +20,7 @@ import com.biopet.facturacion.repository.ConceptoFacturableRepository;
 import com.biopet.facturacion.repository.DatosFacturacionRepository;
 import com.biopet.facturacion.repository.EmisorFiscalRepository;
 import com.biopet.facturacion.repository.FacturaDetalleRepository;
+import com.biopet.facturacion.repository.FacturaDocumentoRepository;
 import com.biopet.facturacion.repository.FacturaPagoRepository;
 import com.biopet.facturacion.repository.FacturaRepository;
 import com.biopet.facturacion.repository.PuntoEmisionRepository;
@@ -77,6 +78,7 @@ public abstract class FacturaEscenarioTestBase extends FacturacionPostgresTestBa
     @Autowired protected FacturaRepository facturaRepository;
     @Autowired protected FacturaDetalleRepository facturaDetalleRepository;
     @Autowired protected FacturaPagoRepository facturaPagoRepository;
+    @Autowired protected FacturaDocumentoRepository facturaDocumentoRepository;
     @Autowired protected FacturaBorradorService borradorService;
 
     protected int siguiente() {
@@ -155,16 +157,26 @@ public abstract class FacturaEscenarioTestBase extends FacturacionPostgresTestBa
         return nuevoEmisor(true);
     }
 
+    /**
+     * El RUC se genera con la forma que exige el XSD del SRI
+     * ({@code [0-9]{10}001}: 10 digitos y el sufijo 001), que es MAS estricta
+     * que el CHECK de "13 digitos" de la tabla. Con un RUC de 13 digitos
+     * cualquiera la factura se emite sin problema pero su XML no valida, asi que
+     * los fixtures usan desde el principio la forma buena.
+     *
+     * <p>Lo mismo con {@code agenteRetencion}: el XSD lo restringe a digitos
+     * (maximo 8), mientras que la columna admite cualquier texto de 20.
+     */
     protected EmisorFiscal nuevoEmisor(boolean activo) {
         return emisorFiscalRepository.save(EmisorFiscal.builder()
-                .ruc(String.valueOf(6_000_000_000_000L + siguiente()))
+                .ruc(String.format("%010d", 900_000_000L + siguiente()) + "001")
                 .razonSocial("EMISOR FICTICIO " + siguiente())
                 .nombreComercial("NOMBRE COMERCIAL FICTICIO")
                 .direccionMatriz("Direccion matriz ficticia")
                 .obligadoContabilidad(true)
                 .contribuyenteEspecial("12345")
                 .rimpe(false)
-                .agenteRetencionResolucion("RES-FICTICIA")
+                .agenteRetencionResolucion("12345678")
                 .activo(activo)
                 .build());
     }
