@@ -408,7 +408,11 @@ textarea:focus-visible,
   color: var(--color-accent);
   margin-left: 2px;
 }
-.field input,
+/* :not([type="checkbox"]) a proposito: un checkbox NUNCA debe heredar el
+   width:100%/min-height/padding de un input de texto -era exactamente el bug
+   del tab Emisor (checkboxes de ~45x45px, desalineados). Los checkboxes
+   tienen su propio bloque mas abajo (.checkbox-row). */
+.field input:not([type="checkbox"]),
 .field select,
 .field textarea {
   width: 100%;
@@ -420,17 +424,43 @@ textarea:focus-visible,
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
 }
-.field input:disabled,
+.field input:not([type="checkbox"]):disabled,
 .field select:disabled,
 .field textarea:disabled {
   background: var(--color-surface-sunken);
   color: var(--color-muted);
   cursor: not-allowed;
 }
-.field input[aria-invalid="true"],
+.field input:not([type="checkbox"])[aria-invalid="true"],
 .field select[aria-invalid="true"],
 .field textarea[aria-invalid="true"] {
   border-color: var(--color-danger);
+}
+/* Booleano de formulario (Emisor: "Obligado a llevar contabilidad", "Régimen
+   RIMPE", "Activo"; Conceptos: "Mostrar solo activos"): checkbox pequeño +
+   texto en línea, nunca la fila completa del campo. `.field label.checkbox-row`
+   (3 clases/selectores de especificidad) pisa a propósito `.field label`
+   (2) sin necesitar !important. */
+.field label.checkbox-row,
+.checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--color-text);
+  font: var(--text-body);
+  margin-bottom: 0;
+  cursor: pointer;
+}
+.checkbox-row input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 auto;
+  accent-color: var(--color-primary);
 }
 .field-hint {
   margin: var(--space-1) 0 0;

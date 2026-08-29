@@ -82,11 +82,11 @@ type Tab = 'emisor' | 'puntos' | 'conceptos' | 'tarifas';
         <div class="field"><label for="e-razonSocial">Razón social<span class="required-mark" aria-hidden="true">*</span></label><input id="e-razonSocial" type="text" formControlName="razonSocial" /></div>
         <div class="field"><label for="e-nombreComercial">Nombre comercial</label><input id="e-nombreComercial" type="text" formControlName="nombreComercial" /></div>
         <div class="field"><label for="e-direccion">Dirección matriz<span class="required-mark" aria-hidden="true">*</span></label><input id="e-direccion" type="text" formControlName="direccionMatriz" /></div>
-        <div class="field"><label><input type="checkbox" formControlName="obligadoContabilidad" /> Obligado a llevar contabilidad</label></div>
-        <div class="field"><label><input type="checkbox" formControlName="rimpe" /> Régimen RIMPE</label></div>
+        <div class="field"><label class="checkbox-row"><input type="checkbox" formControlName="obligadoContabilidad" /> Obligado a llevar contabilidad</label></div>
+        <div class="field"><label class="checkbox-row"><input type="checkbox" formControlName="rimpe" /> Régimen RIMPE</label></div>
         <div class="field"><label for="e-contribuyente">Resolución de contribuyente especial</label><input id="e-contribuyente" type="text" formControlName="contribuyenteEspecial" /></div>
         <div class="field"><label for="e-agente">Resolución de agente de retención</label><input id="e-agente" type="text" formControlName="agenteRetencionResolucion" /></div>
-        <div class="field"><label><input type="checkbox" formControlName="activo" /> Activo</label></div>
+        <div class="field"><label class="checkbox-row"><input type="checkbox" formControlName="activo" /> Activo</label></div>
         <div class="modal-panel__actions">
           <button type="submit" class="btn btn--primary" [disabled]="guardandoEmisor()">{{ guardandoEmisor() ? 'Guardando…' : 'Guardar' }}</button>
           <button type="button" class="btn btn--secondary" (click)="mostrarFormEmisor.set(false)" [disabled]="guardandoEmisor()">Cancelar</button>
@@ -181,7 +181,7 @@ type Tab = 'emisor' | 'puntos' | 'conceptos' | 'tarifas';
       </form>
 
       <div class="toolbar" style="margin-top: var(--space-4);">
-        <label>
+        <label class="checkbox-row">
           <input type="checkbox" [checked]="soloActivos()" (change)="alternarSoloActivos()" />
           Mostrar solo activos
         </label>
