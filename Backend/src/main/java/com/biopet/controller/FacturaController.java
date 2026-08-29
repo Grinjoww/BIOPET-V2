@@ -12,12 +12,14 @@ import com.biopet.facturacion.dto.ReemplazarPagosRequest;
 import com.biopet.facturacion.dto.SeleccionarCompradorRequest;
 import com.biopet.facturacion.entity.EstadoFactura;
 import com.biopet.facturacion.entity.Factura;
+import com.biopet.facturacion.entity.FacturaDocumento;
 import com.biopet.facturacion.entity.TipoDocumentoFactura;
 import com.biopet.facturacion.service.FacturaBorradorService;
 import com.biopet.facturacion.service.FacturaConsultaService;
 import com.biopet.facturacion.service.FacturaConsultaService.DocumentoDescarga;
 import com.biopet.facturacion.service.FacturaEmisionService;
 import com.biopet.facturacion.service.FacturaFirmaService;
+import com.biopet.facturacion.service.FacturaRideService;
 import com.biopet.facturacion.service.FacturaSriService;
 import com.biopet.facturacion.service.FacturaXmlService;
 import com.biopet.facturacion.service.command.ActualizarFacturaBorradorCommand;
@@ -142,6 +144,7 @@ public class FacturaController {
     private final FacturaFirmaService firmaService;
     private final FacturaSriService sriService;
     private final FacturaConsultaService consultaService;
+    private final FacturaRideService facturaRideService;
     private final SriAmbienteProperties ambienteProperties;
 
     public FacturaController(FacturaBorradorService borradorService,
@@ -150,6 +153,7 @@ public class FacturaController {
                              FacturaFirmaService firmaService,
                              FacturaSriService sriService,
                              FacturaConsultaService consultaService,
+                             FacturaRideService facturaRideService,
                              SriAmbienteProperties ambienteProperties) {
         this.borradorService = borradorService;
         this.emisionService = emisionService;
@@ -157,6 +161,7 @@ public class FacturaController {
         this.firmaService = firmaService;
         this.sriService = sriService;
         this.consultaService = consultaService;
+        this.facturaRideService = facturaRideService;
         this.ambienteProperties = ambienteProperties;
     }
 
@@ -311,6 +316,37 @@ public class FacturaController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + descarga.nombreArchivo() + "\"")
                 .body(descarga.contenido());
+    }
+
+    /**
+     * RIDE (representacion impresa) de una factura AUTORIZADA (Fase 10).
+     *
+     * <p>A diferencia de {@link #documento}, este endpoint SI puede generar
+     * contenido nuevo -es la unica escritura implicita detras de un
+     * {@code GET} en todo este controlador, y es deliberada: el RIDE es la
+     * unica pieza de la Fase 10, no existe un paso previo tipo
+     * "/generar-ride" analogo a {@code /generar-xml}/{@code /firmar}, y la
+     * generacion es local (PDF a partir de datos ya persistidos, sin tocar
+     * el SRI) e idempotente-. La primera llamada genera y persiste; las
+     * siguientes devuelven los MISMOS bytes ya guardados
+     * ({@link FacturaRideService#generarRide}).
+     *
+     * <p>El control de acceso se comprueba ANTES de generar nada
+     * ({@link FacturaConsultaService#exigirAccesoADocumento}): un DUENO
+     * pidiendo el RIDE de una factura ajena, o de una propia que todavia no
+     * esta AUTORIZADA, recibe 403 sin que se gaste trabajo construyendo un
+     * PDF que no se le iba a entregar.
+     */
+    @GetMapping("/{id:\\d+}/ride")
+    @PreAuthorize("hasAnyRole('ADMIN','AUXILIAR','DUENO')")
+    public ResponseEntity<byte[]> ride(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+        consultaService.exigirAccesoADocumento(id, TipoDocumentoFactura.RIDE_PDF, userDetails.getUsername());
+        FacturaDocumento documento = facturaRideService.generarRide(id);
+        String nombre = consultaService.nombreArchivoDocumento(id, TipoDocumentoFactura.RIDE_PDF);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nombre + "\"")
+                .body(documento.getContenido());
     }
 
     /** Solo lectura, solo diagnostico tecnico: ADMIN/AUXILIAR, ver la clase. */

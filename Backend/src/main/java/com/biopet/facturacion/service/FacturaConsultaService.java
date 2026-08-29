@@ -213,23 +213,12 @@ public class FacturaConsultaService {
      * regenera: si no existe (p. ej. se pide XML_FIRMADO antes de firmar), es
      * un 404, no un disparador para crearlo sobre la marcha.
      *
-     * <p>DUENO: solo {@link TipoDocumentoFactura#XML_AUTORIZADO}, y solo de su
-     * propia factura AUTORIZADA. Pedir cualquier otro tipo es 403 ANTES de
-     * tocar la base de datos del documento -no hace falta ni comprobar si
-     * existe para saber que no se va a entregar-.
+     * <p>Ownership: ver {@link #exigirAccesoADocumento}.
      */
     @Transactional(readOnly = true)
     public DocumentoDescarga documento(Long facturaId, TipoDocumentoFactura tipo, String email) {
-        Usuario usuario = usuarioActual(email);
+        exigirAccesoADocumento(facturaId, tipo, email);
         Factura factura = facturaPorId(facturaId);
-
-        if (usuario.getRol() == Rol.ROLE_DUENO) {
-            if (tipo != TipoDocumentoFactura.XML_AUTORIZADO) {
-                throw new AccessDeniedException(
-                        "Solo puede descargar el comprobante autorizado de sus propias facturas.");
-            }
-            exigirVisibleParaDueno(usuario, factura);
-        }
 
         FacturaDocumento documento = facturaDocumentoRepository
                 .findByFactura_IdAndTipo(facturaId, tipo)
@@ -240,10 +229,50 @@ public class FacturaConsultaService {
         return new DocumentoDescarga(documento.getContenido(), nombre);
     }
 
+    /**
+     * Solo el control de acceso, SIN tocar {@code factura_documentos}: lo usa
+     * {@link #documento} (documento ya persistido, lectura pura) y tambien el
+     * flujo del RIDE (Fase 10), que necesita comprobar ownership ANTES de
+     * generarlo -si se comprobase despues, la generacion ya habria ocurrido
+     * como efecto secundario de una peticion que se iba a rechazar de todas
+     * formas-.
+     *
+     * <p>DUENO: solo {@link TipoDocumentoFactura#XML_AUTORIZADO} o
+     * {@link TipoDocumentoFactura#RIDE_PDF}, y solo de su propia factura
+     * AUTORIZADA (ver {@link #exigirVisibleParaDueno}). Pedir cualquier otro
+     * tipo es 403 sin llegar a comprobar si el documento existe.
+     */
+    @Transactional(readOnly = true)
+    public void exigirAccesoADocumento(Long facturaId, TipoDocumentoFactura tipo, String email) {
+        Usuario usuario = usuarioActual(email);
+        Factura factura = facturaPorId(facturaId);
+
+        if (usuario.getRol() == Rol.ROLE_DUENO) {
+            if (tipo != TipoDocumentoFactura.XML_AUTORIZADO && tipo != TipoDocumentoFactura.RIDE_PDF) {
+                throw new AccessDeniedException(
+                        "Solo puede descargar el comprobante autorizado o el RIDE de sus propias facturas.");
+            }
+            exigirVisibleParaDueno(usuario, factura);
+        }
+    }
+
+    /**
+     * Nombre de archivo para una descarga cuyo binario ya se obtuvo por otro
+     * camino (el RIDE, generado por {@code FacturaRideService} en su PROPIA
+     * transaccion). Evita que el controlador toque
+     * {@code FacturaDocumento.getFactura()} -relacion LAZY- fuera de la
+     * transaccion en la que se genero el documento.
+     */
+    @Transactional(readOnly = true)
+    public String nombreArchivoDocumento(Long facturaId, TipoDocumentoFactura tipo) {
+        return nombreArchivo(facturaPorId(facturaId), tipo);
+    }
+
     private static String nombreArchivo(Factura factura, TipoDocumentoFactura tipo) {
         String base = factura.getClaveAcceso() != null ? factura.getClaveAcceso()
                 : "factura-" + factura.getId();
-        return base + "-" + tipo.name().toLowerCase(java.util.Locale.ROOT) + ".xml";
+        String extension = tipo == TipoDocumentoFactura.RIDE_PDF ? "pdf" : "xml";
+        return base + "-" + tipo.name().toLowerCase(java.util.Locale.ROOT) + "." + extension;
     }
 
     // ==================================================================

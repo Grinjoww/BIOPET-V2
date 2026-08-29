@@ -26,6 +26,11 @@
             promovida a dependencia productiva en la Fase 6.
         -->
         <xades4j.version>2.4.1</xades4j.version>
+        <!--
+            openpdf: generacion del RIDE (representacion impresa) en la Fase 10.
+            Ver THIRD_PARTY_NOTICES.md para el porque de la eleccion.
+        -->
+        <openpdf.version>1.3.30</openpdf.version>
     </properties>
 <dependencyManagement>
     <dependencies>
@@ -200,6 +205,26 @@
             <groupId>org.springframework.ws</groupId>
             <artifactId>spring-ws-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!--
+            ========================= RIDE: FASE 10 =============================
+            OpenPDF (fork mantenido de iText 4, licencia dual LGPL 2.1 / MPL 2.0)
+            para generar la representacion impresa (RIDE) de una factura
+            AUTORIZADA. Se elige frente a iText 5/7 -que relicenciaron a
+            AGPL/comercial- precisamente por eso: OpenPDF existe para cubrir el
+            mismo caso de uso (documentos PDF con tablas, tipografia y codigos de
+            barras) bajo una licencia compatible con un backend que no puede
+            aceptar AGPL. Incluye Barcode128 (Codigo 128), que es el mismo
+            simbolismo que usa el RIDE oficial del SRI para la clave de acceso:
+            no hace falta ninguna dependencia adicional de codigo de barras.
+            Ver THIRD_PARTY_NOTICES.md.
+            =======================================================================
+        -->
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>${openpdf.version}</version>
         </dependency>
     </dependencies>
 

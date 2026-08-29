@@ -277,7 +277,7 @@ type AccionFiscal = 'emitir' | 'generar-xml' | 'firmar' | 'enviar-sri' | 'sincro
     <!-- ===== Documentos ===== -->
     <section class="panel" aria-labelledby="documentos-titulo" *ngIf="f.estado !== 'BORRADOR'">
       <h2 id="documentos-titulo" class="panel__title-inline">Documentos</h2>
-      <div class="toolbar" *ngIf="documentosVisibles(f).length > 0; else sinDocumentos">
+      <div class="toolbar" *ngIf="documentosVisibles(f).length > 0 || (f.estado === 'AUTORIZADA' && puedeDescargarRide); else sinDocumentos">
         <button
           type="button"
           class="btn btn--secondary btn--sm"
@@ -286,6 +286,23 @@ type AccionFiscal = 'emitir' | 'generar-xml' | 'firmar' | 'enviar-sri' | 'sincro
           (click)="descargar(f, tipo)">
           <app-icon name="descargar" [size]="16"></app-icon>
           {{ descargando() === tipo ? 'Descargando…' : etiquetaTipoDocumento(tipo) }}
+        </button>
+        <!--
+          RIDE (Fase 10): a diferencia de los tres botones de arriba -que solo
+          aparecen cuando el tipo YA figura en documentosDisponibles-, este se
+          ofrece en cuanto la factura está AUTORIZADA, aunque el RIDE todavía
+          no se haya generado nunca: el backend lo genera la primera vez que
+          se pide (idempotente) y las siguientes veces devuelve el mismo PDF
+          ya persistido. Nunca se genera nada en Angular.
+        -->
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          *ngIf="f.estado === 'AUTORIZADA' && puedeDescargarRide"
+          [disabled]="descargandoRide()"
+          (click)="descargarRide(f)">
+          <app-icon name="descargar" [size]="16"></app-icon>
+          {{ descargandoRide() ? 'Generando…' : 'Descargar RIDE (PDF)' }}
         </button>
       </div>
       <ng-template #sinDocumentos>
@@ -434,6 +451,7 @@ export class FacturaDetalleComponent implements OnInit {
   puntoEmisionSeleccionado: number | null = null;
 
   descargando = signal<TipoDocumentoFactura | null>(null);
+  descargandoRide = signal(false);
 
   mostrarBitacora = signal(false);
   cargandoBitacora = signal(false);
@@ -461,6 +479,17 @@ export class FacturaDetalleComponent implements OnInit {
   get puedeOperar(): boolean {
     const rol = this.auth.usuarioActual()?.rol;
     return rol === 'ROLE_ADMIN' || rol === 'ROLE_AUXILIAR';
+  }
+
+  /**
+   * GET /api/facturas/{id}/ride: @PreAuthorize("hasAnyRole('ADMIN','AUXILIAR','DUENO')").
+   * VETERINARIO se excluye a propósito -misma política que el resto de
+   * descargas de documentos fiscales (ver documento() en el backend): que
+   * exista el RIDE no amplía su acceso fiscal.
+   */
+  get puedeDescargarRide(): boolean {
+    const rol = this.auth.usuarioActual()?.rol;
+    return rol === 'ROLE_ADMIN' || rol === 'ROLE_AUXILIAR' || rol === 'ROLE_DUENO';
   }
 
   private cargar(id: number): void {
@@ -502,6 +531,29 @@ export class FacturaDetalleComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.descargando.set(null);
+        this.errorAccion.set(this.problemDetail.mensaje(err));
+      },
+    });
+  }
+
+  /**
+   * A diferencia de {@link descargar}, esta llamada puede disparar la
+   * generación del PDF en el backend la primera vez (idempotente: llamadas
+   * siguientes devuelven el mismo archivo). Angular nunca construye el PDF ni
+   * usa `window.print()`: solo pide el Blob y se lo entrega al navegador tal
+   * cual, igual que con el resto de documentos.
+   */
+  descargarRide(f: Factura): void {
+    this.errorAccion.set('');
+    this.descargandoRide.set(true);
+    this.api.descargarRide(f.id).subscribe({
+      next: (blob) => {
+        this.descargandoRide.set(false);
+        const nombreArchivo = `${f.claveAcceso ?? 'factura-' + f.id}-ride.pdf`;
+        this.guardarBlob(blob, nombreArchivo);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.descargandoRide.set(false);
         this.errorAccion.set(this.problemDetail.mensaje(err));
       },
     });

@@ -13,8 +13,8 @@ licencia y, si procede, con asesoría legal.
 
 Este archivo no pretende ser un inventario exhaustivo de todas las dependencias
 del proyecto (Spring Boot y su ecosistema aportan muchas más, mayoritariamente
-Apache-2.0). Recoge las que entraron con la Fase 6 y las que su árbol arrastra
-de forma directa.
+Apache-2.0). Recoge las que entraron con la Fase 6, la Fase 7 y la Fase 10, y
+las que sus árboles arrastran de forma directa.
 
 Árbol reproducible con:
 
@@ -118,12 +118,55 @@ Versiones gestionadas por `spring-boot-dependencies`; ninguna se fija a mano.
 | `org.jvnet.staxex:stax-ex` | 2.1.0 | EDL-1.0 / BSD de 2 cláusulas | Extensiones StAX, requerida por SAAJ |
 
 Todo el árbol es Apache-2.0 o EDL-1.0 (licencia BSD de Eclipse, permisiva). No
-añade ninguna dependencia copyleft: la única del proyecto sigue siendo xades4j.
+añade ninguna dependencia copyleft: hasta esta fase la única del proyecto era
+xades4j (ver más abajo, Fase 10, para la segunda: openpdf).
 
 **No se usa ningún generador de código a partir del WSDL.** Los bindings JAXB
 están escritos a mano en `com.biopet.facturacion.sri.ws`, de modo que el build
 no depende de que los servidores del SRI estén disponibles y no se añade ningún
 plugin de generación al ciclo de vida.
+
+---
+
+## RIDE: generación de PDF (Fase 10)
+
+### openpdf 1.3.30
+
+| Campo | Valor |
+|---|---|
+| Coordenadas | `com.github.librepdf:openpdf:1.3.30` |
+| Proyecto | <https://github.com/LibrePDF/OpenPDF> |
+| Uso en BIOPET | Construcción del RIDE (representación impresa del comprobante electrónico autorizado): tabla de detalles, totales y código de barras Code 128 de la clave de acceso |
+| Scope | `compile` |
+| Dependencias transitivas | Ninguna (`mvn dependency:tree` lo muestra como hoja) |
+
+**Licencia — dual, ambas permisivas para este uso.** Declarada literalmente en
+el POM del artefacto (`openpdf-parent-1.3.30.pom`):
+
+```xml
+<licenses>
+    <license>
+        <name>GNU Lesser General Public License (LGPL), Version 2.1</name>
+    </license>
+    <license>
+        <name>Mozilla Public License Version 2.0</name>
+    </license>
+</licenses>
+```
+
+**Por qué openpdf y no iText.** OpenPDF es el fork que la comunidad mantiene
+exactamente para seguir teniendo, bajo LGPL 2.1 / MPL 2.0, la API que iText 4
+tenía antes de que iText 5/7 relicenciara a AGPL 3.0 (con opción comercial de
+pago). Un backend que no puede aceptar AGPL sin ofrecer también su propio
+código fuente completo bajo esa misma licencia necesita evitar iText 5/7;
+openpdf cubre el mismo caso de uso (documentos con tablas, tipografía y
+códigos de barras) sin ese problema. Se consume como biblioteca sin
+modificarla, en un jar independiente dentro de `BOOT-INF/lib/` — mismo
+razonamiento que ya se aplica a xades4j (LGPL) más arriba.
+
+`com.lowagie.text.pdf.Barcode128` (incluido en el propio artefacto) genera el
+código de barras de la clave de acceso: no se declara ninguna dependencia
+adicional de códigos de barras.
 
 ---
 

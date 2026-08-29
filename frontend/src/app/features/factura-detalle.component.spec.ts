@@ -292,4 +292,45 @@ describe('FacturaDetalleComponent (integración ligera: TestBed + HttpTestingCon
     expect(creado).toHaveBeenCalledWith(contenido);
     expect(revocado).toHaveBeenCalledWith('blob:ficticio');
   });
+
+  // ==================================================================
+  // Fase 10: RIDE (PDF)
+  // ==================================================================
+
+  it('"Descargar RIDE (PDF)" solo aparece con la factura AUTORIZADA, para ADMIN/AUXILIAR/DUENO (nunca VETERINARIO)', () => {
+    cargar('ROLE_ADMIN', factura({ estado: 'EMITIDA', claveAcceso: 'clave-ficticia' }));
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Descargar RIDE (PDF)');
+
+    cargar('ROLE_ADMIN', factura({ estado: 'AUTORIZADA' }));
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Descargar RIDE (PDF)');
+
+    cargar('ROLE_AUXILIAR', factura({ estado: 'AUTORIZADA' }));
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Descargar RIDE (PDF)');
+
+    cargar('ROLE_DUENO', factura({ estado: 'AUTORIZADA' }));
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Descargar RIDE (PDF)');
+
+    cargar('ROLE_VETERINARIO', factura({ estado: 'AUTORIZADA' }));
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Descargar RIDE (PDF)');
+  });
+
+  it('el RIDE se pide como Blob a /ride y se entrega al navegador sin generarlo ni parsearlo en Angular', () => {
+    cargar('ROLE_ADMIN', factura({ estado: 'AUTORIZADA', documentosDisponibles: [] }));
+
+    const creado = spyOn(URL, 'createObjectURL').and.returnValue('blob:ride-ficticio');
+    spyOn(URL, 'revokeObjectURL');
+
+    const botonRide = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b: any) =>
+      b.textContent.includes('Descargar RIDE (PDF)')
+    ) as HTMLButtonElement;
+    botonRide.click();
+    fixture.detectChanges();
+
+    const req = httpMock.expectOne((r) => r.url === '/api/facturas/7/ride' && r.method === 'GET');
+    expect(req.request.responseType).toBe('blob');
+    const pdfFicticio = new Blob(['%PDF-ficticio']);
+    req.flush(pdfFicticio);
+
+    expect(creado).toHaveBeenCalledWith(pdfFicticio);
+  });
 });

@@ -256,6 +256,17 @@ export class FacturaApiService {
     return this.http.get(`${this.base}/${id}/documentos/${tipo}`, { responseType: 'blob' });
   }
 
+  /**
+   * RIDE (representación impresa, Fase 10). A diferencia de
+   * {@link descargarDocumento}, este endpoint SÍ puede generar el PDF la
+   * primera vez que se pide (backend idempotente: la primera llamada genera y
+   * persiste, las siguientes devuelven los mismos bytes) — nunca se genera
+   * nada aquí en el cliente, solo se pide el resultado como Blob.
+   */
+  descargarRide(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/ride`, { responseType: 'blob' });
+  }
+
   /** Restringido en el backend a ADMIN/AUXILIAR; el componente solo lo llama si el rol corresponde. */
   eventosSri(id: number): Observable<FacturaEventoSri[]> {
     return this.http.get<FacturaEventoSri[]>(`${this.base}/${id}/eventos-sri`);

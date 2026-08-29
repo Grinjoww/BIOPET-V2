@@ -11,6 +11,7 @@ import com.biopet.facturacion.exception.FacturaXmlInvalidoException;
 import com.biopet.facturacion.exception.FirmaElectronicaException;
 import com.biopet.facturacion.exception.OrigenClinicoInvalidoException;
 import com.biopet.facturacion.exception.PagosFacturaInvalidosException;
+import com.biopet.facturacion.exception.RideNoDisponibleException;
 import com.biopet.facturacion.exception.SecuencialAgotadoException;
 import com.biopet.facturacion.exception.SecuencialNoConfiguradoException;
 import com.biopet.facturacion.exception.TarifaImpuestoAmbiguaException;
@@ -208,7 +209,8 @@ public ResponseEntity<ProblemDetail> errorApiExterna(ExternalApiException ex, Ht
             SecuencialNoConfiguradoException.class,
             ConfiguracionFiscalInvalidaException.class,
             TarifaImpuestoNoConfiguradaException.class,
-            TarifaImpuestoAmbiguaException.class
+            TarifaImpuestoAmbiguaException.class,
+            RideNoDisponibleException.class
     })
     public ResponseEntity<ProblemDetail> conflictoFiscal(RuntimeException ex, HttpServletRequest request) {
         return problemResponse(HttpStatus.CONFLICT, ProblemType.CONFLICT,
