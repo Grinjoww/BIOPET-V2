@@ -39,6 +39,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -244,6 +245,22 @@ public class FacturaController {
                 .toList();
         borradorService.reemplazarPagos(id, comandos);
         return consultaService.mapearParaRespuestaDeEscritura(id);
+    }
+
+    /**
+     * Borrado FISICO, exclusivo de BORRADOR (ver el javadoc de
+     * {@link FacturaBorradorService#eliminar}). No es anulacion ni nota de
+     * credito -eso pertenece al pipeline SRI, todavia no implementado-: es
+     * descartar un documento interno que nunca llego a existir fiscalmente.
+     * VETERINARIO/DUENO no llegan aqui: ninguno de los dos puede escribir
+     * borradores (ver la nota "Por que VETERINARIO no escribe borradores" en
+     * la clase, y DUENO nunca crea/edita facturas).
+     */
+    @DeleteMapping("/{id:\\d+}")
+    @PreAuthorize("hasAnyRole('ADMIN','AUXILIAR')")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        borradorService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 
     // ==================================================================

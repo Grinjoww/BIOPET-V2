@@ -2,7 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../core/auth.service';
 import { ProblemDetailService } from '../core/problem-detail.service';
@@ -358,7 +358,22 @@ type AccionFiscal = 'emitir' | 'generar-xml' | 'firmar' | 'enviar-sri' | 'sincro
         </div>
       </div>
 
-      <div class="toolbar" *ngIf="!confirmandoEmision() && !confirmandoEnvioSri()">
+      <!-- Confirmación de borrado de borrador: acción destructiva, sin deshacer -->
+      <div *ngIf="confirmandoEliminar()" class="field">
+        <p class="alert alert--warning" role="alert">
+          ¿Eliminar este borrador? Esta acción eliminará sus detalles y pagos y no se puede deshacer.
+        </p>
+        <div class="modal-panel__actions">
+          <button type="button" class="btn btn--danger" [disabled]="eliminando()" (click)="confirmarEliminar(f)">
+            {{ eliminando() ? 'Eliminando…' : 'Sí, eliminar borrador' }}
+          </button>
+          <button type="button" class="btn btn--secondary" (click)="confirmandoEliminar.set(false)" [disabled]="eliminando()">
+            Cancelar
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar" *ngIf="!confirmandoEmision() && !confirmandoEnvioSri() && !confirmandoEliminar()">
         <button type="button" class="btn btn--primary" *ngIf="f.estado === 'BORRADOR'" [disabled]="accionEnCurso() !== null" (click)="abrirConfirmarEmision()">
           Emitir
         </button>
@@ -373,6 +388,15 @@ type AccionFiscal = 'emitir' | 'generar-xml' | 'firmar' | 'enviar-sri' | 'sincro
         </button>
         <button type="button" class="btn btn--secondary" *ngIf="puedeSincronizarSri(f.estado, f.claveAcceso)" [disabled]="accionEnCurso() !== null" (click)="ejecutar(f, 'sincronizar-sri')">
           {{ accionEnCurso() === 'sincronizar-sri' ? 'Sincronizando…' : 'Sincronizar SRI' }}
+        </button>
+        <!--
+          Eliminar borrador (borrado físico, NO anulación SRI): solo existe
+          mientras estado === 'BORRADOR'. Esta sección entera ya está detrás
+          de *ngIf="puedeOperar" (ADMIN/AUXILIAR), igual que el backend
+          (@PreAuthorize("hasAnyRole('ADMIN','AUXILIAR')") en el DELETE).
+        -->
+        <button type="button" class="btn btn--danger" *ngIf="f.estado === 'BORRADOR'" [disabled]="accionEnCurso() !== null" (click)="confirmandoEliminar.set(true)">
+          Eliminar borrador
         </button>
       </div>
     </section>
@@ -446,6 +470,8 @@ export class FacturaDetalleComponent implements OnInit {
   accionEnCurso = signal<AccionFiscal | null>(null);
   confirmandoEmision = signal(false);
   confirmandoEnvioSri = signal(false);
+  confirmandoEliminar = signal(false);
+  eliminando = signal(false);
   puntosEmision = signal<PuntoEmision[]>([]);
   cargandoPuntos = signal(false);
   puntoEmisionSeleccionado: number | null = null;
@@ -460,6 +486,7 @@ export class FacturaDetalleComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private api: FacturaApiService,
     private configApi: FacturacionConfigApiService,
     private auth: AuthService,
@@ -644,6 +671,30 @@ export class FacturaDetalleComponent implements OnInit {
         // 502/504 del SRI ya llegan con un detail redactado por el backend
         // ("La factura conserva su numeración y puede reintentarse más
         // tarde") — nunca se reinterpreta aquí como "factura rechazada".
+        this.errorAccion.set(this.problemDetail.mensaje(err));
+      },
+    });
+  }
+
+  /**
+   * Borrado físico exclusivo de BORRADOR (DELETE /api/facturas/{id}). Si el
+   * backend responde 409 (ya no es BORRADOR, o quedó rastro fiscal) la
+   * factura NUNCA se quita de la vista: solo se muestra el error y se cierra
+   * la confirmación, igual que cualquier otra acción fiscal fallida.
+   */
+  confirmarEliminar(f: Factura): void {
+    if (this.eliminando()) return;
+    this.errorAccion.set('');
+    this.eliminando.set(true);
+    this.api.eliminar(f.id).subscribe({
+      next: () => {
+        this.eliminando.set(false);
+        this.confirmandoEliminar.set(false);
+        this.router.navigate(['/facturas']);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.eliminando.set(false);
+        this.confirmandoEliminar.set(false);
         this.errorAccion.set(this.problemDetail.mensaje(err));
       },
     });

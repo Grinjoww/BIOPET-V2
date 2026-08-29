@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter, ActivatedRoute, convertToParamMap } from '@angular/router';
+import { provideRouter, ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 
 import { AuthService, UsuarioResponse } from '../core/auth.service';
 import { FacturaDetalleComponent } from './factura-detalle.component';
@@ -332,5 +332,95 @@ describe('FacturaDetalleComponent (integración ligera: TestBed + HttpTestingCon
     req.flush(pdfFicticio);
 
     expect(creado).toHaveBeenCalledWith(pdfFicticio);
+  });
+
+  // ==================================================================
+  // Fix funcional: eliminar factura en BORRADOR (DELETE /api/facturas/{id})
+  // ==================================================================
+
+  function botonEliminarBorrador(): HTMLButtonElement | undefined {
+    return Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (b: any) => b.textContent.trim() === 'Eliminar borrador'
+    ) as HTMLButtonElement | undefined;
+  }
+
+  it('ADMIN y AUXILIAR ven "Eliminar borrador" en un BORRADOR; VETERINARIO y DUENO nunca lo ven', () => {
+    cargar('ROLE_ADMIN', factura({ estado: 'BORRADOR' }));
+    expect(botonEliminarBorrador()).toBeDefined();
+
+    cargar('ROLE_AUXILIAR', factura({ estado: 'BORRADOR' }));
+    expect(botonEliminarBorrador()).toBeDefined();
+
+    cargar('ROLE_VETERINARIO', factura({ estado: 'BORRADOR' }));
+    expect(botonEliminarBorrador()).toBeUndefined();
+
+    cargar('ROLE_DUENO', factura({ estado: 'BORRADOR' }));
+    expect(botonEliminarBorrador()).toBeUndefined();
+  });
+
+  it('nunca se ofrece "Eliminar borrador" para EMITIDA, AUTORIZADA ni RECHAZADA, ni con ese texto ni con "Anular"/"Cancelar factura SRI"', () => {
+    for (const estado of ['EMITIDA', 'AUTORIZADA', 'RECHAZADA'] as const) {
+      cargar('ROLE_ADMIN', factura({ estado, claveAcceso: 'clave-ficticia' }));
+      const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+      expect(botonEliminarBorrador()).toBeUndefined();
+      expect(texto).not.toContain('Anular factura');
+      expect(texto).not.toContain('Cancelar factura SRI');
+    }
+  });
+
+  it('al pulsar "Eliminar borrador" pide confirmación explícita antes de llamar al backend', () => {
+    cargar('ROLE_ADMIN', factura({ estado: 'BORRADOR' }));
+
+    botonEliminarBorrador()!.click();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('¿Eliminar este borrador? Esta acción eliminará sus detalles y pagos y no se puede deshacer.');
+    httpMock.expectNone((r) => r.method === 'DELETE');
+  });
+
+  it('confirmar la eliminación llama a DELETE /api/facturas/{id} y navega a /facturas', () => {
+    cargar('ROLE_ADMIN', factura({ estado: 'BORRADOR' }));
+    const router = TestBed.inject(Router);
+    const navegar = spyOn(router, 'navigate').and.resolveTo(true);
+
+    botonEliminarBorrador()!.click();
+    fixture.detectChanges();
+
+    const botonConfirmar = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b: any) =>
+      b.textContent.includes('Sí, eliminar borrador')
+    ) as HTMLButtonElement;
+    botonConfirmar.click();
+    fixture.detectChanges();
+
+    const req = httpMock.expectOne((r) => r.url === '/api/facturas/7' && r.method === 'DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    fixture.detectChanges();
+
+    expect(navegar).toHaveBeenCalledWith(['/facturas']);
+  });
+
+  it('un 409 al eliminar NO quita la factura de la vista: se muestra el error y la factura sigue intacta', () => {
+    cargar('ROLE_ADMIN', factura({ estado: 'BORRADOR' }));
+    const router = TestBed.inject(Router);
+    const navegar = spyOn(router, 'navigate');
+
+    botonEliminarBorrador()!.click();
+    fixture.detectChanges();
+    (Array.from(fixture.nativeElement.querySelectorAll('button')).find((b: any) =>
+      b.textContent.includes('Sí, eliminar borrador')
+    ) as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne((r) => r.url === '/api/facturas/7' && r.method === 'DELETE')
+      .flush({ detail: 'La factura 7 esta en estado EMITIDA y solo puede modificarse mientras sea BORRADOR.' }, { status: 409, statusText: 'Conflict' });
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('La factura 7 esta en estado EMITIDA y solo puede modificarse mientras sea BORRADOR.');
+    expect((fixture.componentInstance as any).factura()).not.toBeNull();
+    expect((fixture.componentInstance as any).factura().id).toBe(7);
+    expect(navegar).not.toHaveBeenCalled();
   });
 });

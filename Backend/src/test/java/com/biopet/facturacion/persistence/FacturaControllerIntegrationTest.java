@@ -50,6 +50,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -245,6 +246,90 @@ class FacturaControllerIntegrationTest extends FacturaEscenarioTestBase {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.documentosDisponibles", org.hamcrest.Matchers.hasItem("XML_FIRMADO")));
+    }
+
+    // ==================================================================
+    // Eliminar borrador (DELETE /api/facturas/{id})
+    // ==================================================================
+
+    @Test
+    void adminEliminaUnBorrador() throws Exception {
+        Escenario esc = new Escenario();
+        Long borradorId = esc.borradorListoParaEmitir();
+        String token = login(esc.admin, CLAVE);
+
+        mockMvc.perform(delete("/api/facturas/" + borradorId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/facturas/" + borradorId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void auxiliarEliminaUnBorrador() throws Exception {
+        Escenario esc = new Escenario();
+        Long borradorId = esc.borradorListoParaEmitir();
+        String token = login(esc.auxiliar, CLAVE);
+
+        mockMvc.perform(delete("/api/facturas/" + borradorId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void unaFacturaEmitidaNoSePuedeEliminarPorRestYSigueExistiendo() throws Exception {
+        Escenario esc = new Escenario();
+        Factura emitida = esc.emitida();
+        String token = login(esc.admin, CLAVE);
+
+        mockMvc.perform(delete("/api/facturas/" + emitida.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").exists());
+
+        mockMvc.perform(get("/api/facturas/" + emitida.getId())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("EMITIDA"));
+    }
+
+    @Test
+    void eliminarUnaFacturaInexistenteEs404() throws Exception {
+        Escenario esc = new Escenario();
+        String token = login(esc.admin, CLAVE);
+
+        mockMvc.perform(delete("/api/facturas/987654321")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void veterinarioNoPuedeEliminarUnBorrador() throws Exception {
+        Escenario esc = new Escenario();
+        Long borradorId = esc.borradorListoParaEmitir();
+        String tokenVeterinario = login(esc.veterinario, CLAVE);
+
+        mockMvc.perform(delete("/api/facturas/" + borradorId)
+                        .header("Authorization", "Bearer " + tokenVeterinario))
+                .andExpect(status().isForbidden());
+
+        String tokenAdmin = login(esc.admin, CLAVE);
+        mockMvc.perform(get("/api/facturas/" + borradorId)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void duenoNoPuedeEliminarUnBorrador() throws Exception {
+        Escenario esc = new Escenario();
+        Long borradorId = esc.borradorListoParaEmitir();
+        String token = login(esc.dueno, CLAVE);
+
+        mockMvc.perform(delete("/api/facturas/" + borradorId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
     }
 
     // ==================================================================

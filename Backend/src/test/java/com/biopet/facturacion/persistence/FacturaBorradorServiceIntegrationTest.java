@@ -606,6 +606,101 @@ class FacturaBorradorServiceIntegrationTest extends FacturaEscenarioTestBase {
     }
 
     // ==================================================================
+    // Eliminar (borrado fisico exclusivo de BORRADOR)
+    // ==================================================================
+
+    @Test
+    void eliminarUnBorradorConDetallesYPagosLoBorraTodoYConservaLasEntidadesCompartidas() {
+        ConceptoFacturable concepto = conceptoConTarifa();
+        Usuario usuario = nuevoUsuario();
+        Factura borrador = borradorService.crear(
+                new CrearFacturaBorradorCommand(usuario.getId(), null, FECHA));
+        borradorService.reemplazarDetalles(borrador.getId(),
+                List.of(DetalleBorradorCommand.de(concepto.getId(), new BigDecimal("2"))));
+        borradorService.reemplazarPagos(borrador.getId(), List.of(
+                PagoBorradorCommand.de(FormaPagoSri.TARJETA_DEBITO, new BigDecimal("46.00"))));
+        Long facturaId = borrador.getId();
+
+        borradorService.eliminar(facturaId);
+
+        assertThat(facturaRepository.findById(facturaId)).isEmpty();
+        assertThat(facturaDetalleRepository.findAllByFactura_IdOrderByLineaAsc(facturaId)).isEmpty();
+        assertThat(facturaPagoRepository.findAllByFactura_Id(facturaId)).isEmpty();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM factura_detalles WHERE factura_id = ?", Integer.class, facturaId))
+                .isZero();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM factura_pagos WHERE factura_id = ?", Integer.class, facturaId))
+                .isZero();
+
+        // Entidades compartidas: intactas.
+        assertThat(usuarioRepository.findById(usuario.getId())).isPresent();
+        assertThat(conceptoFacturableRepository.findById(concepto.getId())).isPresent();
+    }
+
+    @Test
+    void unBorradorVacioSinDetallesNiPagosTambienSeElimina() {
+        Usuario usuario = nuevoUsuario();
+        Factura borrador = borradorService.crear(
+                new CrearFacturaBorradorCommand(usuario.getId(), null, FECHA));
+
+        borradorService.eliminar(borrador.getId());
+
+        assertThat(facturaRepository.findById(borrador.getId())).isEmpty();
+    }
+
+    @Test
+    void unaFacturaQueYaNoEsBorradorNuncaSeElimina() {
+        Usuario usuario = nuevoUsuario();
+        for (EstadoFactura estadoNoBorrador : List.of(
+                EstadoFactura.EMITIDA, EstadoFactura.AUTORIZADA, EstadoFactura.RECHAZADA)) {
+            Factura factura = facturaRepository.save(Factura.builder()
+                    .usuario(usuario)
+                    .fechaEmision(FECHA)
+                    .estado(estadoNoBorrador)
+                    .build());
+
+            assertThatThrownBy(() -> borradorService.eliminar(factura.getId()))
+                    .as("estado " + estadoNoBorrador)
+                    .isInstanceOf(FacturaNoEditableException.class);
+
+            // Sigue existiendo, intacta.
+            assertThat(facturaRepository.findById(factura.getId()))
+                    .as("estado " + estadoNoBorrador)
+                    .isPresent();
+        }
+    }
+
+    @Test
+    void unBorradorConRastroFiscalInconsistenteNoSeEliminaAunqueSuEstadoDigaBorrador() {
+        // Escenario que la maquina de estados actual no deberia permitir
+        // nunca: se fuerza por SQL directo para probar la segunda barrera
+        // defensiva de eliminar() (ver su javadoc), no la del estado.
+        Usuario usuario = nuevoUsuario();
+        Factura borrador = borradorService.crear(
+                new CrearFacturaBorradorCommand(usuario.getId(), null, FECHA));
+        jdbc.update("UPDATE facturas SET clave_acceso = ? WHERE id = ?",
+                "0".repeat(49), borrador.getId());
+
+        assertThatThrownBy(() -> borradorService.eliminar(borrador.getId()))
+                .isInstanceOf(FacturaNoEditableException.class);
+
+        assertThat(facturaRepository.findById(borrador.getId())).isPresent();
+    }
+
+    @Test
+    void eliminarUnaFacturaInexistenteEs404() {
+        assertThatThrownBy(() -> borradorService.eliminar(987_654_321L))
+                .isInstanceOf(RecursoNoEncontradoException.class);
+    }
+
+    @Test
+    void eliminarSinIdEsArgumentoInvalido() {
+        assertThatThrownBy(() -> borradorService.eliminar(null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    // ==================================================================
     // Apoyo
     // ==================================================================
 

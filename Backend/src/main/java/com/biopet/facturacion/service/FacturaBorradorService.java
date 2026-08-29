@@ -15,6 +15,7 @@ import com.biopet.facturacion.exception.TitularFacturaInvalidoException;
 import com.biopet.facturacion.repository.ConceptoFacturableRepository;
 import com.biopet.facturacion.repository.DatosFacturacionRepository;
 import com.biopet.facturacion.repository.FacturaDetalleRepository;
+import com.biopet.facturacion.repository.FacturaDocumentoRepository;
 import com.biopet.facturacion.repository.FacturaPagoRepository;
 import com.biopet.facturacion.repository.FacturaRepository;
 import com.biopet.facturacion.service.command.ActualizarFacturaBorradorCommand;
@@ -58,6 +59,7 @@ public class FacturaBorradorService {
     private final FacturaRepository facturaRepository;
     private final FacturaDetalleRepository facturaDetalleRepository;
     private final FacturaPagoRepository facturaPagoRepository;
+    private final FacturaDocumentoRepository facturaDocumentoRepository;
     private final DatosFacturacionRepository datosFacturacionRepository;
     private final ConceptoFacturableRepository conceptoFacturableRepository;
     private final UsuarioRepository usuarioRepository;
@@ -68,6 +70,7 @@ public class FacturaBorradorService {
     public FacturaBorradorService(FacturaRepository facturaRepository,
                                   FacturaDetalleRepository facturaDetalleRepository,
                                   FacturaPagoRepository facturaPagoRepository,
+                                  FacturaDocumentoRepository facturaDocumentoRepository,
                                   DatosFacturacionRepository datosFacturacionRepository,
                                   ConceptoFacturableRepository conceptoFacturableRepository,
                                   UsuarioRepository usuarioRepository,
@@ -77,6 +80,7 @@ public class FacturaBorradorService {
         this.facturaRepository = facturaRepository;
         this.facturaDetalleRepository = facturaDetalleRepository;
         this.facturaPagoRepository = facturaPagoRepository;
+        this.facturaDocumentoRepository = facturaDocumentoRepository;
         this.datosFacturacionRepository = datosFacturacionRepository;
         this.conceptoFacturableRepository = conceptoFacturableRepository;
         this.usuarioRepository = usuarioRepository;
@@ -293,6 +297,85 @@ public class FacturaBorradorService {
         }
 
         return facturaRepository.saveAndFlush(factura);
+    }
+
+    // ==================================================================
+    // Eliminacion
+    // ==================================================================
+
+    /**
+     * Borra FISICAMENTE un borrador: la unica factura que puede desaparecer de
+     * verdad, porque nunca consumio numeracion fiscal (ver el javadoc de
+     * {@link Factura} sobre por que no existe baja logica para el resto de
+     * estados). No es "anular" ni "cancelar" -eso son operaciones del pipeline
+     * SRI, todavia sin implementar-; es descartar un documento interno a medio
+     * armar que nadie mas que BIOPET conoce.
+     *
+     * <h2>Doble candado antes de borrar</h2>
+     *
+     * <p>1) {@code estado == BORRADOR} ({@link #borradorEditable}, el mismo
+     * candado que ya protege editar/reemplazar detalles y pagos). 2) Ademas,
+     * defensivamente, que NINGUN campo de numeracion/autorizacion este
+     * relleno y que no exista ni un solo {@code FacturaDocumento} archivado
+     * ({@link #exigirSinRastroFiscal}). El primer candado deberia bastar -la
+     * maquina de estados actual no permite que un BORRADOR tenga clave de
+     * acceso-, pero un DELETE fisico es irreversible: se prefiere fallar en
+     * un caso que "no deberia poder pasar" antes que arriesgar borrar un
+     * comprobante con algun rastro fiscal por una inconsistencia de datos que
+     * esta fase no previo.
+     *
+     * <h2>Hijos</h2>
+     *
+     * <p>{@code factura_detalles} y {@code factura_pagos} se borran EXPLICITAMENTE
+     * antes que la cabecera, reutilizando {@link #borrarDetalles}/
+     * {@link #borrarPagos} -los mismos metodos que ya usa
+     * {@link #reemplazarDetalles}/{@link #reemplazarPagos}-: ninguna FK de V8
+     * lleva {@code ON DELETE CASCADE} (decision deliberada de esa migracion),
+     * asi que sin este paso el {@code DELETE} de la cabecera fallaria por
+     * integridad referencial. Nunca se toca {@code ConceptoFacturable},
+     * {@code DatosFacturacion}, {@code Mascota}, {@code Usuario} ni
+     * {@code PuntoEmision}: son entidades compartidas, solo trazabilidad
+     * desde el borrador, jamas de su propiedad.
+     *
+     * @throws com.biopet.exception.RecursoNoEncontradoException si no existe (404).
+     * @throws FacturaNoEditableException si no esta en BORRADOR (409).
+     */
+    @Transactional
+    public void eliminar(Long facturaId) {
+        Factura factura = borradorEditable(facturaId);
+        exigirSinRastroFiscal(factura);
+
+        borrarPagos(factura);
+        borrarDetalles(factura);
+        facturaRepository.delete(factura);
+    }
+
+    /**
+     * Defensa adicional descrita en el javadoc de {@link #eliminar}: ademas
+     * del estado, ningun campo que solo se rellena al emitir puede estar
+     * presente, y no debe existir ningun documento archivado (XML en
+     * cualquiera de sus tres formas, o RIDE). Reutiliza
+     * {@link FacturaNoEditableException} -el mismo mensaje "solo puede
+     * modificarse mientras sea BORRADOR" describe exactamente este caso,
+     * borrar es la forma mas fuerte de modificar- en vez de anadir una
+     * excepcion nueva para un camino que la maquina de estados actual no deja
+     * alcanzar.
+     */
+    private void exigirSinRastroFiscal(Factura factura) {
+        boolean tieneNumeracion = factura.getClaveAcceso() != null
+                || factura.getSecuencial() != null
+                || factura.getCodigoNumerico() != null
+                || factura.getNumeroAutorizacion() != null
+                || factura.getAmbiente() != null
+                || factura.getEstablecimiento() != null
+                || factura.getPuntoEmisionCodigo() != null
+                || factura.getPuntoEmision() != null;
+        boolean tieneDocumentos = !facturaDocumentoRepository
+                .findAllByFactura_Id(factura.getId()).isEmpty();
+
+        if (tieneNumeracion || tieneDocumentos) {
+            throw new FacturaNoEditableException(factura.getId(), factura.getEstado());
+        }
     }
 
     // ==================================================================

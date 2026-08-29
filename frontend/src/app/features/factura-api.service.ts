@@ -218,6 +218,16 @@ export class FacturaApiService {
     return this.http.put<Factura>(`${this.base}/${id}/pagos`, { pagos });
   }
 
+  /**
+   * Borrado físico, exclusivo de BORRADOR (backend rechaza con 409 cualquier
+   * otro estado, o un BORRADOR con rastro fiscal). Nunca es una anulación ni
+   * una nota de crédito SRI: eso no existe todavía. El componente debe
+   * mostrar confirmación antes de llamar y nunca reintentar en caliente.
+   */
+  eliminar(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`);
+  }
+
   // ---------- Pipeline fiscal ----------
 
   /**
