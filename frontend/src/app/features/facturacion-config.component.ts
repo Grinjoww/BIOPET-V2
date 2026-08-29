@@ -219,10 +219,6 @@ type Tab = 'emisor' | 'puntos' | 'conceptos' | 'tarifas';
       </button>
 
       <form [formGroup]="tarifaForm" (ngSubmit)="crearTarifa()" novalidate *ngIf="mostrarFormTarifa()">
-        <p class="field-hint">
-          Abre una vigencia nueva. Si ya existe una vigencia abierta para el mismo impuesto/porcentaje, el backend la
-          cierra automáticamente el día anterior a esta — nunca se sobrescribe una tarifa histórica.
-        </p>
         <div class="field">
           <label for="t-impuesto">Código de impuesto<span class="required-mark" aria-hidden="true">*</span></label>
           <select id="t-impuesto" formControlName="codigoImpuesto">
@@ -234,7 +230,11 @@ type Tab = 'emisor' | 'puntos' | 'conceptos' | 'tarifas';
         <div class="field"><label for="t-porcentaje">Código de porcentaje (SRI)<span class="required-mark" aria-hidden="true">*</span></label><input id="t-porcentaje" type="text" formControlName="codigoPorcentaje" maxlength="2" placeholder="4" /></div>
         <div class="field"><label for="t-descripcion">Descripción<span class="required-mark" aria-hidden="true">*</span></label><input id="t-descripcion" type="text" formControlName="descripcion" maxlength="100" /></div>
         <div class="field"><label for="t-tarifa">Tarifa (%)<span class="required-mark" aria-hidden="true">*</span></label><input id="t-tarifa" type="number" min="0" max="100" step="0.01" formControlName="tarifa" /></div>
-        <div class="field"><label for="t-vigenteDesde">Vigente desde<span class="required-mark" aria-hidden="true">*</span></label><input id="t-vigenteDesde" type="date" formControlName="vigenteDesde" /></div>
+        <div class="field">
+          <label for="t-vigenteDesde">Vigente desde<span class="required-mark" aria-hidden="true">*</span></label>
+          <input id="t-vigenteDesde" type="date" formControlName="vigenteDesde" />
+          <p class="field-hint">Las tarifas anteriores se conservan como historial.</p>
+        </div>
         <div class="modal-panel__actions">
           <button type="submit" class="btn btn--primary" [disabled]="guardandoTarifa()">{{ guardandoTarifa() ? 'Creando…' : 'Crear vigencia' }}</button>
           <button type="button" class="btn btn--secondary" (click)="mostrarFormTarifa.set(false)" [disabled]="guardandoTarifa()">Cancelar</button>

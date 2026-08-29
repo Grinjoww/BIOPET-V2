@@ -264,8 +264,7 @@ interface PagoEnEdicion {
           </tbody>
         </table>
         <p class="field-hint">
-          Subtotal estimado, sin impuestos. El backend calcula el impuesto y el total definitivo con la tarifa
-          vigente en la fecha de emisión al guardar las líneas.
+          Los impuestos se calculan automáticamente según la tarifa vigente.
         </p>
       </div>
 
@@ -611,7 +610,7 @@ export class FacturaNuevaComponent implements OnInit {
         this.guardandoDetalles.set(false);
         this.factura.set(actualizada);
         this.lineasPendientes.set([]);
-        this.mostrarExito('Líneas guardadas. El backend ya calculó el impuesto y el subtotal real.');
+        this.mostrarExito('Líneas guardadas con el impuesto y el subtotal ya calculados.');
       },
       error: (err: HttpErrorResponse) => {
         this.guardandoDetalles.set(false);
