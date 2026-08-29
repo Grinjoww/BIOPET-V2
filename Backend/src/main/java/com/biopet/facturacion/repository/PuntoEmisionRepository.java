@@ -13,4 +13,13 @@ public interface PuntoEmisionRepository extends JpaRepository<PuntoEmision, Long
             Long emisorFiscalId, String establecimiento, String puntoEmision);
 
     List<PuntoEmision> findAllByEmisorFiscal_IdAndActivoTrue(Long emisorFiscalId);
+
+    /**
+     * Todos los puntos activos, de cualquier emisor. Usada por la Fase 8B para
+     * que AUXILIAR pueda elegir {@code puntoEmisionId} al emitir sin necesitar
+     * primero el id del emisor: hoy BIOPET tiene una sola clinica, pero el
+     * filtro por emisor de {@link #findAllByEmisorFiscal_IdAndActivoTrue} sigue
+     * disponible para cuando haga falta acotar.
+     */
+    List<PuntoEmision> findAllByActivoTrue();
 }

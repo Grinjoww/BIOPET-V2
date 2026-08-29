@@ -19,6 +19,7 @@ import com.biopet.facturacion.exception.TitularFacturaInvalidoException;
 import com.biopet.facturacion.sri.SriComunicacionException;
 import com.biopet.facturacion.sri.TipoFalloSri;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -85,6 +86,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> parametroInvalido(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
         String detail = "El parámetro '" + ex.getName() + "' tiene un formato inválido.";
         return problemResponse(HttpStatus.BAD_REQUEST, ProblemType.BAD_REQUEST, "Parámetro inválido", detail, request);
+    }
+
+    /**
+     * Red de seguridad generica para restricciones de la base de datos que el
+     * codigo de aplicacion no anticipo con una excepcion de dominio propia: un
+     * indice unico (RUC de emisor, serie de punto de emision, vigencia de
+     * tarifa, el predeterminado de {@code datos_facturacion}) o una FK que
+     * impide una operacion. Nunca se expone el mensaje crudo del driver JDBC
+     * -puede contener nombres de tabla/columna internos-, solo un detalle
+     * generico; quien necesite un mensaje mas especifico debe anticiparlo con su
+     * propia excepcion de dominio ANTES de llegar aqui.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ProblemDetail> conflictoDeIntegridad(DataIntegrityViolationException ex,
+                                                                HttpServletRequest request) {
+        return problemResponse(HttpStatus.CONFLICT, ProblemType.CONFLICT,
+                "Conflicto con datos existentes",
+                "La operacion entra en conflicto con datos ya existentes o referenciados.", request);
     }
 
     @ExceptionHandler(RateLimitExcedidoException.class)
