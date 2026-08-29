@@ -25,7 +25,10 @@ export type IconName =
   | 'anadir'
   | 'check'
   | 'chevron-left'
-  | 'chevron-right';
+  | 'chevron-right'
+  | 'facturas'
+  | 'documento'
+  | 'descargar';
 
 export interface IconShape {
   paths?: string[];
@@ -140,5 +143,32 @@ export const ICONS: Record<IconName, IconShape> = {
   },
   'chevron-right': {
     polylines: ['9 6 15 12 9 18'],
+  },
+  // Recibo/comprobante: hoja con borde inferior dentado y líneas de detalle
+  // — evoca una factura sin ser un ícono de "dinero" genérico (billete,
+  // signo $), que no encaja con el resto del set, geométrico y funcional.
+  facturas: {
+    paths: [
+      'M6 3h12v17.2a.8.8 0 0 1-1.24.67l-1.5-1a.8.8 0 0 0-.88 0l-1.5 1a.8.8 0 0 1-.88 0l-1.5-1a.8.8 0 0 0-.88 0l-1.5 1a.8.8 0 0 0-.88 0l-1.5 1A.8.8 0 0 1 6 20.2Z',
+    ],
+    lines: [
+      [9, 8, 15, 8],
+      [9, 12, 15, 12],
+      [9, 16, 13, 16],
+    ],
+  },
+  documento: {
+    paths: ['M7 2h7l4 4v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z', 'M14 2v4h4'],
+    lines: [
+      [9, 13, 15, 13],
+      [9, 17, 15, 17],
+    ],
+  },
+  descargar: {
+    lines: [
+      [12, 3, 12, 15],
+      [4, 21, 20, 21],
+    ],
+    polylines: ['7 10 12 15 17 10'],
   },
 };

@@ -97,6 +97,34 @@ export const routes: Routes = [
         loadComponent: () => import('./features/vacunas.component').then((m) => m.VacunasComponent),
       },
 
+      // Fase 9: los 4 roles llegan a /facturas (el backend acota qué ven,
+      // ver FacturaConsultaService), así que el listado y el detalle NO
+      // llevan roleGuard — solo lo llevan las dos rutas de ESCRITURA
+      // administrativa, que si son exclusivas de un subconjunto de roles.
+      // Orden deliberado: los segmentos literales ('nueva', 'configuracion')
+      // van ANTES que ':id', porque el Router de Angular evalúa las rutas en
+      // el orden declarado y ':id' capturaría "nueva"/"configuracion" como
+      // si fueran un id si fuera declarada primero.
+      {
+        path: 'facturas',
+        loadComponent: () => import('./features/facturas.component').then((m) => m.FacturasComponent),
+      },
+      {
+        path: 'facturas/nueva',
+        loadComponent: () => import('./features/factura-nueva.component').then((m) => m.FacturaNuevaComponent),
+        canActivate: [roleGuard(['ROLE_ADMIN', 'ROLE_AUXILIAR'])],
+      },
+      {
+        path: 'facturas/configuracion',
+        loadComponent: () =>
+          import('./features/facturacion-config.component').then((m) => m.FacturacionConfigComponent),
+        canActivate: [roleGuard(['ROLE_ADMIN'])],
+      },
+      {
+        path: 'facturas/:id',
+        loadComponent: () => import('./features/factura-detalle.component').then((m) => m.FacturaDetalleComponent),
+      },
+
       {
         path: 'usuarios',
         loadComponent: () => import('./features/usuarios.component').then((m) => m.UsuariosComponent),

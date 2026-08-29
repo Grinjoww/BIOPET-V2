@@ -6,6 +6,7 @@ import { AuthService } from '../core/auth.service';
 import { humanizarRol, inicialesDe } from '../core/roles';
 import { PageHeaderComponent } from '../shared/page-header/page-header.component';
 import { IconComponent } from '../shared/icons/icon.component';
+import { DatosFacturacionComponent } from './datos-facturacion.component';
 
 /**
  * IMPORTANTE — auditoría real de esta fase (no asumida):
@@ -32,7 +33,7 @@ import { IconComponent } from '../shared/icons/icon.component';
  */
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, PageHeaderComponent, IconComponent],
+  imports: [CommonModule, RouterLink, PageHeaderComponent, IconComponent, DatosFacturacionComponent],
   template: `
   <app-page-header
     eyebrow="Cuenta"
@@ -75,6 +76,15 @@ import { IconComponent } from '../shared/icons/icon.component';
       <a routerLink="/usuarios" class="btn btn--ghost btn--sm" *ngIf="esAdmin()">Ir a Usuarios</a>
     </section>
 
+    <section class="panel profile-panel" aria-labelledby="titulo-facturacion" *ngIf="esDueno()">
+      <h2 id="titulo-facturacion" class="panel__title-inline">Datos de facturación</h2>
+      <p class="field-hint profile-panel__texto">
+        Identidades tributarias con las que la clínica puede emitirte comprobantes. Solo tú puedes verlas y
+        gestionarlas.
+      </p>
+      <app-datos-facturacion></app-datos-facturacion>
+    </section>
+
     <section class="panel profile-panel" aria-labelledby="titulo-sesion">
       <h2 id="titulo-sesion" class="panel__title-inline">Sesión</h2>
       <p class="field-hint profile-panel__texto">Tu sesión actual está activa.</p>
@@ -104,6 +114,10 @@ export class PerfilComponent {
 
   esAdmin(): boolean {
     return this.auth.usuarioActual()?.rol === 'ROLE_ADMIN';
+  }
+
+  esDueno(): boolean {
+    return this.auth.usuarioActual()?.rol === 'ROLE_DUENO';
   }
 
   cerrarSesion(): void {

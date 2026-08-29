@@ -54,6 +54,16 @@ describe('roles (navegación por rol — solo wayfinding de UI)', () => {
     }
   });
 
+  it('los 4 roles ven /facturas (el backend acota el contenido, no la navegación), con label "Mis facturas" solo para DUENO', () => {
+    for (const rol of ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_AUXILIAR', 'ROLE_DUENO'] as const) {
+      expect(paths(rol)).withContext(rol).toContain('/facturas');
+    }
+    expect(label('ROLE_DUENO', '/facturas')).toBe('Mis facturas');
+    expect(label('ROLE_ADMIN', '/facturas')).toBe('Facturas');
+    expect(label('ROLE_AUXILIAR', '/facturas')).toBe('Facturas');
+    expect(label('ROLE_VETERINARIO', '/facturas')).toBe('Facturas');
+  });
+
   it('humanizarRol traduce los 4 roles reales y cae a "Usuario" ante cualquier otro valor', () => {
     expect(humanizarRol('ROLE_ADMIN')).toBe('Administrador');
     expect(humanizarRol('ROLE_VETERINARIO')).toBe('Veterinario');

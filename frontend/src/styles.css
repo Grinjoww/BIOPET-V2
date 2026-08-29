@@ -1517,3 +1517,59 @@ textarea:focus-visible,
     width: 100%;
   }
 }
+
+/* ------------------------------------------------------------
+   Facturación V1 — pipeline visual (ficha de factura) y bitácora SRI.
+   Reutiliza tokens y patrones existentes (chip, panel, table-clinico):
+   no se introduce ningún color ni radio nuevo.
+   ------------------------------------------------------------ */
+.factura-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+.factura-pipeline__paso {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font: var(--text-small);
+  color: var(--color-muted);
+  background: var(--color-surface-sunken);
+}
+.factura-pipeline__marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+}
+.factura-pipeline__paso--completado {
+  color: var(--color-success);
+  background: var(--color-success-bg);
+  border-color: var(--color-success-border);
+}
+.factura-pipeline__paso--actual {
+  color: var(--color-primary);
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  font-weight: 600;
+}
+.factura-bitacora__mensajes {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--color-surface-sunken);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-2);
+}

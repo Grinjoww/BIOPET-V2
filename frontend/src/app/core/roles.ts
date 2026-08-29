@@ -59,7 +59,14 @@ export function navGroupsParaRol(rol: RolBiopet): NavGroup[] {
     { path: '/mascotas', label: esDueno ? 'Mis mascotas' : 'Mascotas', icon: 'mascotas' },
     { path: '/citas', label: esDueno ? 'Mis citas' : 'Citas', icon: 'citas' },
     { path: '/consultas', label: esDueno ? 'Mis consultas' : 'Consultas', icon: 'consultas' },
-    { path: '/vacunas', label: esDueno ? 'Mis vacunas' : 'Vacunas', icon: 'vacunas' }
+    { path: '/vacunas', label: esDueno ? 'Mis vacunas' : 'Vacunas', icon: 'vacunas' },
+    // Los 4 roles tienen algún acceso real a /facturas (FacturaController:
+    // ADMIN/AUXILIAR operan el pipeline completo, VETERINARIO ve solo
+    // facturas con una línea clínica suya, DUENO solo las propias
+    // AUTORIZADAS — ver FacturaConsultaService), así que el enlace nunca se
+    // oculta por rol; solo cambia la etiqueta para DUENO, igual que el resto
+    // de este grupo.
+    { path: '/facturas', label: esDueno ? 'Mis facturas' : 'Facturas', icon: 'facturas' }
   );
 
   const administracion: NavItem[] = [];
