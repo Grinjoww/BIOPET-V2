@@ -1,3 +1,35 @@
+## Versiones del proyecto
+
+Este repositorio corresponde a la **Entrega Final académica de BIOPET** y
+conserva la trazabilidad, evidencias, documentación y correcciones realizadas
+a partir de la retroalimentación docente.
+
+El tag histórico `v1.0.0` se mantiene inmutable para preservar la
+reproducibilidad de la versión evaluada. Las correcciones documentales y de
+trazabilidad posteriores se encuentran incorporadas en `main` sin alterar
+dicho tag.
+
+### Versión funcional evolucionada
+
+De forma paralela, el desarrollo funcional y visual del sistema continuó en:
+
+**BIOPET-V2:**  
+https://github.com/Grinjoww/BIOPET-V2
+
+Esta versión incorpora mejoras posteriores de interfaz, experiencia de
+usuario y funcionalidades adicionales, entre ellas el módulo de facturación.
+
+La separación entre ambos repositorios fue intencional: se mantuvo este
+repositorio como referencia académica y reproducible de la entrega, mientras
+que BIOPET-V2 se utilizó para continuar la evolución del producto sin
+reescribir ni alterar los artefactos históricos de la evaluación.
+
+Para revisión de evidencias académicas, reproducibilidad, informe y
+retroalimentación: **ENTREGA-FINAL-BIOPET**.
+
+Para revisión del estado funcional y visual más reciente del sistema:
+**BIOPET-V2**.
+
 # BIOPET V2 — Sistema Web de Gestión Veterinaria
 
 Repositorio oficial: [github.com/Grinjoww/BIOPET-V2](https://github.com/Grinjoww/BIOPET-V2)
