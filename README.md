@@ -1,3 +1,23 @@
+# BIOPET V2
+BIOPET-V2 se encuentra desplegado en Render y puede probarse directamente desde los siguientes enlaces:
+
+- **Frontend:** https://biopet-v2-frontend.onrender.com/
+- **Backend / API:** https://biopet-v2-backend.onrender.com/
+
+### Credenciales de demostración
+
+Para facilitar la revisión académica y funcional del sistema se encuentra disponible una cuenta de demostración con permisos de administrador:
+
+| Campo | Valor |
+|---|---|
+| Rol | Administrador |
+| Correo | `demo@biopet.com` |
+| Contraseña | `BIOPET-Demo-2026!` |
+
+> Esta cuenta fue creada exclusivamente para la revisión académica de BIOPET. No corresponde a credenciales personales ni a secretos de infraestructura.
+
+Con esta cuenta pueden revisarse las funcionalidades disponibles en la versión actual del sistema, incluyendo la gestión administrativa y los módulos incorporados en BIOPET-V2.
+
 # BIOPET V2 — Sistema Web de Gestión Veterinaria
 
 Repositorio oficial: [github.com/Grinjoww/BIOPET-V2](https://github.com/Grinjoww/BIOPET-V2)
