@@ -1,17 +1,9 @@
 #!/bin/sh
 # Backend/render-entrypoint.sh
 #
-# Punto de entrada usado UNICAMENTE por Render (render.yaml, dockerCommand),
-# no por Docker Compose local (que usa el ENTRYPOINT normal del Dockerfile
-# y ya recibe DB_URL completo desde .env).
-#
-# Motivo: render.yaml no puede inyectar DB_URL directamente (Render solo
-# expone DB_HOST/DB_PORT/DB_NAME por separado via fromDatabase), y una
-# expresion "sh -c 'export ... && exec ...'" embebida como string dentro
-# de dockerCommand en el YAML termina siendo interpretada por Render como
-# un unico nombre de programa (exit 127, "not found") en vez de como una
-# cadena de comandos de shell. Este script evita ese problema: render.yaml
-# solo referencia su ruta, sin quoting complejo.
+# Punto de entrada usado UNICAMENTE por Render.
+# Construye DB_URL y, si existe el secreto SRI en Base64,
+# reconstruye temporalmente el PKCS#12 sin versionarlo.
 #
 # No imprime passwords ni ningun otro secreto.
 
@@ -31,5 +23,39 @@ if [ -z "${DB_NAME:-}" ]; then
 fi
 
 export DB_URL="jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
+
+# ------------------------------------------------------------
+# Certificado de firma electronica SRI
+# ------------------------------------------------------------
+
+SRI_CERT_B64_FILE="${SRI_CERT_B64_FILE:-/etc/secrets/sri-cert.p12.b64}"
+SRI_CERT_RUNTIME_PATH="${SRI_CERT_RUNTIME_PATH:-/tmp/biopet-sri-cert.p12}"
+
+if [ -f "$SRI_CERT_B64_FILE" ]; then
+    if [ -z "${SRI_CERT_PASSWORD:-}" ]; then
+        echo "render-entrypoint: existe certificado SRI pero falta SRI_CERT_PASSWORD" >&2
+        exit 1
+    fi
+
+    # Los archivos creados a partir de aqui quedan accesibles solo para
+    # el usuario del proceso.
+    umask 077
+
+    if ! base64 -d "$SRI_CERT_B64_FILE" > "$SRI_CERT_RUNTIME_PATH"; then
+        rm -f "$SRI_CERT_RUNTIME_PATH"
+        echo "render-entrypoint: no se pudo reconstruir el certificado SRI" >&2
+        exit 1
+    fi
+
+    if [ ! -s "$SRI_CERT_RUNTIME_PATH" ]; then
+        rm -f "$SRI_CERT_RUNTIME_PATH"
+        echo "render-entrypoint: el certificado SRI reconstruido esta vacio" >&2
+        exit 1
+    fi
+
+    export SRI_CERT_PATH="$SRI_CERT_RUNTIME_PATH"
+
+    echo "render-entrypoint: material de firma SRI disponible en runtime"
+fi
 
 exec java -jar /app/app.jar
