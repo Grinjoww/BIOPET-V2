@@ -4,6 +4,8 @@ import com.biopet.entity.Mascota;
 import com.biopet.entity.Rol;
 import com.biopet.entity.Usuario;
 import com.biopet.entity.Vacuna;
+import com.biopet.repository.CitaRepository;
+import com.biopet.repository.ConsultaRepository;
 import com.biopet.repository.MascotaRepository;
 import com.biopet.repository.UsuarioRepository;
 import com.biopet.repository.VacunaRepository;
@@ -43,13 +45,19 @@ class VacunaControllerTest {
     @Autowired UsuarioRepository usuarioRepository;
     @Autowired MascotaRepository mascotaRepository;
     @Autowired VacunaRepository vacunaRepository;
+    @Autowired CitaRepository citaRepository;
+    @Autowired ConsultaRepository consultaRepository;
     @Autowired PasswordEncoder passwordEncoder;
 
     @MockBean TokenBlacklistService tokenBlacklistService;
 
     @BeforeEach
     void setUp() {
+        // Consultas y citas se eliminan antes que mascotas porque ambas tablas
+        // contienen una FK hacia mascotas (ver MascotaControllerTest).
         vacunaRepository.deleteAll();
+        consultaRepository.deleteAll();
+        citaRepository.deleteAll();
         mascotaRepository.deleteAll();
         usuarioRepository.deleteAll();
         Usuario admin = Usuario.builder()
