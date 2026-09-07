@@ -37,6 +37,8 @@ import java.util.Optional;
 @Service
 public class FacturaFirmaService {
 
+    private static final org.slf4j.Logger log =
+        org.slf4j.LoggerFactory.getLogger(FacturaFirmaService.class);
     private final FacturaRepository facturaRepository;
     private final FacturaDocumentoRepository facturaDocumentoRepository;
     private final CertificadoFirmaProvider certificadoFirmaProvider;
@@ -101,16 +103,31 @@ public class FacturaFirmaService {
         // Nunca firmar bytes corruptos: la firma los legitimaria.
         exigirIntegridad(generado, facturaId, "generado");
 
-        MaterialFirma material = certificadoFirmaProvider.material();
-        byte[] firmado = facturaXadesSigner.firmar(
-                generado.getContenido(), material, firmaProperties.getAlgoritmo());
+        log.info("FIRMA_DIAG stage=CERT_MATERIAL_START facturaId={}", facturaId);
 
-        // Si la firma no verifica, no se guarda: un comprobante con una firma
-        // invalida es peor que uno sin firmar, porque parece valido.
-        firmaXadesVerificador.exigirValida(firmado, facturaId);
-        // Y el comprobante firmado debe seguir cumpliendo el XSD oficial: la
-        // firma va dentro del propio <factura>, asi que puede romperlo.
-        facturaXsdValidator.validar(firmado);
+            MaterialFirma material = certificadoFirmaProvider.material();
+
+            log.info("FIRMA_DIAG stage=CERT_MATERIAL_OK facturaId={}", facturaId);
+            log.info("FIRMA_DIAG stage=XADES_SIGN_START facturaId={}", facturaId);
+
+            byte[] firmado = facturaXadesSigner.firmar(
+                    generado.getContenido(), material, firmaProperties.getAlgoritmo());
+
+            log.info("FIRMA_DIAG stage=XADES_SIGN_OK facturaId={}", facturaId);
+            log.info("FIRMA_DIAG stage=XADES_VERIFY_START facturaId={}", facturaId);
+
+            // Si la firma no verifica, no se guarda: un comprobante con una firma
+            // invalida es peor que uno sin firmar, porque parece valido.
+            firmaXadesVerificador.exigirValida(firmado, facturaId);
+
+            log.info("FIRMA_DIAG stage=XADES_VERIFY_OK facturaId={}", facturaId);
+            log.info("FIRMA_DIAG stage=XSD_SIGNED_START facturaId={}", facturaId);
+
+            // Y el comprobante firmado debe seguir cumpliendo el XSD oficial: la
+            // firma va dentro del propio <factura>, asi que puede romperlo.
+            facturaXsdValidator.validar(firmado);
+
+            log.info("FIRMA_DIAG stage=XSD_SIGNED_OK facturaId={}", facturaId);
 
         FacturaDocumento documento = FacturaDocumento.builder()
                 .factura(factura)
