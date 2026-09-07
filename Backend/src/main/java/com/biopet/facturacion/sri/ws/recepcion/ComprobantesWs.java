@@ -3,29 +3,29 @@ package com.biopet.facturacion.sri.ws.recepcion;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElements;
 
 import java.util.List;
 
-/** Envoltorio {@code <comprobantes>} con N {@code <comprobante>}. */
+/**
+ * Envoltorio <comprobantes> con N <comprobante>.
+ *
+ * Acepta tanto la variante cualificada contemplada por el contrato como
+ * la variante sin namespace observada en CELCER.
+ */
 @XmlAccessorType(XmlAccessType.FIELD)
 public class ComprobantesWs {
 
-    /**
-     * QUALIFIED, aunque el esquema sea {@code elementFormDefault="unqualified"}.
-     *
-     * <p>No es una inconsistencia: el WSDL declara este hijo como
-     * {@code <xs:element ref="tns:comprobante"/>}, es decir, una REFERENCIA a un
-     * elemento GLOBAL. Los elementos globales llevan siempre el namespace del
-     * esquema, y {@code elementFormDefault} solo gobierna a los locales. La
-     * respuesta real del SRI mezcla ambas formas: {@code <estado>} y
-     * {@code <comprobantes>} van sin prefijo, y {@code <ns2:comprobante>} con el.
-     *
-     * <p>Equivocarse aqui no da error: JAXB simplemente no encuentra el elemento
-     * y deja la lista vacia. El sintoma seria una DEVUELTA sin ningun mensaje
-     * -perdiendo justo el diagnostico por el que se devolvio- sin que nada
-     * fallase. Ver {@code SriBindingContraWsdlTest}.
-     */
-    @XmlElement(name = "comprobante", namespace = NamespaceRecepcion.URI)
+    @XmlElements({
+            @XmlElement(
+                    name = "comprobante",
+                    namespace = NamespaceRecepcion.URI,
+                    type = ComprobanteWs.class),
+            @XmlElement(
+                    name = "comprobante",
+                    namespace = "",
+                    type = ComprobanteWs.class)
+    })
     private List<ComprobanteWs> comprobante;
 
     public List<ComprobanteWs> getComprobante() {

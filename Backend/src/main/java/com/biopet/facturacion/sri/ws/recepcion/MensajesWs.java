@@ -3,19 +3,29 @@ package com.biopet.facturacion.sri.ws.recepcion;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElements;
 
 import java.util.List;
 
-/** Envoltorio {@code <mensajes>} con N {@code <mensaje>}. */
+/**
+ * Envoltorio <mensajes> con N <mensaje>.
+ *
+ * Acepta tanto la variante cualificada contemplada por el contrato como
+ * la variante sin namespace observada en CELCER.
+ */
 @XmlAccessorType(XmlAccessType.FIELD)
 public class MensajesWs {
 
-    /**
-     * QUALIFIED por la misma razon que en {@code ComprobantesWs}: el WSDL lo
-     * declara como {@code ref="tns:mensaje"}, una referencia a un elemento
-     * global, y esos van siempre con el namespace del esquema.
-     */
-    @XmlElement(name = "mensaje", namespace = NamespaceRecepcion.URI)
+    @XmlElements({
+            @XmlElement(
+                    name = "mensaje",
+                    namespace = NamespaceRecepcion.URI,
+                    type = MensajeWs.class),
+            @XmlElement(
+                    name = "mensaje",
+                    namespace = "",
+                    type = MensajeWs.class)
+    })
     private List<MensajeWs> mensaje;
 
     public List<MensajeWs> getMensaje() {
