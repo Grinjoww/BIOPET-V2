@@ -47,6 +47,8 @@ import java.util.List;
 @Component
 public class CertificadoFirmaProvider {
 
+    private static final org.slf4j.Logger log =
+        org.slf4j.LoggerFactory.getLogger(CertificadoFirmaProvider.class);
     /** Minimo exigido por la normativa de firma electronica vigente. */
     static final int BITS_MINIMOS = 2048;
 
@@ -78,13 +80,14 @@ public class CertificadoFirmaProvider {
             throw new CertificadoFirmaInvalidoException(
                     "No hay contrasena del certificado de firma configurada (SRI_CERT_PASSWORD).");
         }
-
+        log.info("CERT_DIAG stage=CONFIG_OK");
         Path archivo = Path.of(ruta);
         if (!Files.isReadable(archivo)) {
             // Se nombra la ruta, que no es un secreto; la contrasena jamas.
             throw new CertificadoFirmaInvalidoException(
                     "No se puede leer el almacen PKCS#12 en la ruta configurada: " + archivo);
         }
+        log.info("CERT_DIAG stage=FILE_READABLE_OK");
 
         // char[] y no String: se puede limpiar en cuanto deja de hacer falta, y
         // no queda a merced del recolector como un literal inmutable.
@@ -102,13 +105,12 @@ public class CertificadoFirmaProvider {
     }
 
     private MaterialFirma cargar(Path archivo, char[] password) {
-        KeyStore almacen;
+    KeyStore almacen;
+
         try (InputStream entrada = Files.newInputStream(archivo)) {
             almacen = KeyStore.getInstance("PKCS12");
             almacen.load(entrada, password);
         } catch (IOException e) {
-            // Una contrasena incorrecta llega hasta aqui como IOException con
-            // causa UnrecoverableKeyException; se traduce sin filtrar nada.
             throw new CertificadoFirmaInvalidoException(
                     "No se pudo abrir el almacen PKCS#12: contrasena incorrecta o archivo danado.", e);
         } catch (GeneralSecurityException e) {
@@ -116,30 +118,45 @@ public class CertificadoFirmaProvider {
                     "El almacen PKCS#12 no se pudo cargar.", e);
         }
 
+        log.info("CERT_DIAG stage=PKCS12_LOAD_OK");
+
         String alias = resolverAlias(almacen);
+
+        log.info("CERT_DIAG stage=ALIAS_RESOLVE_OK");
 
         PrivateKey privateKey;
         X509Certificate certificate;
+
         try {
             java.security.Key clave = almacen.getKey(alias, password);
+
             if (!(clave instanceof PrivateKey)) {
                 throw new CertificadoFirmaInvalidoException(
-                        "La entrada \"" + alias + "\" del PKCS#12 no contiene una clave privada.");
+                        "La entrada configurada del PKCS#12 no contiene una clave privada.");
             }
+
             privateKey = (PrivateKey) clave;
 
             java.security.cert.Certificate bruto = almacen.getCertificate(alias);
+
             if (!(bruto instanceof X509Certificate)) {
                 throw new CertificadoFirmaInvalidoException(
-                        "La entrada \"" + alias + "\" del PKCS#12 no contiene un certificado X.509.");
+                        "La entrada configurada del PKCS#12 no contiene un certificado X.509.");
             }
+
             certificate = (X509Certificate) bruto;
+
         } catch (GeneralSecurityException e) {
             throw new CertificadoFirmaInvalidoException(
                     "No se pudo leer la clave del PKCS#12: contrasena de la entrada incorrecta.", e);
         }
 
+        log.info("CERT_DIAG stage=KEY_AND_CERT_OK");
+
         validar(privateKey, certificate);
+
+        log.info("CERT_DIAG stage=CERT_VALIDATE_OK");
+
         return new MaterialFirma(privateKey, certificate);
     }
 
