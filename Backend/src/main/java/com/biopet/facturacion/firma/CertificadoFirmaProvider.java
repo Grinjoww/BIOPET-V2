@@ -120,7 +120,21 @@ public class CertificadoFirmaProvider {
 
         log.info("CERT_DIAG stage=PKCS12_LOAD_OK");
 
-        String alias = resolverAlias(almacen);
+        String aliasConfigurado = propiedades.getCertificado().getAlias();
+
+        log.info(
+                "CERT_DIAG stage=ALIAS_INPUT configured={} length={}",
+                aliasConfigurado != null && !aliasConfigurado.isBlank(),
+                aliasConfigurado == null ? 0 : aliasConfigurado.trim().length()
+        );
+
+        String alias;
+        try {
+            alias = resolverAlias(almacen);
+        } catch (CertificadoFirmaInvalidoException e) {
+            log.warn("CERT_DIAG stage=ALIAS_RESOLVE_FAIL");
+            throw e;
+        }
 
         log.info("CERT_DIAG stage=ALIAS_RESOLVE_OK");
 
