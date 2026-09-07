@@ -160,43 +160,78 @@ public class CertificadoFirmaProvider {
         return new MaterialFirma(privateKey, certificate);
     }
 
-    /**
-     * Alias configurado, o el unico que haya. Si el almacen trae varias claves y
-     * no se indico cual, se exige elegir: firmar con la equivocada produciria
-     * comprobantes a nombre de otro.
-     */
     private String resolverAlias(KeyStore almacen) {
         String configurado = propiedades.getCertificado().getAlias();
+
         try {
             if (configurado != null && !configurado.isBlank()) {
-                if (!almacen.isKeyEntry(configurado)) {
-                    throw new CertificadoFirmaInvalidoException(
-                            "El PKCS#12 no tiene ninguna entrada de clave con el alias \""
-                                    + configurado + "\".");
+                // Evita que un espacio accidental al copiar desde Render
+                // haga fallar un alias que por lo demas es correcto.
+                String limpio = configurado.trim();
+
+                if (almacen.isKeyEntry(limpio)) {
+                    return limpio;
                 }
-                return configurado;
+
+                // Segundo intento seguro: compara contra los alias reales sin
+                // distinguir mayusculas/minusculas ni espacios externos.
+                // Nunca se imprimen los alias reales en logs.
+                List<Integer> longitudes = new ArrayList<>();
+                int claves = 0;
+
+                Enumeration<String> aliases = almacen.aliases();
+                while (aliases.hasMoreElements()) {
+                    String actual = aliases.nextElement();
+
+                    if (almacen.isKeyEntry(actual)) {
+                        claves++;
+                        longitudes.add(actual.length());
+
+                        if (actual.trim().equalsIgnoreCase(limpio)) {
+                            log.info("CERT_DIAG stage=ALIAS_NORMALIZED_MATCH");
+                            return actual;
+                        }
+                    }
+                }
+
+                // Diagnostico seguro: solo longitudes y cantidad de entradas,
+                // nunca nombres, seriales ni datos del titular.
+                log.info(
+                        "CERT_DIAG stage=ALIAS_NOT_FOUND configuredLength={} keyEntryCount={} candidateLengths={}",
+                        limpio.length(), claves, longitudes);
+
+                throw new CertificadoFirmaInvalidoException(
+                        "El PKCS#12 no tiene ninguna entrada de clave con el alias \""
+                                + limpio + "\".");
             }
 
             List<String> candidatos = new ArrayList<>();
             Enumeration<String> alias = almacen.aliases();
+
             while (alias.hasMoreElements()) {
                 String actual = alias.nextElement();
+
                 if (almacen.isKeyEntry(actual)) {
                     candidatos.add(actual);
                 }
             }
+
             if (candidatos.isEmpty()) {
                 throw new CertificadoFirmaInvalidoException(
                         "El PKCS#12 no contiene ninguna entrada con clave privada.");
             }
+
             if (candidatos.size() > 1) {
                 throw new CertificadoFirmaInvalidoException(
-                        "El PKCS#12 contiene " + candidatos.size() + " claves; indique cual usar "
-                                + "con SRI_CERT_ALIAS.");
+                        "El PKCS#12 contiene " + candidatos.size()
+                                + " claves; indique cual usar con SRI_CERT_ALIAS.");
             }
+
             return candidatos.get(0);
+
         } catch (GeneralSecurityException e) {
-            throw new CertificadoFirmaInvalidoException("No se pudieron leer los alias del PKCS#12.", e);
+            throw new CertificadoFirmaInvalidoException(
+                    "No se pudieron leer los alias del PKCS#12.", e);
         }
     }
 
