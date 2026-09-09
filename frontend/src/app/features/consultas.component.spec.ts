@@ -127,7 +127,7 @@ describe('ConsultasComponent (integración ligera: TestBed + HttpTestingControll
     expect(fixture.nativeElement.querySelector('article .actions')).toBeFalsy();
   });
 
-  it('creación: carga perezosa de mascotas/veterinarios al abrir, y POST con los 7 campos reales', () => {
+  it('creación: abrir el formulario NO trae mascotas ni veterinarios de golpe (selectores buscables), y POST con los 7 campos reales', () => {
     crear('ROLE_ADMIN');
     fixture.detectChanges();
     flushListado([]);
@@ -139,8 +139,10 @@ describe('ConsultasComponent (integración ligera: TestBed + HttpTestingControll
     component.abrirCrear();
     fixture.detectChanges();
 
-    httpMock.expectOne((r) => r.url === '/api/mascotas' && r.method === 'GET').flush(paginaCon([]));
-    httpMock.expectOne('/api/usuarios/veterinarios').flush([]);
+    // Auditoría de usabilidad con datos masivos: ya no se cargan todas las
+    // mascotas/veterinarios al abrir el formulario, solo al buscar (2+ caracteres).
+    httpMock.expectNone((r) => r.url === '/api/mascotas');
+    httpMock.expectNone((r) => r.url === '/api/usuarios/veterinarios');
 
     component.form.setValue({
       mascotaId: 7,
@@ -179,8 +181,6 @@ describe('ConsultasComponent (integración ligera: TestBed + HttpTestingControll
       fixture.detectChanges();
       flushListado([]);
       component.abrirCrear();
-      httpMock.expectOne((r) => r.url === '/api/mascotas').flush(paginaCon([]));
-      httpMock.expectOne('/api/usuarios/veterinarios').flush([]);
       fixture.detectChanges();
 
       const input: HTMLInputElement = fixture.nativeElement.querySelector('#f-fechaConsulta');
@@ -215,8 +215,6 @@ describe('ConsultasComponent (integración ligera: TestBed + HttpTestingControll
     fixture.detectChanges();
 
     component.abrirEditar(existente);
-    httpMock.expectOne((r) => r.url === '/api/mascotas').flush(paginaCon([]));
-    httpMock.expectOne('/api/usuarios/veterinarios').flush([]);
     fixture.detectChanges();
 
     const v = component.form.getRawValue();

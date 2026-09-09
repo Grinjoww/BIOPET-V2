@@ -1,12 +1,14 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { ProblemDetailService } from '../core/problem-detail.service';
-import { UsuarioSeleccionable, UsuarioSeleccionableApiService } from '../core/usuario-seleccionable-api.service';
-import { Mascota, MascotaApiService } from './mascota-api.service';
+import { UsuarioSeleccionableApiService } from '../core/usuario-seleccionable-api.service';
+import { MascotaApiService } from './mascota-api.service';
 import {
   DetalleFacturaRequestPayload,
   Factura,
@@ -21,9 +23,15 @@ import {
 import { DatosFacturacion, DatosFacturacionApiService, DatosFacturacionRequestPayload } from './datos-facturacion-api.service';
 import { PageHeaderComponent } from '../shared/page-header/page-header.component';
 import { IconComponent } from '../shared/icons/icon.component';
+import { EntitySearchSelectComponent, OpcionBusqueda } from '../shared/entity-search-select/entity-search-select.component';
 import { etiquetaFormaPago } from './factura-presentacion';
 
-const TAMANIO_PAGINA_SELECTOR_MASCOTAS = 200;
+/** Representación canónica de "consumidor final" que el SRI publica y que
+ *  BIOPET ya acepta sin cambios (TipoIdentificacionSri.CONSUMIDOR_FINAL,
+ *  DatosFacturacionRequest sin validación de formato) -no es un valor
+ *  inventado para esta pantalla, ver informe de auditoría de usabilidad. */
+const CONSUMIDOR_FINAL_IDENTIFICACION = '9999999999999';
+const CONSUMIDOR_FINAL_RAZON_SOCIAL = 'CONSUMIDOR FINAL';
 
 /** Una línea todavía sin guardar en el backend, solo mientras el usuario arma el borrador en esta pantalla. */
 interface LineaEnEdicion {
@@ -64,7 +72,7 @@ interface PagoEnEdicion {
  */
 @Component({
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, PageHeaderComponent, IconComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, PageHeaderComponent, IconComponent, EntitySearchSelectComponent],
   template: `
   <app-page-header
     eyebrow="Facturación"
@@ -87,27 +95,29 @@ interface PagoEnEdicion {
     </div>
 
     <form [formGroup]="datosGeneralesForm" (ngSubmit)="crearBorrador()" novalidate *ngIf="!factura()">
-      <div class="field">
-        <label for="f-usuarioId">Dueño<span class="required-mark" aria-hidden="true">*</span></label>
-        <select id="f-usuarioId" formControlName="usuarioId" [disabled]="cargandoDuenios()" (change)="onDuenioSeleccionado()">
-          <option [ngValue]="null" disabled>
-            {{ cargandoDuenios() ? 'Cargando dueños…' : 'Selecciona un dueño' }}
-          </option>
-          <option *ngFor="let d of duenios()" [ngValue]="d.id">{{ d.nombre }} — {{ d.email }}</option>
-        </select>
-        <p class="field-error" *ngIf="tieneErrorGeneral('usuarioId')">{{ mensajeErrorGeneral('usuarioId') }}</p>
-      </div>
+      <app-entity-search-select
+        [controlId]="'f-usuarioId'"
+        label="Dueño"
+        [requerido]="true"
+        placeholder="Nombre, email o usuario (mín. 2 caracteres)…"
+        hint="Escriba parte del nombre, el email o el usuario, p. ej. &quot;Jaime&quot;, &quot;admin.demo&quot; o &quot;usuario000201&quot;."
+        [buscar]="buscarDuenios"
+        [seleccionInicial]="duenioSeleccionInicial"
+        (seleccion)="onDuenioSeleccionado($event)">
+      </app-entity-search-select>
+      <p class="field-error" *ngIf="tieneErrorGeneral('usuarioId')">{{ mensajeErrorGeneral('usuarioId') }}</p>
 
-      <div class="field">
-        <label for="f-mascotaId">Mascota (opcional)</label>
-        <select id="f-mascotaId" formControlName="mascotaId" [disabled]="cargandoMascotas() || mascotasDelDuenio().length === 0">
-          <option [ngValue]="null">Sin mascota asociada</option>
-          <option *ngFor="let m of mascotasDelDuenio()" [ngValue]="m.id">{{ m.nombre }} — {{ m.especie }}</option>
-        </select>
-        <p class="field-hint" *ngIf="!cargandoMascotas() && datosGeneralesForm.value.usuarioId && mascotasDelDuenio().length === 0">
-          Este dueño no tiene mascotas registradas todavía.
-        </p>
-      </div>
+      <app-entity-search-select
+        #mascotaSelector
+        [controlId]="'f-mascotaId'"
+        label="Mascota (opcional)"
+        [disabled]="!datosGeneralesForm.value.usuarioId"
+        placeholder="Nombre de la mascota (mín. 2 caracteres)…"
+        [hint]="datosGeneralesForm.value.usuarioId ? '' : 'Selecciona primero un dueño.'"
+        [buscar]="buscarMascotasDelDuenio"
+        [seleccionInicial]="mascotaSeleccionInicial"
+        (seleccion)="onMascotaSeleccionada($event)">
+      </app-entity-search-select>
 
       <div class="field">
         <label for="f-fechaEmision">Fecha de emisión<span class="required-mark" aria-hidden="true">*</span></label>
@@ -185,11 +195,15 @@ interface PagoEnEdicion {
             <option value="IDENTIFICACION_EXTERIOR">Identificación del exterior</option>
           </select>
         </div>
-        <div class="field">
+        <p class="field-hint" *ngIf="esConsumidorFinal()">
+          Consumidor final: se registrará con la identificación y razón social estándar del SRI
+          ({{ CONSUMIDOR_FINAL_IDENTIFICACION }} · {{ CONSUMIDOR_FINAL_RAZON_SOCIAL }}). No hace falta escribir estos datos.
+        </p>
+        <div class="field" *ngIf="!esConsumidorFinal()">
           <label for="c-identificacion">Identificación<span class="required-mark" aria-hidden="true">*</span></label>
           <input id="c-identificacion" type="text" formControlName="identificacion" />
         </div>
-        <div class="field">
+        <div class="field" *ngIf="!esConsumidorFinal()">
           <label for="c-razonSocial">Razón social / Nombres<span class="required-mark" aria-hidden="true">*</span></label>
           <input id="c-razonSocial" type="text" formControlName="razonSocial" />
         </div>
@@ -365,13 +379,11 @@ export class FacturaNuevaComponent implements OnInit {
   factura = signal<Factura | null>(null);
   creandoBorrador = signal(false);
 
-  duenios = signal<UsuarioSeleccionable[]>([]);
-  cargandoDuenios = signal(false);
   duenioSeleccionadoNombre = '';
-
-  todasLasMascotas: Mascota[] = [];
-  mascotasDelDuenio = signal<Mascota[]>([]);
-  cargandoMascotas = signal(false);
+  private duenioElegido: OpcionBusqueda | null = null;
+  duenioSeleccionInicial: OpcionBusqueda | null = null;
+  mascotaSeleccionInicial: OpcionBusqueda | null = null;
+  @ViewChild('mascotaSelector') private mascotaSelector?: EntitySearchSelectComponent;
 
   datosGeneralesForm = this.fb.group({
     usuarioId: [null as number | null, [Validators.required, Validators.min(1)]],
@@ -380,6 +392,8 @@ export class FacturaNuevaComponent implements OnInit {
   });
 
   // ---------- Comprador ----------
+  readonly CONSUMIDOR_FINAL_IDENTIFICACION = CONSUMIDOR_FINAL_IDENTIFICACION;
+  readonly CONSUMIDOR_FINAL_RAZON_SOCIAL = CONSUMIDOR_FINAL_RAZON_SOCIAL;
   datosFacturacion = signal<DatosFacturacion[]>([]);
   cargandoDatosFacturacion = signal(false);
   guardandoComprador = signal(false);
@@ -418,9 +432,9 @@ export class FacturaNuevaComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.cargarDuenios();
-    this.cargarMascotas();
     this.cargarConceptos();
+    this.onTipoIdentificacionCambiado(this.compradorForm.value.tipoIdentificacion ?? 'CEDULA');
+    this.compradorForm.get('tipoIdentificacion')!.valueChanges.subscribe((tipo) => this.onTipoIdentificacionCambiado(tipo));
   }
 
   private hoyIso(): string {
@@ -429,29 +443,77 @@ export class FacturaNuevaComponent implements OnInit {
 
   // ---------- Paso 1 ----------
 
-  private cargarDuenios(): void {
-    this.cargandoDuenios.set(true);
-    this.usuarioSeleccionableApi.listarDuenios().subscribe({
-      next: (res) => {
-        this.duenios.set(res ?? []);
-        this.cargandoDuenios.set(false);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.cargandoDuenios.set(false);
-        this.error.set(this.problemDetail.mensaje(err));
-      },
-    });
+  /**
+   * Búsqueda real contra GET /api/usuarios/duenios?q=...&size=... (paginada
+   * en el backend, ver UsuarioController). Ya NO se cargan los ~1.800
+   * dueños activos de una sola vez -auditoría de usabilidad con datos
+   * masivos-: 15 resultados como máximo por tecleo, con debounce/mínimo de
+   * caracteres resueltos dentro de app-entity-search-select.
+   */
+  buscarDuenios = (q: string): Observable<OpcionBusqueda[]> =>
+    this.usuarioSeleccionableApi
+      .buscarDuenios(q, 0, 15)
+      .pipe(map((res) => res.content.map((u) => ({ id: u.id, principal: u.nombre, secundario: u.email }))));
+
+  /**
+   * Búsqueda real contra GET /api/mascotas?q=...&duenioId=...&size=...,
+   * acotada al dueño ya elegido en este mismo paso. Antes se precargaban
+   * 200 mascotas (de 10.000) y se filtraban en el cliente por duenioId: con
+   * datos masivos, la mascota real de un dueño casi siempre quedaba fuera
+   * de esas 200 y el campo aparecía vacío aunque sí existiera.
+   */
+  buscarMascotasDelDuenio = (q: string): Observable<OpcionBusqueda[]> => {
+    const duenioId = this.datosGeneralesForm.value.usuarioId;
+    if (!duenioId) return of([]);
+    return this.mascotaApi
+      .buscarSeleccionables(q, 0, 15, duenioId)
+      .pipe(map((res) => res.content.map((m) => ({ id: m.id, principal: m.nombre, secundario: m.especie }))));
+  };
+
+  onDuenioSeleccionado(opcion: OpcionBusqueda | null): void {
+    this.duenioElegido = opcion;
+    this.datosGeneralesForm.patchValue({ usuarioId: opcion?.id ?? null, mascotaId: null });
+    this.datosGeneralesForm.get('usuarioId')?.markAsTouched();
+    // El dueño cambió: la mascota elegida (si la había) ya no aplica.
+    // seleccionInicial=null no basta por sí solo -si ya era null, un
+    // rebinding a null no dispara ngOnChanges-: se limpia también la
+    // selección visible del propio componente hijo directamente.
+    this.mascotaSeleccionInicial = null;
+    this.mascotaSelector?.limpiar();
   }
 
-  private cargarMascotas(): void {
-    this.cargandoMascotas.set(true);
-    this.mascotaApi.listar(0, TAMANIO_PAGINA_SELECTOR_MASCOTAS, 'nombre,asc').subscribe({
-      next: (res) => {
-        this.todasLasMascotas = res.content ?? [];
-        this.cargandoMascotas.set(false);
-      },
-      error: () => this.cargandoMascotas.set(false),
-    });
+  onMascotaSeleccionada(opcion: OpcionBusqueda | null): void {
+    this.datosGeneralesForm.patchValue({ mascotaId: opcion?.id ?? null });
+  }
+
+  // ---------- Paso 2: Consumidor final ----------
+
+  esConsumidorFinal(): boolean {
+    return this.compradorForm.value.tipoIdentificacion === 'CONSUMIDOR_FINAL';
+  }
+
+  /**
+   * Consumidor final NO debe forzar al operador a escribir una
+   * identificación/razón social que no corresponde a ese caso: se autocompletan
+   * con el estándar del SRI y se deshabilitan (siguen viajando en
+   * getRawValue(), que sí incluye controles disabled). Al cambiar a otro
+   * tipo, solo se limpia el valor si vino de este autocompletado -si el
+   * operador ya había escrito algo real antes, no se pisa-.
+   */
+  private onTipoIdentificacionCambiado(tipo: string | null): void {
+    const identificacion = this.compradorForm.get('identificacion')!;
+    const razonSocial = this.compradorForm.get('razonSocial')!;
+    if (tipo === 'CONSUMIDOR_FINAL') {
+      identificacion.setValue(CONSUMIDOR_FINAL_IDENTIFICACION);
+      razonSocial.setValue(CONSUMIDOR_FINAL_RAZON_SOCIAL);
+      identificacion.disable({ emitEvent: false });
+      razonSocial.disable({ emitEvent: false });
+    } else {
+      if (identificacion.value === CONSUMIDOR_FINAL_IDENTIFICACION) identificacion.setValue('');
+      if (razonSocial.value === CONSUMIDOR_FINAL_RAZON_SOCIAL) razonSocial.setValue('');
+      identificacion.enable({ emitEvent: false });
+      razonSocial.enable({ emitEvent: false });
+    }
   }
 
   private cargarConceptos(): void {
@@ -466,12 +528,6 @@ export class FacturaNuevaComponent implements OnInit {
         this.error.set(this.problemDetail.mensaje(err));
       },
     });
-  }
-
-  onDuenioSeleccionado(): void {
-    const id = this.datosGeneralesForm.value.usuarioId;
-    this.mascotasDelDuenio.set(id ? this.todasLasMascotas.filter((m) => m.duenioId === id) : []);
-    this.datosGeneralesForm.patchValue({ mascotaId: null });
   }
 
   tieneErrorGeneral(campo: string): boolean {
@@ -492,7 +548,7 @@ export class FacturaNuevaComponent implements OnInit {
       return;
     }
     const v = this.datosGeneralesForm.getRawValue();
-    this.duenioSeleccionadoNombre = this.duenios().find((d) => d.id === v.usuarioId)?.nombre ?? '';
+    this.duenioSeleccionadoNombre = this.duenioElegido?.principal ?? '';
 
     this.creandoBorrador.set(true);
     this.facturaApi
@@ -569,6 +625,9 @@ export class FacturaNuevaComponent implements OnInit {
         this.datosFacturacion.set([...this.datosFacturacion(), datos]);
         this.mostrarNuevoComprador.set(false);
         this.compradorForm.reset({ tipoIdentificacion: 'CEDULA', identificacion: '', razonSocial: '', direccion: '', telefono: '', emailFacturacion: '' });
+        // reset() no reactiva por sí solo un control que había quedado
+        // disabled (consumidor final): se resincroniza explícitamente.
+        this.onTipoIdentificacionCambiado('CEDULA');
         this.seleccionarComprador(datos);
       },
       error: (err: HttpErrorResponse) => {

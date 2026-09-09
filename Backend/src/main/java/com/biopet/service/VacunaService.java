@@ -16,8 +16,27 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
+/**
+ * Reglas de acceso a datos (fase "corrección final demo local"):
+ * <ul>
+ *   <li>DUENO: solo lee vacunas de sus propias mascotas.</li>
+ *   <li>VETERINARIO: lee y escribe ÚNICAMENTE las vacunas donde él es el
+ *       veterinario asignado -antes leía y podía modificar/eliminar
+ *       CUALQUIER vacuna, de cualquier veterinario, o sin veterinario-.
+ *       Una vacuna sin veterinario asignado no es "de" ningún veterinario:
+ *       queda fuera del alcance de todos ellos hasta que alguien la asigne.</li>
+ *   <li>ADMIN/AUXILIAR: sin restricciones adicionales de datos.</li>
+ * </ul>
+ */
 @Service
 public class VacunaService {
+    /** Ver CitaService: mismo criterio "nunca null" por consistencia, aunque
+     *  fechaAplicacion es DATE (no TIMESTAMPTZ). */
+    private static final LocalDate DESDE_POR_DEFECTO = LocalDate.of(1900, 1, 1);
+    private static final LocalDate HASTA_POR_DEFECTO = LocalDate.of(9999, 12, 31);
+
     private final VacunaRepository vacunaRepository;
     private final MascotaRepository mascotaRepository;
     private final UsuarioRepository usuarioRepository;
@@ -32,27 +51,60 @@ public class VacunaService {
 
     @Transactional(readOnly = true)
     public Page<VacunaResponse> listar(Pageable pageable, String email) {
-        Usuario usuario = usuarioActivo(email);
-        if (usuario.getRol() == Rol.ROLE_DUENO) {
-            return vacunaRepository.findAllByMascota_Duenio_IdAndActivoTrue(usuario.getId(), pageable)
-                    .map(this::toResponse);
-        }
-        return vacunaRepository.findAllByActivoTrue(pageable).map(this::toResponse);
+        return buscarInterno(pageable, email, null, null, null, null, null);
     }
 
+    /**
+     * GET /api/vacunas con filtros server-side (mascota/veterinario/tipo/
+     * rango de fechas).
+     */
+    @Transactional(readOnly = true)
+    public Page<VacunaResponse> buscar(Pageable pageable, String email, Long mascotaId, Long veterinarioIdFiltro,
+                                        String tipo, LocalDate desde, LocalDate hasta) {
+        return buscarInterno(pageable, email, mascotaId, veterinarioIdFiltro, tipo, desde, hasta);
+    }
+
+    private Page<VacunaResponse> buscarInterno(Pageable pageable, String email, Long mascotaId,
+                                                Long veterinarioIdFiltro, String tipo, LocalDate desde, LocalDate hasta) {
+        Usuario usuario = usuarioActivo(email);
+        Long duenioId = null;
+        Long veterinarioId = veterinarioIdFiltro;
+        if (usuario.getRol() == Rol.ROLE_DUENO) {
+            duenioId = usuario.getId();
+        } else if (usuario.getRol() == Rol.ROLE_VETERINARIO) {
+            veterinarioId = usuario.getId();
+        }
+        LocalDate desdeEfectivo = desde != null ? desde : DESDE_POR_DEFECTO;
+        LocalDate hastaEfectiva = hasta != null ? hasta : HASTA_POR_DEFECTO;
+        // Nunca se pasa null a VacunaRepository.buscar: "%" casa con todo
+        // cuando no hay tipo que filtrar (ver el javadoc del repositorio).
+        String patronTipo = (tipo == null || tipo.isBlank()) ? "%" : "%" + tipo.trim() + "%";
+        return vacunaRepository.buscar(mascotaId, veterinarioId, duenioId, patronTipo, desdeEfectivo, hastaEfectiva, pageable)
+                .map(this::toResponse);
+    }
+
+    /**
+     * GET /api/vacunas/mascota/{mascotaId}. DUENO solo si es su mascota
+     * (403 si no); VETERINARIO ve únicamente sus propias vacunas para esa
+     * mascota.
+     */
     @Transactional(readOnly = true)
     public Page<VacunaResponse> listarPorMascota(Long mascotaId, Pageable pageable, String email) {
         Usuario usuario = usuarioActivo(email);
         Mascota mascota = mascotaActiva(mascotaId);
-        verificarAcceso(usuario, mascota);
-        return vacunaRepository.findAllByMascotaIdAndActivoTrue(mascotaId, pageable).map(this::toResponse);
+        if (usuario.getRol() == Rol.ROLE_DUENO && !mascota.getDuenio().getId().equals(usuario.getId())) {
+            throw new AccessDeniedException("No tiene permisos para acceder a esta vacuna.");
+        }
+        Long veterinarioId = usuario.getRol() == Rol.ROLE_VETERINARIO ? usuario.getId() : null;
+        return vacunaRepository.buscar(mascotaId, veterinarioId, null, "%", DESDE_POR_DEFECTO, HASTA_POR_DEFECTO, pageable)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
     public VacunaResponse buscar(Long id, String email) {
         Usuario usuario = usuarioActivo(email);
         Vacuna vacuna = vacunaActiva(id);
-        verificarAcceso(usuario, vacuna.getMascota());
+        verificarAcceso(usuario, vacuna);
         return toResponse(vacuna);
     }
 
@@ -76,7 +128,7 @@ public class VacunaService {
     public VacunaResponse actualizar(Long id, VacunaRequest request, String email) {
         Usuario usuario = usuarioActivo(email);
         Vacuna vacuna = vacunaActiva(id);
-        verificarAcceso(usuario, vacuna.getMascota());
+        verificarAcceso(usuario, vacuna);
 
         Mascota mascota = mascotaActiva(request.mascotaId());
         Usuario veterinario = resolverVeterinario(request.veterinarioId());
@@ -94,7 +146,7 @@ public class VacunaService {
     public void eliminar(Long id, String email) {
         Usuario usuario = usuarioActivo(email);
         Vacuna vacuna = vacunaActiva(id);
-        verificarAcceso(usuario, vacuna.getMascota());
+        verificarAcceso(usuario, vacuna);
         vacuna.setActivo(false);
         vacunaRepository.save(vacuna);
     }
@@ -128,13 +180,21 @@ public class VacunaService {
         return veterinario;
     }
 
-    private boolean tieneAccesoGlobal(Rol rol) {
-        return rol == Rol.ROLE_ADMIN || rol == Rol.ROLE_VETERINARIO || rol == Rol.ROLE_AUXILIAR;
-    }
-
-    private void verificarAcceso(Usuario usuario, Mascota mascota) {
-        if (!tieneAccesoGlobal(usuario.getRol()) && !mascota.getDuenio().getId().equals(usuario.getId())) {
+    /**
+     * GET /api/vacunas/{id} y también gate de escritura (actualizar/
+     * eliminar): DUENO solo si es su mascota, VETERINARIO solo si es SU
+     * vacuna asignada (una sin veterinario asignado no es de nadie),
+     * ADMIN/AUXILIAR sin restricción.
+     */
+    private void verificarAcceso(Usuario usuario, Vacuna vacuna) {
+        if (usuario.getRol() == Rol.ROLE_DUENO && !vacuna.getMascota().getDuenio().getId().equals(usuario.getId())) {
             throw new AccessDeniedException("No tiene permisos para acceder a esta vacuna.");
+        }
+        if (usuario.getRol() == Rol.ROLE_VETERINARIO) {
+            Usuario veterinarioAsignado = vacuna.getVeterinario();
+            if (veterinarioAsignado == null || !veterinarioAsignado.getId().equals(usuario.getId())) {
+                throw new AccessDeniedException("No tiene permisos para acceder a esta vacuna.");
+            }
         }
     }
 

@@ -58,11 +58,36 @@ export class MascotaApiService {
 
   constructor(private http: HttpClient) {}
 
-  listar(page: number, size: number, sort = 'id,asc'): Observable<PageResponse<Mascota>> {
-    const params = new HttpParams()
+  /**
+   * `q` opcional (auditoría "demo local", listados): busca por nombre,
+   * expediente ("EXP-000007" o "7") o dueño, reutilizando el MISMO
+   * mecanismo que ya usa app-entity-search-select -ver
+   * MascotaService.buscarSeleccionables-, sin duplicar el endpoint. Orden
+   * por defecto id,desc: la mascota recién creada aparece primero.
+   */
+  listar(page: number, size: number, sort = 'id,desc', q?: string): Observable<PageResponse<Mascota>> {
+    let params = new HttpParams()
       .set('page', page)
       .set('size', size)
       .set('sort', sort);
+    if (q && q.trim().length > 0) params = params.set('q', q.trim());
+    return this.http.get<PageResponse<Mascota>>(this.base, { params });
+  }
+
+  /**
+   * Selector buscable (auditoría de usabilidad con datos masivos): `q` es
+   * OBLIGATORIO aquí -a diferencia de listar()- porque este método existe
+   * solo para alimentar app-entity-search-select, nunca para traer "todas"
+   * las mascotas. `duenioId` es opcional: factura-nueva lo usa para acotar
+   * la búsqueda a las mascotas del dueño ya elegido en el paso 1 (antes se
+   * traían 200 mascotas de golpe y se filtraban en el cliente -con 10.000
+   * mascotas reales, la mayoría de dueños quedaba con "0 resultados"
+   * aunque sí tuvieran mascota-). El backend sigue devolviendo
+   * Page<Mascota> paginado de verdad (ver MascotaService.buscarSeleccionables).
+   */
+  buscarSeleccionables(q: string, page = 0, size = 20, duenioId?: number): Observable<PageResponse<Mascota>> {
+    let params = new HttpParams().set('q', q).set('page', page).set('size', size).set('sort', 'nombre,asc');
+    if (duenioId != null) params = params.set('duenioId', duenioId);
     return this.http.get<PageResponse<Mascota>>(this.base, { params });
   }
 

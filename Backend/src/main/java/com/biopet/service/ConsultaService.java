@@ -18,8 +18,26 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+
+/**
+ * Reglas de acceso a datos (fase "corrección final demo local"):
+ * <ul>
+ *   <li>DUENO: solo lee consultas de sus propias mascotas.</li>
+ *   <li>VETERINARIO: lee y escribe ÚNICAMENTE las consultas donde él es el
+ *       veterinario asignado -antes leía y podía modificar/eliminar
+ *       CUALQUIER consulta, de cualquier veterinario-.</li>
+ *   <li>ADMIN/AUXILIAR: sin restricciones adicionales de datos.</li>
+ * </ul>
+ */
 @Service
 public class ConsultaService {
+    /** Ver CitaService: nunca se pasa null a ConsultaRepository.buscar para
+     *  desde/hasta -Postgres falla al inferir el tipo de un TIMESTAMPTZ NULL
+     *  ligado dos veces en la misma consulta-. */
+    private static final Instant DESDE_POR_DEFECTO = Instant.EPOCH;
+    private static final Instant HASTA_POR_DEFECTO = Instant.parse("9999-12-31T23:59:59Z");
+
     private final ConsultaRepository consultaRepository;
     private final MascotaRepository mascotaRepository;
     private final UsuarioRepository usuarioRepository;
@@ -35,27 +53,55 @@ public class ConsultaService {
     @Cacheable(value = "consultas", key = "#email + '-' + #pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()")
     @Transactional(readOnly = true)
     public Page<ConsultaResponse> listar(Pageable pageable, String email) {
-        Usuario usuario = usuarioActual(email);
-        if (usuario.getRol() == Rol.ROLE_DUENO) {
-            return consultaRepository.findAllByMascota_Duenio_IdAndActivoTrue(usuario.getId(), pageable)
-                    .map(this::toResponse);
-        }
-        return consultaRepository.findAllByActivoTrue(pageable).map(this::toResponse);
+        return buscarInterno(pageable, email, null, null, null, null, null);
     }
 
     /**
-     * GET /api/consultas/mascota/{mascotaId}. Misma regla de propiedad que
-     * el resto del servicio (ROLE_DUENO solo si es su mascota; roles
-     * clínicos sin restricción adicional), aplicada aquí a nivel de
-     * mascota porque puede no existir ninguna Consulta todavía (página
-     * vacía legítima, no un 403).
+     * GET /api/consultas con filtros server-side (mascota/veterinario/texto/
+     * rango de fechas). Sin cache a propósito -texto libre de alta
+     * variabilidad, ver MascotaService.buscarSeleccionables-.
+     */
+    @Transactional(readOnly = true)
+    public Page<ConsultaResponse> buscar(Pageable pageable, String email, Long mascotaId, Long veterinarioIdFiltro,
+                                          String q, Instant desde, Instant hasta) {
+        return buscarInterno(pageable, email, mascotaId, veterinarioIdFiltro, q, desde, hasta);
+    }
+
+    private Page<ConsultaResponse> buscarInterno(Pageable pageable, String email, Long mascotaId,
+                                                  Long veterinarioIdFiltro, String q, Instant desde, Instant hasta) {
+        Usuario usuario = usuarioActual(email);
+        Long duenioId = null;
+        Long veterinarioId = veterinarioIdFiltro;
+        if (usuario.getRol() == Rol.ROLE_DUENO) {
+            duenioId = usuario.getId();
+        } else if (usuario.getRol() == Rol.ROLE_VETERINARIO) {
+            veterinarioId = usuario.getId();
+        }
+        Instant desdeEfectivo = desde != null ? desde : DESDE_POR_DEFECTO;
+        Instant hastaEfectiva = hasta != null ? hasta : HASTA_POR_DEFECTO;
+        // Nunca se pasa null a ConsultaRepository.buscar: "%" casa con todo
+        // cuando no hay texto que filtrar (ver el javadoc del repositorio).
+        String patronTexto = (q == null || q.isBlank()) ? "%" : "%" + q.trim() + "%";
+        return consultaRepository.buscar(mascotaId, veterinarioId, duenioId, patronTexto, desdeEfectivo, hastaEfectiva, pageable)
+                .map(this::toResponse);
+    }
+
+    /**
+     * GET /api/consultas/mascota/{mascotaId}. DUENO solo si es su mascota
+     * (403 si no); VETERINARIO ve únicamente sus propias consultas para esa
+     * mascota (página vacía si nunca la atendió, no 403: la mascota en sí
+     * puede seguir siendo visible para él).
      */
     @Transactional(readOnly = true)
     public Page<ConsultaResponse> listarPorMascota(Long mascotaId, Pageable pageable, String email) {
         Usuario usuario = usuarioActual(email);
         Mascota mascota = mascotaActiva(mascotaId);
-        verificarAccesoMascota(usuario, mascota);
-        return consultaRepository.findAllByMascotaIdAndActivoTrue(mascotaId, pageable).map(this::toResponse);
+        if (usuario.getRol() == Rol.ROLE_DUENO && !mascota.getDuenio().getId().equals(usuario.getId())) {
+            throw new AccessDeniedException("No tiene permisos para acceder a esta consulta.");
+        }
+        Long veterinarioId = usuario.getRol() == Rol.ROLE_VETERINARIO ? usuario.getId() : null;
+        return consultaRepository.buscar(mascotaId, veterinarioId, null, "%", DESDE_POR_DEFECTO, HASTA_POR_DEFECTO, pageable)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -140,21 +186,18 @@ public class ConsultaService {
         return veterinario;
     }
 
-    private void verificarAcceso(Usuario usuario, Consulta consulta) {
-        verificarAccesoMascota(usuario, consulta.getMascota());
-    }
-
     /**
-     * Extraída de verificarAcceso(Usuario, Consulta) para reutilizarla en
-     * listarPorMascota(), donde todavía no hay ninguna Consulta concreta
-     * sobre la que comprobar propiedad (puede haber cero).
+     * GET /api/consultas/{id} y también gate de escritura (actualizar/
+     * eliminar): DUENO solo si es su mascota, VETERINARIO solo si es SU
+     * consulta asignada, ADMIN/AUXILIAR sin restricción. Antes un
+     * VETERINARIO podía leer/modificar/eliminar la consulta de CUALQUIER
+     * otro veterinario -aquí es donde se corrige-.
      */
-    private void verificarAccesoMascota(Usuario usuario, Mascota mascota) {
-        boolean accesoGlobal = usuario.getRol() == Rol.ROLE_ADMIN
-                || usuario.getRol() == Rol.ROLE_VETERINARIO
-                || usuario.getRol() == Rol.ROLE_AUXILIAR;
-        boolean esDuenioDeLaMascota = mascota.getDuenio().getId().equals(usuario.getId());
-        if (!accesoGlobal && !esDuenioDeLaMascota) {
+    private void verificarAcceso(Usuario usuario, Consulta consulta) {
+        if (usuario.getRol() == Rol.ROLE_DUENO && !consulta.getMascota().getDuenio().getId().equals(usuario.getId())) {
+            throw new AccessDeniedException("No tiene permisos para acceder a esta consulta.");
+        }
+        if (usuario.getRol() == Rol.ROLE_VETERINARIO && !consulta.getVeterinario().getId().equals(usuario.getId())) {
             throw new AccessDeniedException("No tiene permisos para acceder a esta consulta.");
         }
     }

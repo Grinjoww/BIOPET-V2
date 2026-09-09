@@ -1,12 +1,12 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AuthService } from '../core/auth.service';
 import { ProblemDetailService } from '../core/problem-detail.service';
 import { humanizarRol, RolBiopet } from '../core/roles';
-import { Usuario, UsuarioApiService, UsuarioRequestPayload } from './usuario-api.service';
+import { EstadoUsuarioFiltro, FiltrosUsuarios, Usuario, UsuarioApiService, UsuarioRequestPayload } from './usuario-api.service';
 import { PageHeaderComponent } from '../shared/page-header/page-header.component';
 import { IconComponent } from '../shared/icons/icon.component';
 import { FocusTrapDirective } from '../shared/focus-trap/focus-trap.directive';
@@ -51,7 +51,7 @@ const ROLES_DISPONIBLES: RolBiopet[] = ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_
  */
 @Component({
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, IconComponent, FocusTrapDirective],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, PageHeaderComponent, IconComponent, FocusTrapDirective],
   template: `
   <app-page-header
     eyebrow="Administración"
@@ -68,7 +68,43 @@ const ROLES_DISPONIBLES: RolBiopet[] = ['ROLE_ADMIN', 'ROLE_VETERINARIO', 'ROLE_
     <button type="button" class="btn btn--ghost btn--sm" (click)="cargar()" [disabled]="cargando()">
       Actualizar
     </button>
+    <button type="button" class="btn btn--secondary btn--sm" (click)="alternarFiltros()" [attr.aria-expanded]="mostrarFiltros()">
+      {{ mostrarFiltros() ? 'Ocultar filtros' : 'Filtros' }}
+    </button>
   </div>
+
+  <!-- ===== Filtros (auditoría de usabilidad con datos masivos: 2.002 cuentas, fase "demo local") ===== -->
+  <section *ngIf="mostrarFiltros()" class="panel" aria-labelledby="filtros-usuarios-titulo">
+    <h2 id="filtros-usuarios-titulo" class="panel__title-inline">Filtros</h2>
+    <div class="toolbar">
+      <div class="field">
+        <label for="f-filtro-texto">Nombre o email</label>
+        <input id="f-filtro-texto" type="text" [(ngModel)]="filtroTexto" [ngModelOptions]="{ standalone: true }" placeholder="p. ej. «Jaime» o «biopet.com»" />
+      </div>
+      <div class="field">
+        <label for="f-filtro-rol">Rol</label>
+        <select id="f-filtro-rol" [(ngModel)]="filtroRol" [ngModelOptions]="{ standalone: true }">
+          <option [ngValue]="null">Todos</option>
+          <option value="ROLE_ADMIN">Administrador</option>
+          <option value="ROLE_VETERINARIO">Veterinario</option>
+          <option value="ROLE_AUXILIAR">Auxiliar</option>
+          <option value="ROLE_DUENO">Dueño</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-filtro-estado">Estado</label>
+        <select id="f-filtro-estado" [(ngModel)]="filtroEstado" [ngModelOptions]="{ standalone: true }">
+          <option value="activo">Activos</option>
+          <option value="inactivo">Inactivos</option>
+          <option value="todos">Todos</option>
+        </select>
+      </div>
+      <div class="field" style="align-self: flex-end;">
+        <button type="button" class="btn btn--primary btn--sm" (click)="aplicarFiltros()">Filtrar</button>
+        <button type="button" class="btn btn--secondary btn--sm" (click)="limpiarFiltros()">Limpiar</button>
+      </div>
+    </div>
+  </section>
 
   <p class="alert alert--danger" role="alert" aria-live="assertive" *ngIf="error()">
     <strong>Error:</strong> {{ error() }}
@@ -282,6 +318,13 @@ export class UsuariosComponent implements OnInit {
   error = signal('');
   mensajeExito = signal('');
 
+  // ---------- Filtros (auditoría de usabilidad con datos masivos, fase "demo local") ----------
+  mostrarFiltros = signal(false);
+  filtroTexto = '';
+  filtroRol: RolBiopet | null = null;
+  filtroEstado: EstadoUsuarioFiltro = 'activo';
+  private filtrosAplicados: FiltrosUsuarios = {};
+
   mostrarFormulario = signal(false);
   editando = signal<Usuario | null>(null);
   guardando = signal(false);
@@ -330,7 +373,7 @@ export class UsuariosComponent implements OnInit {
   cargar(): void {
     this.error.set('');
     this.cargando.set(true);
-    this.api.listar(this.pagina(), TAMANIO_PAGINA).subscribe({
+    this.api.listar(this.pagina(), TAMANIO_PAGINA, this.filtrosAplicados).subscribe({
       next: (res) => {
         this.usuarios.set(res.content ?? []);
         this.totalPaginas.set(res.totalPages ?? 0);
@@ -343,6 +386,29 @@ export class UsuariosComponent implements OnInit {
         this.error.set(this.problemDetail.mensaje(err));
       },
     });
+  }
+
+  alternarFiltros(): void {
+    this.mostrarFiltros.set(!this.mostrarFiltros());
+  }
+
+  aplicarFiltros(): void {
+    this.filtrosAplicados = {
+      q: this.filtroTexto.trim() || undefined,
+      rol: this.filtroRol ?? undefined,
+      estado: this.filtroEstado,
+    };
+    this.pagina.set(0);
+    this.cargar();
+  }
+
+  limpiarFiltros(): void {
+    this.filtroTexto = '';
+    this.filtroRol = null;
+    this.filtroEstado = 'activo';
+    this.filtrosAplicados = {};
+    this.pagina.set(0);
+    this.cargar();
   }
 
   irAPagina(nuevaPagina: number): void {

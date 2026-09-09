@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class MascotaService {
@@ -44,6 +46,65 @@ public class MascotaService {
             return mascotaRepository.findAllByDuenioIdAndActivoTrue(usuario.getId(), pageable).map(this::toResponse);
         }
         return mascotaRepository.findAllByActivoTrue(pageable).map(this::toResponse);
+    }
+
+    /**
+     * Selector BUSCABLE de "mascota" al crear/editar una cita, consulta,
+     * vacuna o factura (mascotaId) -auditoría de usabilidad con datos
+     * masivos: con 10.000 mascotas, esos formularios cargaban solo las
+     * primeras 200 (alfabéticas) y el resto quedaba, en la práctica,
+     * imposible de elegir. Método SEPARADO de {@link #listar} -y sin
+     * {@code @Cacheable}- a propósito: es texto libre de alta variabilidad,
+     * cachearlo no aportaría hit-rate real y arriesgaría devolver resultados
+     * de una búsqueda anterior para otra.
+     *
+     * <p>{@code duenioIdFiltro} es opcional y solo lo usa ADMIN/VETERINARIO/
+     * AUXILIAR (ver factura-nueva: tras elegir dueño, la mascota se busca YA
+     * acotada a ese dueño -antes se traían 200 mascotas de golpe y se
+     * filtraban en el cliente-). Para ROLE_DUENO no cambia nada: sigue
+     * viendo solo lo suyo sin importar qué llegue en ese parámetro.
+     */
+    @Transactional(readOnly = true)
+    public Page<MascotaResponse> buscarSeleccionables(Pageable pageable, String email, String q, Long duenioIdFiltro) {
+        Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado"));
+
+        String texto = (q == null || q.isBlank()) ? null : q.trim();
+        Long idExacto = idSiEsNumerico(texto);
+
+        if (usuario.getRol() == Rol.ROLE_DUENO) {
+            return mascotaRepository.buscarActivasPorDuenio(usuario.getId(), texto, idExacto, pageable)
+                    .map(this::toResponse);
+        }
+        if (duenioIdFiltro != null) {
+            return mascotaRepository.buscarActivasPorDuenio(duenioIdFiltro, texto, idExacto, pageable)
+                    .map(this::toResponse);
+        }
+        return mascotaRepository.buscarActivas(texto, idExacto, pageable).map(this::toResponse);
+    }
+
+    /** Permite buscar mascotas por id exacto cuando el texto escrito es puramente numérico (p.ej. "5" o el id del expediente). */
+    /**
+     * Reconoce tanto un id "pelado" (p.ej. "7") como el expediente visual
+     * que ve el usuario en pantalla (formatearExpediente en el frontend:
+     * "EXP-000007") -listado de mascotas, fase "demo local": buscar por
+     * expediente debe funcionar tal cual se muestra, no solo con el id crudo-.
+     */
+    private static final Pattern PATRON_ID_O_EXPEDIENTE = Pattern.compile("(?i)^(?:exp-?)?0*(\\d+)$");
+
+    private Long idSiEsNumerico(String texto) {
+        if (texto == null) {
+            return null;
+        }
+        Matcher m = PATRON_ID_O_EXPEDIENTE.matcher(texto.trim());
+        if (!m.matches()) {
+            return null;
+        }
+        try {
+            return Long.valueOf(m.group(1));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @Transactional(readOnly = true)

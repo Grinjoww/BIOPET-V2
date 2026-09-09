@@ -25,6 +25,16 @@ export interface UsuarioRequestPayload {
   rol: RolBiopet;
 }
 
+/** Estado de cuenta filtrable en GET /api/usuarios — reflejan el @RequestParam "estado" de UsuarioController. */
+export type EstadoUsuarioFiltro = 'activo' | 'inactivo' | 'todos';
+
+/** Filtros opcionales de GET /api/usuarios. */
+export interface FiltrosUsuarios {
+  q?: string; // nombre o email
+  rol?: RolBiopet;
+  estado?: EstadoUsuarioFiltro; // por defecto "activo" si se omite (mismo comportamiento de siempre)
+}
+
 /**
  * Encapsula el CRUD administrativo real de /api/usuarios (ADMIN
  * únicamente — @PreAuthorize("hasRole('ADMIN')") en los 4 métodos).
@@ -39,8 +49,11 @@ export class UsuarioApiService {
 
   constructor(private http: HttpClient) {}
 
-  listar(page: number, size: number, sort = 'nombre,asc'): Observable<PageResponse<Usuario>> {
-    const params = new HttpParams().set('page', page).set('size', size).set('sort', sort);
+  listar(page: number, size: number, filtros: FiltrosUsuarios = {}, sort = 'nombre,asc'): Observable<PageResponse<Usuario>> {
+    let params = new HttpParams().set('page', page).set('size', size).set('sort', sort);
+    if (filtros.q) params = params.set('q', filtros.q);
+    if (filtros.rol) params = params.set('rol', filtros.rol);
+    if (filtros.estado) params = params.set('estado', filtros.estado);
     return this.http.get<PageResponse<Usuario>>(this.base, { params });
   }
 

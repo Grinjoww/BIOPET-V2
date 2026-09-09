@@ -35,13 +35,24 @@ export interface CitaRequestPayload {
   motivo: string | null;
 }
 
+/** Filtros opcionales de GET /api/citas — reflejan los @RequestParam de CitaController. */
+export interface FiltrosCitas {
+  mascotaId?: number;
+  veterinarioId?: number;
+  estado?: EstadoCita;
+  desde?: string; // ISO Instant (UTC)
+  hasta?: string; // ISO Instant (UTC)
+}
+
 /**
  * Encapsula /api/citas completo: el listado general paginado y el CRUD
  * (Citas V2), además de GET /mascota/{id} que ya usaba la ficha de
- * mascota (solo lectura, sin cambios). El filtrado por dueño (ROLE_DUENO
- * ve solo citas de sus propias mascotas) y la restricción de escritura
- * de ROLE_VETERINARIO (solo sus propias citas asignadas) ocurren en el
- * servidor (CitaService); este servicio nunca reimplementa esas reglas.
+ * mascota (solo lectura, sin cambios). El alcance por rol (ROLE_DUENO ve
+ * solo citas de sus propias mascotas; ROLE_VETERINARIO ve y edita
+ * ÚNICAMENTE sus propias citas asignadas, tanto en listado como en
+ * lectura/escritura individual -corrección "demo local", fase de roles-)
+ * ocurre en el servidor (CitaService); este servicio nunca reimplementa
+ * esas reglas ni las filtra de nuevo en el cliente.
  */
 @Injectable({ providedIn: 'root' })
 export class CitaApiService {
@@ -49,8 +60,13 @@ export class CitaApiService {
 
   constructor(private http: HttpClient) {}
 
-  listar(page: number, size: number, sort = 'fechaHora,desc'): Observable<PageResponse<Cita>> {
-    const params = new HttpParams().set('page', page).set('size', size).set('sort', sort);
+  listar(page: number, size: number, filtros: FiltrosCitas = {}, sort = 'fechaHora,desc'): Observable<PageResponse<Cita>> {
+    let params = new HttpParams().set('page', page).set('size', size).set('sort', sort);
+    if (filtros.mascotaId != null) params = params.set('mascotaId', filtros.mascotaId);
+    if (filtros.veterinarioId != null) params = params.set('veterinarioId', filtros.veterinarioId);
+    if (filtros.estado) params = params.set('estado', filtros.estado);
+    if (filtros.desde) params = params.set('desde', filtros.desde);
+    if (filtros.hasta) params = params.set('hasta', filtros.hasta);
     return this.http.get<PageResponse<Cita>>(this.base, { params });
   }
 

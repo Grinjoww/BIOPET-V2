@@ -280,6 +280,91 @@ class CitaControllerTest {
     }
 
     @Test
+    void veterinarioSoloVeSusPropiasCitasEnListadoPrincipal_YAdminVeAmbos() throws Exception {
+        // Corrección "demo local" (fase de roles): ROLE_VETERINARIO debe ver
+        // únicamente las citas donde él es el veterinario asignado, incluso
+        // en el listado principal /api/citas (antes veía TODAS).
+        Long otraMascotaId = crearMascotaYObtenerId(duenoId, "Michi");
+        Long otroVeterinarioId = crearUsuarioConRolYObtenerId(
+                "vet.otro@biopet.com", "ClaveVet456*", Rol.ROLE_VETERINARIO
+        );
+        crearCitaYObtenerId(mascotaId, veterinarioId);
+        crearCitaYObtenerId(otraMascotaId, otroVeterinarioId);
+
+        String tokenVetPrincipal = extractCookieValue(
+                iniciarSesion("vet.principal@biopet.com", "ClaveVet123*"), "access_token"
+        );
+        mockMvc.perform(get("/api/citas").header("Authorization", "Bearer " + tokenVetPrincipal))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].veterinarioId").value(veterinarioId));
+
+        String tokenVetOtro = extractCookieValue(
+                iniciarSesion("vet.otro@biopet.com", "ClaveVet456*"), "access_token"
+        );
+        mockMvc.perform(get("/api/citas").header("Authorization", "Bearer " + tokenVetOtro))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].veterinarioId").value(otroVeterinarioId));
+
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token"
+        );
+        mockMvc.perform(get("/api/citas").header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void filtrarCitasPorVeterinarioMascotaEstadoYRangoDeFechas() throws Exception {
+        Long otraMascotaId = crearMascotaYObtenerId(duenoId, "Michi");
+        Long otroVeterinarioId = crearUsuarioConRolYObtenerId(
+                "vet.filtro@biopet.com", "ClaveVet789*", Rol.ROLE_VETERINARIO
+        );
+        Long citaId1 = crearCitaYObtenerId(mascotaId, veterinarioId);
+        crearCitaYObtenerId(otraMascotaId, otroVeterinarioId);
+
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token"
+        );
+
+        mockMvc.perform(get("/api/citas")
+                        .param("veterinarioId", veterinarioId.toString())
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(citaId1));
+
+        mockMvc.perform(get("/api/citas")
+                        .param("mascotaId", mascotaId.toString())
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(citaId1));
+
+        mockMvc.perform(get("/api/citas")
+                        .param("estado", "PROGRAMADA")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2));
+
+        mockMvc.perform(get("/api/citas")
+                        .param("estado", "CANCELADA")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
+
+        // Rango de fechas: ambas citas se crean 2 días en el futuro (ver
+        // crearCitaYObtenerId), así que una ventana de "hoy hasta hace 1 año"
+        // no debe incluir ninguna.
+        mockMvc.perform(get("/api/citas")
+                        .param("hasta", Instant.now().toString())
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
     void auxiliarListaCitasPorMascota() throws Exception {
         crearCitaYObtenerId(mascotaId, veterinarioId);
         crearUsuarioConRol("aux.mascota@biopet.com", "ClaveAux123*", Rol.ROLE_AUXILIAR);

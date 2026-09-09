@@ -15,8 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 /**
  * CRUD administrativo de usuarios (POST/PUT/DELETE /api/usuarios), restringido a
  * ROLE_ADMIN a nivel de {@code UsuarioController} (@PreAuthorize). No reemplaza ni
@@ -37,6 +35,22 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public Page<UsuarioResponse> listar(Pageable pageable) {
         return usuarioRepository.findAllByActivoTrue(pageable).map(this::toResponse);
+    }
+
+    /**
+     * GET /api/usuarios con filtros server-side (nombre/email, rol, estado)
+     * -auditoría de usabilidad con datos masivos, fase "demo local": con
+     * 2.002 cuentas hacía falta búsqueda-. {@code activo} es null cuando el
+     * cliente no elige un estado concreto -en ese caso se preserva el
+     * comportamiento de siempre de {@link #listar}: solo cuentas activas-,
+     * nunca "todas" implícitamente.
+     */
+    @Transactional(readOnly = true)
+    public Page<UsuarioResponse> buscar(Pageable pageable, String q, Rol rol, Boolean activo) {
+        // Nunca se pasa null a UsuarioRepository.buscarAdmin: "%" casa con
+        // todo cuando no hay texto que filtrar (ver el javadoc del repositorio).
+        String patronTexto = (q == null || q.isBlank()) ? "%" : "%" + q.trim() + "%";
+        return usuarioRepository.buscarAdmin(activo, rol, patronTexto, pageable).map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -117,27 +131,42 @@ public class UsuarioService {
     }
 
     /**
-     * Solo lectura, para poblar el selector de "dueño" al crear/editar una
-     * mascota (MascotaRequest.duenioId). Accesible a ADMIN/VETERINARIO/AUXILIAR
-     * vía UsuarioController; ROLE_DUENO no lo necesita porque nunca crea
-     * mascotas.
+     * Selector BUSCABLE de "dueño" al crear/editar una mascota o una factura
+     * (duenioId/usuarioId). Accesible a ADMIN/VETERINARIO/AUXILIAR vía
+     * UsuarioController; ROLE_DUENO no lo necesita porque nunca elige un
+     * dueño distinto de sí mismo.
+     *
+     * <p>SIEMPRE paginado -con ~1.800 dueños en la base de 1M, cargar todos de
+     * una vez en un {@code <select>} era exactamente el problema de usabilidad
+     * que esto corrige (auditoría "usabilidad con datos masivos")-. {@code q}
+     * es opcional: sin él, se sigue paginando (nunca las ~1.800 filas de
+     * golpe), solo que sin filtrar por texto -el frontend nunca lo llama sin
+     * {@code q} salvo para mostrar el estado inicial vacío del buscador.
      */
     @Transactional(readOnly = true)
-    public List<UsuarioSeleccionableResponse> listarDuenios() {
-        return usuarioRepository.findAllByRolAndActivoTrueOrderByNombreAsc(Rol.ROLE_DUENO).stream()
-                .map(this::toSeleccionableResponse)
-                .toList();
+    public Page<UsuarioSeleccionableResponse> listarDuenios(String q, Pageable pageable) {
+        return usuarioRepository.buscarPorRolActivo(Rol.ROLE_DUENO, patronDeTexto(q), pageable)
+                .map(this::toSeleccionableResponse);
     }
 
     /**
-     * Solo lectura, para poblar el selector de "veterinario" al crear/editar
-     * una cita, consulta o vacuna (veterinarioId).
+     * Selector BUSCABLE de "veterinario" al crear/editar una cita, consulta o
+     * vacuna (veterinarioId). Mismo criterio de paginación que
+     * {@link #listarDuenios}.
      */
     @Transactional(readOnly = true)
-    public List<UsuarioSeleccionableResponse> listarVeterinarios() {
-        return usuarioRepository.findAllByRolAndActivoTrueOrderByNombreAsc(Rol.ROLE_VETERINARIO).stream()
-                .map(this::toSeleccionableResponse)
-                .toList();
+    public Page<UsuarioSeleccionableResponse> listarVeterinarios(String q, Pageable pageable) {
+        return usuarioRepository.buscarPorRolActivo(Rol.ROLE_VETERINARIO, patronDeTexto(q), pageable)
+                .map(this::toSeleccionableResponse);
+    }
+
+    /**
+     * Nunca se pasa null a un {@code lower(:patron)} de JPQL -ver el
+     * javadoc de UsuarioRepository.buscarPorRolActivo-: "%" casa con todo
+     * cuando no hay texto que filtrar.
+     */
+    private static String patronDeTexto(String q) {
+        return (q == null || q.isBlank()) ? "%" : "%" + q.trim() + "%";
     }
 
     private UsuarioResponse toResponse(Usuario usuario) {

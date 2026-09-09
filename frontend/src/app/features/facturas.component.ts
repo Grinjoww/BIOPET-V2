@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
@@ -6,7 +6,10 @@ import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../core/auth.service';
 import { ProblemDetailService } from '../core/problem-detail.service';
-import { UsuarioSeleccionable, UsuarioSeleccionableApiService } from '../core/usuario-seleccionable-api.service';
+import { UsuarioSeleccionableApiService } from '../core/usuario-seleccionable-api.service';
+import { EntitySearchSelectComponent, OpcionBusqueda } from '../shared/entity-search-select/entity-search-select.component';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { EstadoFactura, Factura, FacturaApiService, FiltrosFacturas } from './factura-api.service';
 import { chipClaseEstadoFactura, chipClaseEstadoRecepcion, etiquetaEstadoFactura, etiquetaEstadoRecepcion, numeroComprobante } from './factura-presentacion';
 import { PageHeaderComponent } from '../shared/page-header/page-header.component';
@@ -34,7 +37,7 @@ const FILAS_SKELETON = 4;
  */
 @Component({
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, IconComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, IconComponent, EntitySearchSelectComponent],
   template: `
   <app-page-header
     eyebrow="Facturación"
@@ -89,11 +92,16 @@ const FILAS_SKELETON = 4;
       </div>
 
       <div class="field" *ngIf="esAdmin || puedeCrear">
-        <label for="f-duenio">Dueño</label>
-        <select id="f-duenio" formControlName="usuarioId" [disabled]="cargandoDuenios()">
-          <option [ngValue]="null">Todos los dueños</option>
-          <option *ngFor="let d of duenios()" [ngValue]="d.id">{{ d.nombre }} — {{ d.email }}</option>
-        </select>
+        <app-entity-search-select
+          #duenioFiltroSelector
+          [controlId]="'f-duenio'"
+          label="Dueño"
+          placeholder="Nombre, email o usuario (mín. 2 caracteres)…"
+          hint="Déjalo vacío para ver facturas de todos los dueños."
+          [buscar]="buscarDuenios"
+          [seleccionInicial]="duenioFiltroSeleccionInicial"
+          (seleccion)="onDuenioFiltroSeleccionado($event)">
+        </app-entity-search-select>
       </div>
 
       <div class="modal-panel__actions">
@@ -213,9 +221,8 @@ export class FacturasComponent implements OnInit {
   mostrarFiltros = signal(false);
   filtrosActivos: FiltrosFacturas = {};
 
-  duenios = signal<UsuarioSeleccionable[]>([]);
-  cargandoDuenios = signal(false);
-  private dueniosCargados = false;
+  duenioFiltroSeleccionInicial: OpcionBusqueda | null = null;
+  @ViewChild('duenioFiltroSelector') private duenioFiltroSelector?: EntitySearchSelectComponent;
 
   filtrosForm = this.fb.group({
     estado: [null as EstadoFactura | null],
@@ -303,22 +310,21 @@ export class FacturasComponent implements OnInit {
   // ---------- Filtros ----------
 
   alternarFiltros(): void {
-    const nuevoValor = !this.mostrarFiltros();
-    this.mostrarFiltros.set(nuevoValor);
-    if (nuevoValor) this.cargarDuenios();
+    this.mostrarFiltros.set(!this.mostrarFiltros());
   }
 
-  private cargarDuenios(forzar = false): void {
-    if (this.dueniosCargados && !forzar) return;
-    this.cargandoDuenios.set(true);
-    this.usuarioSeleccionableApi.listarDuenios().subscribe({
-      next: (res) => {
-        this.duenios.set(res ?? []);
-        this.dueniosCargados = true;
-        this.cargandoDuenios.set(false);
-      },
-      error: () => this.cargandoDuenios.set(false),
-    });
+  /**
+   * Búsqueda real contra GET /api/usuarios/duenios?q=...&size=... (paginada
+   * en el backend) — ya NO se cargan todos los dueños activos al abrir el
+   * panel de filtros.
+   */
+  buscarDuenios = (q: string): Observable<OpcionBusqueda[]> =>
+    this.usuarioSeleccionableApi
+      .buscarDuenios(q, 0, 15)
+      .pipe(map((res) => res.content.map((u) => ({ id: u.id, principal: u.nombre, secundario: u.email }))));
+
+  onDuenioFiltroSeleccionado(opcion: OpcionBusqueda | null): void {
+    this.filtrosForm.patchValue({ usuarioId: opcion?.id ?? null });
   }
 
   aplicarFiltros(): void {
@@ -334,6 +340,10 @@ export class FacturasComponent implements OnInit {
 
   limpiarFiltros(): void {
     this.filtrosForm.reset({ estado: null, fechaEmision: '', usuarioId: null });
+    // seleccionInicial=null no basta por sí solo si ya era null (no dispara
+    // ngOnChanges): se limpia también la selección visible directamente.
+    this.duenioFiltroSeleccionInicial = null;
+    this.duenioFiltroSelector?.limpiar();
     this.filtrosActivos = {};
     this.pagina.set(0);
     this.cargar();

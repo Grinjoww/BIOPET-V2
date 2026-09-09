@@ -852,6 +852,148 @@ class MascotaControllerTest {
         return usuarioRepository.save(guardado).getId();
     }
 
+    @Test
+    void qFiltraPorNombreDeMascotaOPorNombreDelDueño() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"jaime@biopet.com","password":"ClaveCorrecta123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+        String tokenAdmin = extractCookieValue(loginResult, "access_token");
+
+        Long dueno1 = registrarDuenoYObtenerId("q.dueno.firulais@biopet.com", "ClaveDueno123*");
+        Long dueno2 = registrarDuenoYObtenerId("q.dueno.michi@biopet.com", "ClaveDueno123*");
+        crearMascota(tokenAdmin, dueno1, "Firulais");
+        crearMascota(tokenAdmin, dueno2, "Michi");
+
+        // Por nombre de la mascota.
+        mockMvc.perform(get("/api/mascotas").param("q", "firula")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].nombre").value("Firulais"));
+
+        // Sin resultados: array vacío, nunca error.
+        mockMvc.perform(get("/api/mascotas").param("q", "noexiste123")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(0));
+    }
+
+    @Test
+    void qBuscaPorExpedienteFormateadoOPorIdCrudo() throws Exception {
+        // Corrección "demo local" (fase de listados): la pantalla Mascotas
+        // muestra el expediente como "EXP-000007" (formatearExpediente en el
+        // frontend); buscar exactamente ESE texto debe encontrar la mascota,
+        // no solo el id crudo.
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"jaime@biopet.com","password":"ClaveCorrecta123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+        String tokenAdmin = extractCookieValue(loginResult, "access_token");
+
+        Long duenoId = registrarDuenoYObtenerId("expediente.dueno@biopet.com", "ClaveDueno123*");
+        Long mascotaId = crearMascotaYObtenerId(tokenAdmin, duenoId, "Toby");
+        String expediente = "EXP-" + String.format("%06d", mascotaId);
+
+        mockMvc.perform(get("/api/mascotas").param("q", expediente)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(mascotaId));
+
+        mockMvc.perform(get("/api/mascotas").param("q", mascotaId.toString())
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(mascotaId));
+    }
+
+    @Test
+    void listadoSinOrdenExplicitoMuestraLaMasRecientePrimero() throws Exception {
+        // Corrección "demo local" (fase de listados): antes el orden por
+        // defecto era id ASC -una mascota recién creada quedaba al final del
+        // listado, invisible sin paginar hasta el fondo-.
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"jaime@biopet.com","password":"ClaveCorrecta123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+        String tokenAdmin = extractCookieValue(loginResult, "access_token");
+
+        Long duenoId = registrarDuenoYObtenerId("orden.dueno@biopet.com", "ClaveDueno123*");
+        crearMascotaYObtenerId(tokenAdmin, duenoId, "Vieja");
+        Long masRecienteId = crearMascotaYObtenerId(tokenAdmin, duenoId, "Nueva");
+
+        mockMvc.perform(get("/api/mascotas").header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(masRecienteId));
+    }
+
+    @Test
+    void qEsOpcionalYSinElSigueDevolviendoElListadoPaginadoDeSiempre() throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"jaime@biopet.com","password":"ClaveCorrecta123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+        String tokenAdmin = extractCookieValue(loginResult, "access_token");
+        Long dueno = registrarDuenoYObtenerId("q.dueno.sinfiltro@biopet.com", "ClaveDueno123*");
+        crearMascota(tokenAdmin, dueno, "SinFiltro");
+
+        mockMvc.perform(get("/api/mascotas")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
+    }
+
+    @Test
+    void qConDuenioIdAcotaLaBusquedaAUnSoloDueño() throws Exception {
+        // factura-nueva: tras elegir dueño, la mascota se busca YA acotada a
+        // ese dueño (auditoría de usabilidad con datos masivos) -antes se
+        // precargaban 200 mascotas y se filtraban en el cliente-.
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"jaime@biopet.com","password":"ClaveCorrecta123*"}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+        String tokenAdmin = extractCookieValue(loginResult, "access_token");
+
+        Long dueno1 = registrarDuenoYObtenerId("q.duenioid.uno@biopet.com", "ClaveDueno123*");
+        Long dueno2 = registrarDuenoYObtenerId("q.duenioid.dos@biopet.com", "ClaveDueno123*");
+        crearMascota(tokenAdmin, dueno1, "Rocky");
+        crearMascota(tokenAdmin, dueno2, "Rocky"); // mismo nombre, dueño distinto: debe distinguirlos
+
+        mockMvc.perform(get("/api/mascotas").param("q", "rocky").param("duenioId", dueno1.toString())
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].duenioId").value(dueno1));
+
+        mockMvc.perform(get("/api/mascotas").param("q", "rocky").param("duenioId", dueno2.toString())
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].duenioId").value(dueno2));
+
+        // Sin duenioId: la búsqueda vuelve a ser global (ambos "Rocky").
+        mockMvc.perform(get("/api/mascotas").param("q", "rocky")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2));
+    }
+
     private Long crearMascotaYObtenerId(
             String tokenAdmin,
             Long duenioId,

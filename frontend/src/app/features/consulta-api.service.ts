@@ -31,13 +31,23 @@ export interface ConsultaRequestPayload {
   observaciones: string | null;
 }
 
+/** Filtros opcionales de GET /api/consultas — reflejan los @RequestParam de ConsultaController. */
+export interface FiltrosConsultas {
+  mascotaId?: number;
+  veterinarioId?: number;
+  q?: string; // busca en motivo y diagnóstico
+  desde?: string; // ISO Instant (UTC)
+  hasta?: string; // ISO Instant (UTC)
+}
+
 /**
  * Encapsula /api/consultas completo: el registro clínico general
  * (Consultas V2) y GET /mascota/{id} que ya usaba la pestaña "Consultas"
- * de la ficha de mascota (solo lectura, sin cambios). El filtrado por
- * dueño (ROLE_DUENO ve solo consultas de sus propias mascotas —
- * Corrección A) ocurre en el servidor (ConsultaService.listar); este
- * servicio nunca reimplementa ese filtro en el cliente.
+ * de la ficha de mascota (solo lectura, sin cambios). El alcance por rol
+ * (ROLE_DUENO ve solo consultas de sus propias mascotas — Corrección A;
+ * ROLE_VETERINARIO ve y edita ÚNICAMENTE sus propias consultas asignadas
+ * -corrección "demo local", fase de roles-) ocurre en el servidor
+ * (ConsultaService); este servicio nunca reimplementa esas reglas.
  */
 @Injectable({ providedIn: 'root' })
 export class ConsultaApiService {
@@ -45,8 +55,13 @@ export class ConsultaApiService {
 
   constructor(private http: HttpClient) {}
 
-  listar(page: number, size: number, sort = 'fechaConsulta,desc'): Observable<PageResponse<Consulta>> {
-    const params = new HttpParams().set('page', page).set('size', size).set('sort', sort);
+  listar(page: number, size: number, filtros: FiltrosConsultas = {}, sort = 'fechaConsulta,desc'): Observable<PageResponse<Consulta>> {
+    let params = new HttpParams().set('page', page).set('size', size).set('sort', sort);
+    if (filtros.mascotaId != null) params = params.set('mascotaId', filtros.mascotaId);
+    if (filtros.veterinarioId != null) params = params.set('veterinarioId', filtros.veterinarioId);
+    if (filtros.q) params = params.set('q', filtros.q);
+    if (filtros.desde) params = params.set('desde', filtros.desde);
+    if (filtros.hasta) params = params.set('hasta', filtros.hasta);
     return this.http.get<PageResponse<Consulta>>(this.base, { params });
   }
 

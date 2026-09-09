@@ -2,16 +2,20 @@ package com.biopet.controller;
 
 import com.biopet.dto.CitaRequest;
 import com.biopet.dto.CitaResponse;
+import com.biopet.entity.EstadoCita;
 import com.biopet.service.CitaService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/citas")
@@ -22,10 +26,22 @@ public class CitaController {
         this.citaService = citaService;
     }
 
+    /**
+     * Todos los filtros son opcionales (auditoría de usabilidad + corrección
+     * de visibilidad por rol, fase "demo local"): sin ninguno, se comporta
+     * como el listado paginado de siempre, ya con el alcance por rol
+     * correcto (ver CitaService.buscar).
+     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')")
-    public Page<CitaResponse> listar(Pageable pageable, @AuthenticationPrincipal UserDetails userDetails) {
-        return citaService.listar(pageable, userDetails.getUsername());
+    public Page<CitaResponse> listar(@RequestParam(required = false) Long mascotaId,
+                                      @RequestParam(required = false) Long veterinarioId,
+                                      @RequestParam(required = false) EstadoCita estado,
+                                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant desde,
+                                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant hasta,
+                                      Pageable pageable,
+                                      @AuthenticationPrincipal UserDetails userDetails) {
+        return citaService.buscar(pageable, userDetails.getUsername(), mascotaId, veterinarioId, estado, desde, hasta);
     }
 
     /**

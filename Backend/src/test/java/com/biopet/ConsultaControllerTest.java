@@ -330,6 +330,8 @@ class ConsultaControllerTest {
 
     @Test
     void veterinarioVeTodasLasConsultasEnListado() throws Exception {
+        // "Todas" = todas las SUYAS, sin importar de qué mascota/dueño -las
+        // dos consultas de este fixture están asignadas al MISMO veterinario-.
         crearConsultaYObtenerId(mascotaId, veterinarioId, "Chequeo 1");
         Long otroDuenoId = crearUsuarioConRolYObtenerId(
                 "otro.dueno.vet@biopet.com", "ClaveOtro123*", Rol.ROLE_DUENO
@@ -346,6 +348,80 @@ class ConsultaControllerTest {
                         .header("Authorization", "Bearer " + tokenVeterinario))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void veterinarioSoloVeSusPropiasConsultasEnListadoPrincipal_YAdminVeAmbos() throws Exception {
+        // Corrección "demo local" (fase de roles): ROLE_VETERINARIO debe ver
+        // únicamente las consultas donde él es el veterinario asignado,
+        // incluso en el listado principal /api/consultas (antes veía TODAS,
+        // de cualquier veterinario).
+        Long otroDuenoId = crearUsuarioConRolYObtenerId(
+                "otro.dueno.aislado@biopet.com", "ClaveOtro123*", Rol.ROLE_DUENO
+        );
+        Long otraMascotaId = crearMascotaYObtenerId(otroDuenoId, "Rocky");
+        Long otroVeterinarioId = crearUsuarioConRolYObtenerId(
+                "vet.otro.consulta@biopet.com", "ClaveVet456*", Rol.ROLE_VETERINARIO
+        );
+        crearConsultaYObtenerId(mascotaId, veterinarioId, "Chequeo propio");
+        crearConsultaYObtenerId(otraMascotaId, otroVeterinarioId, "Chequeo ajeno");
+
+        String tokenVetPrincipal = extractCookieValue(
+                iniciarSesion("vet@biopet.com", "ClaveVet123*"), "access_token"
+        );
+        mockMvc.perform(get("/api/consultas").header("Authorization", "Bearer " + tokenVetPrincipal))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].veterinarioId").value(veterinarioId));
+
+        String tokenVetOtro = extractCookieValue(
+                iniciarSesion("vet.otro.consulta@biopet.com", "ClaveVet456*"), "access_token"
+        );
+        mockMvc.perform(get("/api/consultas").header("Authorization", "Bearer " + tokenVetOtro))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].veterinarioId").value(otroVeterinarioId));
+
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token"
+        );
+        mockMvc.perform(get("/api/consultas").header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void filtrarConsultasPorMascotaVeterinarioYTexto() throws Exception {
+        Long otroDuenoId = crearUsuarioConRolYObtenerId(
+                "otro.dueno.filtro@biopet.com", "ClaveOtro123*", Rol.ROLE_DUENO
+        );
+        Long otraMascotaId = crearMascotaYObtenerId(otroDuenoId, "Rocky");
+        Long consultaId1 = crearConsultaYObtenerId(mascotaId, veterinarioId, "Vacunación anual");
+        crearConsultaYObtenerId(otraMascotaId, veterinarioId, "Chequeo de rutina");
+
+        String tokenAdmin = extractCookieValue(
+                iniciarSesion("jaime@biopet.com", "ClaveCorrecta123*"), "access_token"
+        );
+
+        mockMvc.perform(get("/api/consultas")
+                        .param("mascotaId", mascotaId.toString())
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(consultaId1));
+
+        mockMvc.perform(get("/api/consultas")
+                        .param("q", "vacun")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(consultaId1));
+
+        mockMvc.perform(get("/api/consultas")
+                        .param("q", "noexiste123")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test

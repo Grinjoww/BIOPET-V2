@@ -1,16 +1,19 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { ProblemDetailService } from '../core/problem-detail.service';
-import { UsuarioSeleccionable, UsuarioSeleccionableApiService } from '../core/usuario-seleccionable-api.service';
+import { UsuarioSeleccionableApiService } from '../core/usuario-seleccionable-api.service';
 import { Mascota, MascotaApiService, MascotaRequestPayload, ResumenEspecie } from './mascota-api.service';
 import { PageHeaderComponent } from '../shared/page-header/page-header.component';
 import { IconComponent } from '../shared/icons/icon.component';
 import { FocusTrapDirective } from '../shared/focus-trap/focus-trap.directive';
+import { EntitySearchSelectComponent, OpcionBusqueda } from '../shared/entity-search-select/entity-search-select.component';
 import { formatearExpediente } from '../shared/presentacion';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 const TAMANIO_PAGINA = 10;
 const DURACION_MENSAJE_EXITO_MS = 4000;
@@ -31,7 +34,7 @@ const FILAS_SKELETON = 4;
  */
 @Component({
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, IconComponent, FocusTrapDirective],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, PageHeaderComponent, IconComponent, FocusTrapDirective, EntitySearchSelectComponent],
   template: `
   <app-page-header
     eyebrow="Pacientes"
@@ -52,6 +55,18 @@ const FILAS_SKELETON = 4;
       {{ mostrarResumen() ? 'Ocultar resumen por especie' : 'Ver resumen por especie' }}
     </button>
   </div>
+
+  <form class="toolbar" (ngSubmit)="buscar()" novalidate>
+    <div class="field">
+      <label for="f-buscar-mascota">Buscar</label>
+      <input id="f-buscar-mascota" type="text" [(ngModel)]="textoBusqueda" [ngModelOptions]="{ standalone: true }"
+             placeholder="Nombre, expediente (EXP-000007) o dueño…" />
+    </div>
+    <div class="field" style="align-self: flex-end;">
+      <button type="submit" class="btn btn--primary btn--sm">Buscar</button>
+      <button type="button" class="btn btn--secondary btn--sm" *ngIf="busquedaActiva()" (click)="limpiarBusqueda()">Limpiar</button>
+    </div>
+  </form>
 
   <!-- Mensajes de estado: aria-live para que lectores de pantalla los anuncien,
        y siempre con texto/ícono además de color (nunca solo color). -->
@@ -93,27 +108,18 @@ const FILAS_SKELETON = 4;
     </div>
 
     <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
-      <div class="field">
-        <label for="f-duenioId">Dueño<span class="required-mark" aria-hidden="true">*</span></label>
-        <select
-          id="f-duenioId"
-          formControlName="duenioId"
-          [disabled]="cargandoDuenios()"
-          [attr.aria-invalid]="tieneError('duenioId')"
-          [attr.aria-describedby]="tieneError('duenioId') ? 'err-duenioId' : (errorDuenios() ? 'hint-duenioId' : null)">
-          <option [ngValue]="null" disabled>
-            {{ cargandoDuenios() ? 'Cargando dueños…' : (duenios().length === 0 && !errorDuenios() ? 'No hay dueños registrados todavía' : 'Selecciona un dueño') }}
-          </option>
-          <option *ngFor="let d of duenios()" [ngValue]="d.id">{{ d.nombre }} — {{ d.email }}</option>
-        </select>
-        <p class="field-error" id="err-duenioId" *ngIf="tieneError('duenioId')">
-          {{ mensajeError('duenioId') }}
-        </p>
-        <p class="field-hint" id="hint-duenioId" *ngIf="!tieneError('duenioId') && errorDuenios()">
-          {{ errorDuenios() }}
-          <button type="button" class="btn btn--ghost btn--sm" (click)="cargarDuenios(true)">Reintentar</button>
-        </p>
-      </div>
+      <app-entity-search-select
+        [controlId]="'f-duenioId'"
+        label="Dueño"
+        [requerido]="true"
+        placeholder="Nombre o email del dueño (mín. 2 caracteres)…"
+        [buscar]="buscarDuenios"
+        [seleccionInicial]="duenioSeleccionInicial"
+        (seleccion)="onDuenioSeleccionado($event)">
+      </app-entity-search-select>
+      <p class="field-error" id="err-duenioId" *ngIf="tieneError('duenioId')">
+        {{ mensajeError('duenioId') }}
+      </p>
 
       <div class="field">
         <label for="f-nombre">Nombre<span class="required-mark" aria-hidden="true">*</span></label>
@@ -304,6 +310,12 @@ export class MascotasComponent implements OnInit {
   totalPaginas = signal(0);
   totalElementos = signal(0);
 
+  /** Texto escrito en el campo (no aplicado hasta "Buscar", igual que auditoria.component.ts). */
+  textoBusqueda = '';
+  /** Texto REALMENTE aplicado al listado -lo que cargar() envía al backend-. */
+  private busquedaAplicada = signal('');
+  busquedaActiva = () => this.busquedaAplicada().length > 0;
+
   cargando = signal(false);
   error = signal('');
   mensajeExito = signal('');
@@ -361,34 +373,24 @@ export class MascotasComponent implements OnInit {
   /** Ver shared/presentacion.ts: formato VISUAL de Mascota.id, no un campo nuevo. */
   readonly formatearExpediente = formatearExpediente;
 
-  // ---------- Selector real de dueño (Corrección B: GET /api/usuarios/duenios) ----------
-  duenios = signal<UsuarioSeleccionable[]>([]);
-  cargandoDuenios = signal(false);
-  errorDuenios = signal('');
-  private dueniosCargados = false;
+  // ---------- Selector buscable de dueño (auditoría de usabilidad con datos masivos) ----------
+  duenioSeleccionInicial: OpcionBusqueda | null = null;
 
   /**
-   * Se carga de forma perezosa, solo al abrir el formulario por primera
-   * vez (no en ngOnInit): un ROLE_DUENO nunca ve el botón que abre este
-   * formulario, así que para esa sesión esta llamada nunca debe dispararse
-   * — y si se disparara, el backend la rechazaría con 403 de todas formas
-   * (@PreAuthorize en /api/usuarios/duenios exige ADMIN/VETERINARIO/AUXILIAR).
+   * Búsqueda real contra GET /api/usuarios/duenios?q=...&size=... (paginada
+   * en el backend). Ya NO se cargan todos los dueños activos de una sola
+   * vez -con biopet_db_1m_v2 son ~1.800-: máximo 15 resultados por tecleo.
+   * Si esta llamada llegara a dispararse para un ROLE_DUENO, el backend la
+   * rechaza con 403 igualmente (@PreAuthorize exige ADMIN/VETERINARIO/AUXILIAR).
    */
-  cargarDuenios(forzar = false): void {
-    if (this.dueniosCargados && !forzar) return;
-    this.cargandoDuenios.set(true);
-    this.errorDuenios.set('');
-    this.usuarioSeleccionableApi.listarDuenios().subscribe({
-      next: (res) => {
-        this.duenios.set(res ?? []);
-        this.dueniosCargados = true;
-        this.cargandoDuenios.set(false);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.cargandoDuenios.set(false);
-        this.errorDuenios.set(this.problemDetail.mensaje(err));
-      }
-    });
+  buscarDuenios = (q: string): Observable<OpcionBusqueda[]> =>
+    this.usuarioSeleccionableApi
+      .buscarDuenios(q, 0, 15)
+      .pipe(map((res) => res.content.map((u) => ({ id: u.id, principal: u.nombre, secundario: u.email }))));
+
+  onDuenioSeleccionado(opcion: OpcionBusqueda | null): void {
+    this.form.patchValue({ duenioId: opcion?.id ?? null });
+    this.form.get('duenioId')?.markAsTouched();
   }
 
   /**
@@ -408,7 +410,7 @@ export class MascotasComponent implements OnInit {
   cargar(): void {
     this.error.set('');
     this.cargando.set(true);
-    this.api.listar(this.pagina(), TAMANIO_PAGINA).subscribe({
+    this.api.listar(this.pagina(), TAMANIO_PAGINA, 'id,desc', this.busquedaAplicada()).subscribe({
       next: (res) => {
         this.mascotas.set(res.content ?? []);
         this.totalPaginas.set(res.totalPages ?? 0);
@@ -421,6 +423,20 @@ export class MascotasComponent implements OnInit {
         this.error.set(this.problemDetail.mensaje(err));
       }
     });
+  }
+
+  /** Búsqueda server-side por nombre, expediente o dueño (nunca en memoria). */
+  buscar(): void {
+    this.busquedaAplicada.set(this.textoBusqueda.trim());
+    this.pagina.set(0);
+    this.cargar();
+  }
+
+  limpiarBusqueda(): void {
+    this.textoBusqueda = '';
+    this.busquedaAplicada.set('');
+    this.pagina.set(0);
+    this.cargar();
   }
 
   irAPagina(nuevaPagina: number): void {
@@ -459,8 +475,8 @@ export class MascotasComponent implements OnInit {
     this.editando.set(null);
     this.erroresServidor = null;
     this.form.reset({ duenioId: null, nombre: '', especie: '', raza: '', fechaNacimiento: '' });
+    this.duenioSeleccionInicial = null;
     this.mostrarFormulario.set(true);
-    this.cargarDuenios();
     this.enfocarPrimerCampo();
   }
 
@@ -474,8 +490,10 @@ export class MascotasComponent implements OnInit {
       raza: m.raza,
       fechaNacimiento: m.fechaNacimiento
     });
+    // Dueño ya conocido (edición): se muestra sin tener que volver a
+    // buscarlo -no hay email disponible en MascotaResponse, solo nombre-.
+    this.duenioSeleccionInicial = { id: m.duenioId, principal: m.duenioNombre };
     this.mostrarFormulario.set(true);
-    this.cargarDuenios();
     this.enfocarPrimerCampo();
   }
 

@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
@@ -106,7 +106,7 @@ describe('MascotasComponent (integración ligera: TestBed + HttpTestingControlle
     expect(texto).not.toContain('Registra la primera mascota');
   });
 
-  it('selector de dueño: NO se dispara hasta abrir "Nueva mascota"; luego trae nombre — email y el value real es el id', () => {
+  it('selector de dueño: NO trae nada hasta escribir 2+ caracteres (auditoría de usabilidad con datos masivos); busca por texto y el value real es el id', fakeAsync(() => {
     crear('ROLE_ADMIN');
     fixture.detectChanges();
     httpMock.expectOne((r) => r.url === '/api/mascotas' && r.method === 'GET').flush(paginaCon([]));
@@ -118,43 +118,45 @@ describe('MascotasComponent (integración ligera: TestBed + HttpTestingControlle
     btnNueva.click();
     fixture.detectChanges();
 
-    const req = httpMock.expectOne('/api/usuarios/duenios');
-    req.flush([
-      { id: 3, nombre: 'Ana Dueña', email: 'ana@biopet.com', rol: 'ROLE_DUENO' },
-      { id: 9, nombre: 'Beto Dueño', email: 'beto@biopet.com', rol: 'ROLE_DUENO' },
-    ]);
+    // Abrir el formulario NO dispara ninguna petición: ya no se cargan
+    // todos los dueños de golpe.
+    httpMock.expectNone('/api/usuarios/duenios');
+
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('#f-duenioId');
+    input.dispatchEvent(new Event('focus'));
+    input.value = 'a';
+    input.dispatchEvent(new Event('input'));
+    tick(300);
+    httpMock.expectNone('/api/usuarios/duenios'); // 1 caracter: por debajo del mínimo
+
+    input.value = 'An';
+    input.dispatchEvent(new Event('input'));
+    tick(300);
+
+    const req = httpMock.expectOne((r) => r.url === '/api/usuarios/duenios' && r.params.get('q') === 'An');
+    req.flush({
+      content: [
+        { id: 3, nombre: 'Ana Dueña', email: 'ana@biopet.com', rol: 'ROLE_DUENO' },
+        { id: 9, nombre: 'Beto Dueño', email: 'beto@biopet.com', rol: 'ROLE_DUENO' },
+      ],
+      totalElements: 2, totalPages: 1, number: 0, size: 15, first: true, last: true, empty: false,
+    });
     fixture.detectChanges();
 
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector('#f-duenioId');
-    const opciones = Array.from(select.options).filter((o) => !o.disabled);
-    expect(opciones.map((o) => o.textContent?.trim())).toEqual(['Ana Dueña — ana@biopet.com', 'Beto Dueño — beto@biopet.com']);
+    const opciones: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('.entity-search-select__opcion');
+    expect(opciones.length).toBe(2);
 
-    const segunda = opciones[1];
-    select.value = segunda.value;
-    select.dispatchEvent(new Event('change'));
+    (opciones[1] as HTMLElement).dispatchEvent(new Event('mousedown'));
     fixture.detectChanges();
 
     expect(component.form.get('duenioId')!.value).toBe(9); // el id real, no el texto ni el índice
-  });
 
-  it('selector de dueño: si falla, muestra el error y "Reintentar" dispara una nueva petición', () => {
-    crear('ROLE_ADMIN');
-    fixture.detectChanges();
-    httpMock.expectOne((r) => r.url === '/api/mascotas' && r.method === 'GET').flush(paginaCon([]));
-    fixture.detectChanges();
-
-    component.abrirCrear();
-    fixture.detectChanges();
-    httpMock.expectOne('/api/usuarios/duenios').flush('fallo', { status: 500, statusText: 'Internal Server Error' });
-    fixture.detectChanges();
-
-    const hint: HTMLElement = fixture.nativeElement.querySelector('#hint-duenioId');
-    expect(hint.textContent).toContain('No se pudo completar la operación');
-
-    const reintentar: HTMLButtonElement = hint.querySelector('button')!;
-    reintentar.click();
-    httpMock.expectOne('/api/usuarios/duenios').flush([]);
-  });
+    // Al elegir, Angular retira el <input> del DOM (*ngIf) mientras aún
+    // tenía el foco: el navegador dispara un blur real, que agenda el
+    // setTimeout de onBlurConRetardo() -se vacía aquí para no dejar timers
+    // pendientes al terminar el test fakeAsync.
+    flush();
+  }));
 
   it('creación exitosa: POST con el body exacto, luego cierra el formulario, refresca el listado y muestra éxito', () => {
     crear('ROLE_ADMIN');
@@ -163,7 +165,6 @@ describe('MascotasComponent (integración ligera: TestBed + HttpTestingControlle
     fixture.detectChanges();
 
     component.abrirCrear();
-    httpMock.expectOne('/api/usuarios/duenios').flush([]);
     component.form.setValue({ duenioId: 3, nombre: 'Rex', especie: 'Perro', raza: 'Labrador', fechaNacimiento: '2023-05-01' });
 
     component.guardar();
@@ -186,7 +187,6 @@ describe('MascotasComponent (integración ligera: TestBed + HttpTestingControlle
     fixture.detectChanges();
 
     component.abrirCrear();
-    httpMock.expectOne('/api/usuarios/duenios').flush([]);
     // nombre queda vacío a propósito.
     component.form.patchValue({ duenioId: 3, especie: 'Perro', raza: 'Mestizo', fechaNacimiento: '2023-01-01' });
 
@@ -204,7 +204,6 @@ describe('MascotasComponent (integración ligera: TestBed + HttpTestingControlle
     fixture.detectChanges();
 
     component.abrirCrear();
-    httpMock.expectOne('/api/usuarios/duenios').flush([]);
     component.form.setValue({ duenioId: 3, nombre: 'Rex', especie: 'Perro', raza: 'Labrador', fechaNacimiento: '2023-05-01' });
 
     component.guardar();
@@ -237,7 +236,6 @@ describe('MascotasComponent (integración ligera: TestBed + HttpTestingControlle
     fixture.detectChanges();
 
     component.abrirEditar(existente);
-    httpMock.expectOne('/api/usuarios/duenios').flush([]);
     fixture.detectChanges();
 
     expect(component.form.getRawValue()).toEqual({

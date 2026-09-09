@@ -17,6 +17,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+
 /**
  * CRUD de citas (agendamiento previo de atención veterinaria). No reemplaza ni
  * duplica el futuro módulo de "Consulta" (registro clínico posterior), que
@@ -26,13 +28,21 @@ import org.springframework.transaction.annotation.Transactional;
  * el control por rol "puro" ya vive en {@code CitaController} vía @PreAuthorize):
  * <ul>
  *   <li>DUENO: solo lee citas de sus propias mascotas (igual que MascotaService).</li>
- *   <li>VETERINARIO: lee todas, pero solo puede actualizar las citas donde él
- *       es el veterinario asignado.</li>
+ *   <li>VETERINARIO: lee y escribe ÚNICAMENTE las citas donde él es el
+ *       veterinario asignado (fase "corrección final demo local" — antes
+ *       leía todas, solo la escritura estaba restringida).</li>
  *   <li>ADMIN/AUXILIAR: sin restricciones adicionales de datos.</li>
  * </ul>
  */
 @Service
 public class CitaService {
+    /** Ver AuditoriaEventoRepository/AuditoriaService: Postgres (a diferencia
+     *  de H2) falla al inferir el tipo de un parámetro TIMESTAMPTZ NULL
+     *  ligado dos veces en la misma consulta -nunca se pasa null a
+     *  CitaRepository.buscar, siempre estos límites reales. */
+    private static final Instant DESDE_POR_DEFECTO = Instant.EPOCH;
+    private static final Instant HASTA_POR_DEFECTO = Instant.parse("9999-12-31T23:59:59Z");
+
     private final CitaRepository citaRepository;
     private final MascotaRepository mascotaRepository;
     private final UsuarioRepository usuarioRepository;
@@ -43,27 +53,49 @@ public class CitaService {
         this.usuarioRepository = usuarioRepository;
     }
 
+    /**
+     * GET /api/citas con filtros server-side (mascota/veterinario/estado/
+     * rango de fechas) y alcance por rol. Todos los filtros son opcionales.
+     *
+     * <p>{@code veterinarioIdFiltro} es lo que el CLIENTE pide filtrar (un
+     * ADMIN/AUXILIAR mirando "solo las citas del Dr. X"); el alcance por rol
+     * (DUENO/VETERINARIO) se calcula aquí y SIEMPRE gana sobre lo pedido -un
+     * ROLE_VETERINARIO nunca puede ver citas de otro veterinario cambiando
+     * este parámetro-.
+     */
     @Transactional(readOnly = true)
-    public Page<CitaResponse> listar(Pageable pageable, String email) {
+    public Page<CitaResponse> buscar(Pageable pageable, String email, Long mascotaId, Long veterinarioIdFiltro,
+                                      EstadoCita estado, Instant desde, Instant hasta) {
         Usuario usuario = usuarioActual(email);
+        Long duenioId = null;
+        Long veterinarioId = veterinarioIdFiltro;
         if (usuario.getRol() == Rol.ROLE_DUENO) {
-            return citaRepository.findAllByMascota_Duenio_IdAndActivoTrue(usuario.getId(), pageable).map(this::toResponse);
+            duenioId = usuario.getId();
+        } else if (usuario.getRol() == Rol.ROLE_VETERINARIO) {
+            veterinarioId = usuario.getId();
         }
-        return citaRepository.findAllByActivoTrue(pageable).map(this::toResponse);
+        Instant desdeEfectivo = desde != null ? desde : DESDE_POR_DEFECTO;
+        Instant hastaEfectiva = hasta != null ? hasta : HASTA_POR_DEFECTO;
+        return citaRepository.buscar(mascotaId, veterinarioId, duenioId, estado, desdeEfectivo, hastaEfectiva, pageable)
+                .map(this::toResponse);
     }
 
     /**
-     * GET /api/citas/mascota/{mascotaId}. Solo lectura: usa
-     * verificarAccesoLecturaMascota (misma regla que buscar()), nunca la
-     * regla de escritura de actualizar() — este endpoint no amplía qué
-     * citas puede modificar un VETERINARIO, solo cuáles puede leer.
+     * GET /api/citas/mascota/{mascotaId}. Solo lectura, misma regla de
+     * alcance que {@link #buscar}: DUENO solo si es su mascota (403 si no),
+     * VETERINARIO ve únicamente sus propias citas para esa mascota (no 403:
+     * simplemente puede ser una página vacía si nunca atendió a esa mascota).
      */
     @Transactional(readOnly = true)
     public Page<CitaResponse> listarPorMascota(Long mascotaId, Pageable pageable, String email) {
         Usuario usuario = usuarioActual(email);
         Mascota mascota = resolverMascota(mascotaId);
-        verificarAccesoLecturaMascota(usuario, mascota);
-        return citaRepository.findAllByMascotaIdAndActivoTrue(mascotaId, pageable).map(this::toResponse);
+        if (usuario.getRol() == Rol.ROLE_DUENO && !mascota.getDuenio().getId().equals(usuario.getId())) {
+            throw new AccessDeniedException("No tiene permisos para acceder a esta cita.");
+        }
+        Long veterinarioId = usuario.getRol() == Rol.ROLE_VETERINARIO ? usuario.getId() : null;
+        return citaRepository.buscar(mascotaId, veterinarioId, null, null, DESDE_POR_DEFECTO, HASTA_POR_DEFECTO, pageable)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -138,21 +170,15 @@ public class CitaService {
         return veterinario;
     }
 
-    private boolean tieneAccesoGlobal(Rol rol) {
-        return rol == Rol.ROLE_ADMIN || rol == Rol.ROLE_VETERINARIO || rol == Rol.ROLE_AUXILIAR;
-    }
-
-    private void verificarAccesoLectura(Usuario usuario, Cita cita) {
-        verificarAccesoLecturaMascota(usuario, cita.getMascota());
-    }
-
     /**
-     * Extraída de verificarAccesoLectura(Usuario, Cita) para reutilizarla en
-     * listarPorMascota(), donde todavía no hay ninguna Cita concreta sobre
-     * la que comprobar propiedad (puede haber cero).
+     * GET /api/citas/{id}: DUENO solo si es su mascota, VETERINARIO solo si
+     * es su cita asignada, ADMIN/AUXILIAR sin restricción.
      */
-    private void verificarAccesoLecturaMascota(Usuario usuario, Mascota mascota) {
-        if (!tieneAccesoGlobal(usuario.getRol()) && !mascota.getDuenio().getId().equals(usuario.getId())) {
+    private void verificarAccesoLectura(Usuario usuario, Cita cita) {
+        if (usuario.getRol() == Rol.ROLE_DUENO && !cita.getMascota().getDuenio().getId().equals(usuario.getId())) {
+            throw new AccessDeniedException("No tiene permisos para acceder a esta cita.");
+        }
+        if (usuario.getRol() == Rol.ROLE_VETERINARIO && !cita.getVeterinario().getId().equals(usuario.getId())) {
             throw new AccessDeniedException("No tiene permisos para acceder a esta cita.");
         }
     }

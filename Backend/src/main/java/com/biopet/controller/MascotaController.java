@@ -7,6 +7,8 @@ import com.biopet.service.MascotaService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,9 +28,29 @@ public class MascotaController {
         this.mascotaService = mascotaService;
     }
 
+    /**
+     * {@code q} es OPCIONAL: sin él, es el listado paginado de siempre
+     * (cacheado, ver MascotaService.listar). Con él, resuelve tanto al
+     * selector buscable de los formularios de cita/consulta/vacuna/factura
+     * como a la búsqueda de la propia pantalla "Mascotas" (nombre,
+     * expediente -"EXP-000007" o "7", ver MascotaService.idSiEsNumerico- o
+     * dueño) -auditoría de usabilidad con datos masivos-, SIN cache (texto
+     * libre de alta variabilidad). Misma URL, mismo controller: no se
+     * duplica el endpoint.
+     *
+     * <p>Orden por defecto id DESC ("demo local", fase de listados): una
+     * mascota recién creada tiene el id más alto y así aparece primero, sin
+     * depender de que el cliente mande {@code sort} explícito.
+     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')")
-    public Page<MascotaResponse> listar(Pageable pageable, @AuthenticationPrincipal UserDetails userDetails) {
+    public Page<MascotaResponse> listar(@RequestParam(required = false) String q,
+                                         @RequestParam(required = false) Long duenioId,
+                                         @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable,
+                                         @AuthenticationPrincipal UserDetails userDetails) {
+        if (q != null && !q.isBlank()) {
+            return mascotaService.buscarSeleccionables(pageable, userDetails.getUsername(), q, duenioId);
+        }
         return mascotaService.listar(pageable, userDetails.getUsername());
     }
 

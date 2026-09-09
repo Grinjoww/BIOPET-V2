@@ -206,6 +206,68 @@ class VacunaControllerTest {
     }
 
     @Test
+    void veterinarioSoloVeSusPropiasVacunasEnListado_YAdminVeAmbas() throws Exception {
+        // Corrección "demo local" (fase de roles): ROLE_VETERINARIO debe ver
+        // únicamente las vacunas donde él es el veterinario asignado (antes
+        // veía TODAS, de cualquier veterinario, sin ninguna restricción).
+        String tokenAdmin = tokenDe("admin.vacunas@biopet.com", "ClaveCorrecta123*");
+        Long duenoId = registrarDuenoYObtenerId("vacuna.rol.dueno@biopet.com", "ClaveDueno123*");
+        Long mascotaId = crearMascotaYObtenerId(tokenAdmin, duenoId, "Firulais");
+        Long vetAId = registrarVeterinarioYObtenerId(tokenAdmin, "vacuna.veta@biopet.com", "ClaveVetA123*");
+        Long vetBId = registrarVeterinarioYObtenerId(tokenAdmin, "vacuna.vetb@biopet.com", "ClaveVetB123*");
+        crearVacunaConVeterinarioYObtenerId(tokenAdmin, mascotaId, vetAId, "Antirrábica");
+        crearVacunaConVeterinarioYObtenerId(tokenAdmin, mascotaId, vetBId, "Parvovirus");
+
+        String tokenVetA = tokenDe("vacuna.veta@biopet.com", "ClaveVetA123*");
+        mockMvc.perform(get("/api/vacunas").header("Authorization", "Bearer " + tokenVetA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].veterinarioId").value(vetAId));
+
+        String tokenVetB = tokenDe("vacuna.vetb@biopet.com", "ClaveVetB123*");
+        mockMvc.perform(get("/api/vacunas").header("Authorization", "Bearer " + tokenVetB))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].veterinarioId").value(vetBId));
+
+        mockMvc.perform(get("/api/vacunas").header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void filtrarVacunasPorMascotaVeterinarioYTipo() throws Exception {
+        String tokenAdmin = tokenDe("admin.vacunas@biopet.com", "ClaveCorrecta123*");
+        Long duenoId = registrarDuenoYObtenerId("vacuna.filtro.dueno@biopet.com", "ClaveDueno123*");
+        Long mascota1Id = crearMascotaYObtenerId(tokenAdmin, duenoId, "Rocky");
+        Long mascota2Id = crearMascotaYObtenerId(tokenAdmin, duenoId, "Luna");
+        Long vetId = registrarVeterinarioYObtenerId(tokenAdmin, "vacuna.filtro.vet@biopet.com", "ClaveVet123*");
+        Long vacunaId1 = crearVacunaConVeterinarioYObtenerId(tokenAdmin, mascota1Id, vetId, "Antirrábica");
+        crearVacuna(tokenAdmin, mascota2Id, "Parvovirus"); // sin veterinario asignado
+
+        mockMvc.perform(get("/api/vacunas")
+                        .param("mascotaId", mascota1Id.toString())
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(vacunaId1));
+
+        mockMvc.perform(get("/api/vacunas")
+                        .param("veterinarioId", vetId.toString())
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(vacunaId1));
+
+        mockMvc.perform(get("/api/vacunas")
+                        .param("tipo", "rrábica")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(vacunaId1));
+    }
+
+    @Test
     void buscarVacunaInexistenteDevuelve404() throws Exception {
         String tokenAdmin = tokenDe("admin.vacunas@biopet.com", "ClaveCorrecta123*");
 
@@ -271,6 +333,34 @@ class VacunaControllerTest {
                 .map(Vacuna::getId)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Vacuna no encontrada tras crearla"));
+    }
+
+    private Long crearVacunaConVeterinarioYObtenerId(String tokenAdmin, Long mascotaId, Long veterinarioId, String tipo) throws Exception {
+        mockMvc.perform(post("/api/vacunas")
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"mascotaId":%d,"veterinarioId":%d,"tipo":"%s","fechaAplicacion":"2026-01-10"}
+                                """.formatted(mascotaId, veterinarioId, tipo)))
+                .andExpect(status().isCreated());
+        return vacunaRepository.findAll().stream()
+                .filter(v -> v.getMascota().getId().equals(mascotaId) && v.getTipo().equals(tipo))
+                .map(Vacuna::getId)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Vacuna no encontrada tras crearla"));
+    }
+
+    private Long registrarVeterinarioYObtenerId(String tokenAdmin, String email, String password) throws Exception {
+        mockMvc.perform(post("/api/usuarios")
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nombre":"Veterinario Prueba","email":"%s","password":"%s","rol":"ROLE_VETERINARIO"}
+                                """.formatted(email, password)))
+                .andExpect(status().isCreated());
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new AssertionError("Veterinario no encontrado tras crearlo: " + email))
+                .getId();
     }
 
     private String extractCookieValue(MvcResult result, String cookieName) {

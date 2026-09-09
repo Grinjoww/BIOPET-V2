@@ -88,7 +88,7 @@ describe('VacunasComponent (integración ligera)', () => {
     }
   });
 
-  it('selector de mascota: carga perezosa al abrir el formulario (no antes)', () => {
+  it('selector de mascota/veterinario: NO trae nada al abrir el formulario (auditoría de usabilidad con datos masivos)', () => {
     crear('ROLE_ADMIN');
     fixture.detectChanges();
     flushListado([]);
@@ -99,12 +99,9 @@ describe('VacunasComponent (integración ligera)', () => {
     component.abrirCrear();
     fixture.detectChanges();
 
-    const mascotasReq = httpMock.expectOne((r) => r.url === '/api/mascotas' && r.method === 'GET');
-    const veterinariosReq = httpMock.expectOne('/api/usuarios/veterinarios');
-    expect(mascotasReq.request.method).toBe('GET');
-    expect(veterinariosReq.request.method).toBe('GET');
-    mascotasReq.flush(paginaCon([] as any));
-    veterinariosReq.flush([]);
+    httpMock.expectNone((r) => r.url === '/api/mascotas');
+    httpMock.expectNone((r) => r.url === '/api/usuarios/veterinarios');
+    expect(component.mostrarFormulario()).toBeTrue();
   });
 
   it('veterinario es opcional: POST con veterinarioId=null cuando no se asigna ninguno', () => {
@@ -112,8 +109,6 @@ describe('VacunasComponent (integración ligera)', () => {
     fixture.detectChanges();
     flushListado([]);
     component.abrirCrear();
-    httpMock.expectOne((r) => r.url === '/api/mascotas').flush(paginaCon([] as any));
-    httpMock.expectOne('/api/usuarios/veterinarios').flush([]);
     fixture.detectChanges();
 
     component.form.setValue({
@@ -147,8 +142,6 @@ describe('VacunasComponent (integración ligera)', () => {
     fixture.detectChanges();
 
     component.abrirEditar(existente);
-    httpMock.expectOne((r) => r.url === '/api/mascotas').flush(paginaCon([] as any));
-    httpMock.expectOne('/api/usuarios/veterinarios').flush([]);
     fixture.detectChanges();
 
     expect(component.form.getRawValue().tipo).toBe('Antirrábica');

@@ -75,6 +75,49 @@ class UsuarioControllerTest {
     }
 
     @Test
+    void listarUsuariosFiltraPorTextoRolYEstado() throws Exception {
+        // Auditoría de usabilidad con datos masivos, fase "demo local": con
+        // 2.002 cuentas hace falta poder buscar, no solo paginar a ciegas.
+        Long duenoId = registrarUsuarioYObtenerId("filtro.ana.duena@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
+        Long vetId = registrarUsuarioYObtenerId("filtro.beto.vet@biopet.com", "ClaveVet123*", Rol.ROLE_VETERINARIO);
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+
+        mockMvc.perform(get("/api/usuarios").param("q", "ana")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(duenoId));
+
+        mockMvc.perform(get("/api/usuarios").param("rol", "ROLE_VETERINARIO")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(vetId));
+
+        // Dar de baja al dueño: por defecto (sin "estado") sigue sin verse,
+        // igual que el comportamiento de siempre.
+        mockMvc.perform(delete("/api/usuarios/" + duenoId)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/usuarios").param("q", "ana")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(0));
+
+        mockMvc.perform(get("/api/usuarios").param("q", "ana").param("estado", "inactivo")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(duenoId));
+
+        mockMvc.perform(get("/api/usuarios").param("estado", "todos")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(3)); // admin + dueño (inactivo) + vet
+    }
+
+    @Test
     void buscarUsuarioPorId() throws Exception {
         Long duenoId = registrarUsuarioYObtenerId("buscar.dueno@biopet.com", "ClaveDueno123*", Rol.ROLE_DUENO);
         String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
@@ -348,10 +391,10 @@ class UsuarioControllerTest {
         mockMvc.perform(get("/api/usuarios/duenios")
                         .header("Authorization", "Bearer " + tokenAuxiliar))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].id").value(duenoId))
-                .andExpect(jsonPath("$[0].email").value("sel.dueno1@biopet.com"))
-                .andExpect(jsonPath("$[0].rol").value("ROLE_DUENO"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(duenoId))
+                .andExpect(jsonPath("$.content[0].email").value("sel.dueno1@biopet.com"))
+                .andExpect(jsonPath("$.content[0].rol").value("ROLE_DUENO"));
     }
 
     @Test
@@ -363,10 +406,10 @@ class UsuarioControllerTest {
         mockMvc.perform(get("/api/usuarios/veterinarios")
                         .header("Authorization", "Bearer " + tokenAuxiliar))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].id").value(vetId))
-                .andExpect(jsonPath("$[0].email").value("sel.vet1@biopet.com"))
-                .andExpect(jsonPath("$[0].rol").value("ROLE_VETERINARIO"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(vetId))
+                .andExpect(jsonPath("$.content[0].email").value("sel.vet1@biopet.com"))
+                .andExpect(jsonPath("$.content[0].rol").value("ROLE_VETERINARIO"));
     }
 
     @Test
@@ -443,7 +486,7 @@ class UsuarioControllerTest {
         mockMvc.perform(get("/api/usuarios/duenios")
                         .header("Authorization", "Bearer " + tokenAdmin))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.content.length()").value(0));
     }
 
     @Test
@@ -456,8 +499,8 @@ class UsuarioControllerTest {
         mockMvc.perform(get("/api/usuarios/duenios")
                         .header("Authorization", "Bearer " + tokenAdmin))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].rol").value("ROLE_DUENO"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].rol").value("ROLE_DUENO"));
     }
 
     @Test
@@ -470,8 +513,8 @@ class UsuarioControllerTest {
         mockMvc.perform(get("/api/usuarios/veterinarios")
                         .header("Authorization", "Bearer " + tokenAdmin))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].rol").value("ROLE_VETERINARIO"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].rol").value("ROLE_VETERINARIO"));
     }
 
     @Test
@@ -485,14 +528,14 @@ class UsuarioControllerTest {
         mockMvc.perform(get("/api/usuarios/duenios")
                         .header("Authorization", "Bearer " + tokenAdmin))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(adminId.intValue()))))
-                .andExpect(jsonPath("$[*].id", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(auxiliarId.intValue()))));
+                .andExpect(jsonPath("$.content[*].id", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(adminId.intValue()))))
+                .andExpect(jsonPath("$.content[*].id", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(auxiliarId.intValue()))));
 
         mockMvc.perform(get("/api/usuarios/veterinarios")
                         .header("Authorization", "Bearer " + tokenAdmin))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].id", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(adminId.intValue()))))
-                .andExpect(jsonPath("$[*].id", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(auxiliarId.intValue()))));
+                .andExpect(jsonPath("$.content[*].id", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(adminId.intValue()))))
+                .andExpect(jsonPath("$.content[*].id", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(auxiliarId.intValue()))));
     }
 
     @Test
@@ -503,9 +546,9 @@ class UsuarioControllerTest {
         mockMvc.perform(get("/api/usuarios/duenios")
                         .header("Authorization", "Bearer " + tokenAdmin))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].password").doesNotExist())
-                .andExpect(jsonPath("$[0].passwordHash").doesNotExist())
-                .andExpect(jsonPath("$[0].activo").doesNotExist());
+                .andExpect(jsonPath("$.content[0].password").doesNotExist())
+                .andExpect(jsonPath("$.content[0].passwordHash").doesNotExist())
+                .andExpect(jsonPath("$.content[0].activo").doesNotExist());
     }
 
     @Test
@@ -518,10 +561,10 @@ class UsuarioControllerTest {
         mockMvc.perform(get("/api/usuarios/duenios")
                         .header("Authorization", "Bearer " + tokenAdmin))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(3))
-                .andExpect(jsonPath("$[0].nombre").value("Ana Torres"))
-                .andExpect(jsonPath("$[1].nombre").value("Miguel Ruiz"))
-                .andExpect(jsonPath("$[2].nombre").value("Zoe Andrade"));
+                .andExpect(jsonPath("$.content.length()").value(3))
+                .andExpect(jsonPath("$.content[0].nombre").value("Ana Torres"))
+                .andExpect(jsonPath("$.content[1].nombre").value("Miguel Ruiz"))
+                .andExpect(jsonPath("$.content[2].nombre").value("Zoe Andrade"));
     }
 
     @Test
@@ -535,12 +578,54 @@ class UsuarioControllerTest {
         mockMvc.perform(get("/api/usuarios/duenios")
                         .header("Authorization", "Bearer " + tokenAdmin))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
 
         mockMvc.perform(get("/api/usuarios/veterinarios")
                         .header("Authorization", "Bearer " + tokenAdmin))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
+    }
+
+    @Test
+    void dueniosFiltraPorTextoDeNombreOEmail() throws Exception {
+        crearUsuarioConNombreYRol("Jaime Mariscal", "q.jaime@biopet.com", Rol.ROLE_DUENO);
+        crearUsuarioConNombreYRol("Ana Torres", "q.ana@biopet.com", Rol.ROLE_DUENO);
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+
+        // Por nombre (insensible a mayúsculas).
+        mockMvc.perform(get("/api/usuarios/duenios").param("q", "jaime")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].nombre").value("Jaime Mariscal"));
+
+        // Por email.
+        mockMvc.perform(get("/api/usuarios/duenios").param("q", "q.ana@")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].email").value("q.ana@biopet.com"));
+
+        // Sin coincidencias: array vacío, nunca un error.
+        mockMvc.perform(get("/api/usuarios/duenios").param("q", "xyznadie")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(0));
+    }
+
+    @Test
+    void dueniosSinQSiguePaginandoSinCargarTodoDeGolpe() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            crearUsuarioConNombreYRol("Paginado " + i, "q.pag" + i + "@biopet.com", Rol.ROLE_DUENO);
+        }
+        String tokenAdmin = extractCookieValue(iniciarSesion(EMAIL_ADMIN, PASSWORD_ADMIN), "access_token");
+
+        mockMvc.perform(get("/api/usuarios/duenios").param("size", "2")
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.totalElements").value(5))
+                .andExpect(jsonPath("$.size").value(2));
     }
 
     private Long crearUsuarioConNombreYRol(String nombre, String email, Rol rol) {

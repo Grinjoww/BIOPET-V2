@@ -19,25 +19,109 @@ describe('FacturaNuevaComponent (integración ligera: TestBed + HttpTestingContr
 
   afterEach(() => httpMock.verify());
 
+  /**
+   * Auditoría de usabilidad con datos masivos: dueño y mascota YA NO se
+   * cargan de golpe al iniciar (antes: ~1.800 dueños y 200/10.000 mascotas
+   * de una sola vez) — ahora son selectores buscables (GET .../duenios y
+   * GET /api/mascotas con `q`, bajo demanda). Solo conceptos sigue siendo
+   * un catálogo eager: es acotado (activo=true) y se necesita completo.
+   */
   function flushCargaInicial() {
-    httpMock.expectOne((r) => r.url === '/api/usuarios/duenios').flush([{ id: 3, nombre: 'Ana Dueña', email: 'ana@biopet.test', rol: 'ROLE_DUENO' }]);
-    httpMock
-      .expectOne((r) => r.url === '/api/mascotas')
-      .flush({ content: [{ id: 5, duenioId: 3, duenioNombre: 'Ana Dueña', nombre: 'Firulais', especie: 'Perro', raza: 'Mestizo', fechaNacimiento: '2022-01-01', activo: true, creadoEn: '', actualizadoEn: '' }], totalElements: 1, totalPages: 1, number: 0, size: 200, first: true, last: true, empty: false });
     httpMock
       .expectOne((r) => r.url === '/api/facturacion/conceptos')
       .flush([{ id: 9, codigo: 'CPT-1', descripcion: 'Consulta general', tipo: 'CONSULTA', precioUnitario: 20, codigoImpuesto: 'IVA', codigoPorcentaje: '4', activo: true }]);
   }
 
-  it('carga sus 3 catálogos reales al iniciar: dueños, mascotas y conceptos activos (nunca IDs escritos a mano)', () => {
+  it('carga el catálogo de conceptos activos al iniciar; dueño y mascota NO se cargan de golpe (son buscables)', () => {
     httpMock = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
 
     const reqConceptos = httpMock.expectOne((r) => r.url === '/api/facturacion/conceptos');
     expect(reqConceptos.request.params.get('activo')).toBe('true');
     reqConceptos.flush([]);
-    httpMock.expectOne((r) => r.url === '/api/usuarios/duenios').flush([]);
-    httpMock.expectOne((r) => r.url === '/api/mascotas').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 200, first: true, last: true, empty: true });
+    httpMock.expectNone((r) => r.url === '/api/usuarios/duenios');
+    httpMock.expectNone((r) => r.url === '/api/mascotas');
+  });
+
+  it('selector de dueño busca por texto (mín. 2 caracteres) contra GET /api/usuarios/duenios?q=...&size=15 — nunca trae todos', () => {
+    httpMock = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    flushCargaInicial();
+
+    const component = fixture.componentInstance;
+    component.buscarDuenios('Jaime').subscribe((opciones) => {
+      expect(opciones).toEqual([{ id: 3, principal: 'Ana Dueña', secundario: 'ana@biopet.test' }]);
+    });
+
+    const req = httpMock.expectOne(
+      (r) => r.url === '/api/usuarios/duenios' && r.params.get('q') === 'Jaime' && r.params.get('size') === '15'
+    );
+    req.flush({
+      content: [{ id: 3, nombre: 'Ana Dueña', email: 'ana@biopet.test', rol: 'ROLE_DUENO' }],
+      totalElements: 1, totalPages: 1, number: 0, size: 15, first: true, last: true, empty: false,
+    });
+  });
+
+  it('selector de mascota queda deshabilitado sin dueño, y busca acotado a duenioId cuando ya hay uno elegido', () => {
+    httpMock = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    flushCargaInicial();
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    let sinResultados: unknown[] | undefined;
+    component.buscarMascotasDelDuenio('firu').subscribe((r) => (sinResultados = r));
+    expect(sinResultados).toEqual([]); // sin dueño elegido: no busca nada (no GET disparado)
+    httpMock.expectNone((r) => r.url === '/api/mascotas');
+
+    component.onDuenioSeleccionado({ id: 3, principal: 'Ana Dueña', secundario: 'ana@biopet.test' });
+    component.buscarMascotasDelDuenio('firu').subscribe();
+
+    const req = httpMock.expectOne(
+      (r) => r.url === '/api/mascotas' && r.params.get('q') === 'firu' && r.params.get('duenioId') === '3'
+    );
+    req.flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 15, first: true, last: true, empty: true });
+  });
+
+  it('cambiar de dueño limpia la mascota ya elegida (campo dependiente no debe quedar con un valor obsoleto)', () => {
+    httpMock = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    flushCargaInicial();
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    component.onDuenioSeleccionado({ id: 3, principal: 'Ana Dueña' });
+    component.onMascotaSeleccionada({ id: 5, principal: 'Firulais' });
+    expect(component.datosGeneralesForm.value.mascotaId).toBe(5);
+
+    component.onDuenioSeleccionado({ id: 9, principal: 'Beto Dueño' });
+    expect(component.datosGeneralesForm.value.mascotaId).toBeNull();
+  });
+
+  it('Consumidor final: NO exige escribir identificación/razón social — usa el estándar del SRI y sigue siendo válido', () => {
+    httpMock = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    flushCargaInicial();
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    expect(component.esConsumidorFinal()).toBeFalse();
+    component.compradorForm.patchValue({ tipoIdentificacion: 'CONSUMIDOR_FINAL' });
+
+    expect(component.esConsumidorFinal()).toBeTrue();
+    expect(component.compradorForm.get('identificacion')!.disabled).toBeTrue();
+    expect(component.compradorForm.get('razonSocial')!.disabled).toBeTrue();
+    expect(component.compradorForm.invalid).toBeFalse(); // los controles disabled no bloquean la validez del grupo
+
+    const v = component.compradorForm.getRawValue(); // getRawValue SÍ incluye los disabled
+    expect(v.identificacion).toBe('9999999999999');
+    expect(v.razonSocial).toBe('CONSUMIDOR FINAL');
+
+    // Volver a un tipo normal reactiva los campos y limpia el autocompletado.
+    component.compradorForm.patchValue({ tipoIdentificacion: 'CEDULA' });
+    expect(component.compradorForm.get('identificacion')!.disabled).toBeFalse();
+    expect(component.compradorForm.get('identificacion')!.value).toBe('');
+    expect(component.compradorForm.get('razonSocial')!.value).toBe('');
   });
 
   it('crear borrador envía SOLO usuarioId/mascotaId/fechaEmision — nunca un precio, impuesto, ambiente o secuencial', () => {

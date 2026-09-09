@@ -289,7 +289,7 @@ export class PanelComponent implements OnInit {
   cargarActividad(): void {
     this.cargandoActividad.set(true);
     this.errorActividad.set('');
-    this.consultaApi.listar(0, TAMANIO_ACTIVIDAD, 'fechaConsulta,desc').subscribe({
+    this.consultaApi.listar(0, TAMANIO_ACTIVIDAD, {}, 'fechaConsulta,desc').subscribe({
       next: (res) => {
         this.actividadConsultas.set(res.content ?? []);
         this.cargandoActividad.set(false);

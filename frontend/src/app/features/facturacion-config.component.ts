@@ -78,10 +78,28 @@ type Tab = 'emisor' | 'puntos' | 'conceptos' | 'tarifas';
       </div>
 
       <form [formGroup]="emisorForm" (ngSubmit)="guardarEmisor()" novalidate *ngIf="mostrarFormEmisor()">
-        <div class="field"><label for="e-ruc">RUC<span class="required-mark" aria-hidden="true">*</span></label><input id="e-ruc" type="text" formControlName="ruc" maxlength="13" /></div>
-        <div class="field"><label for="e-razonSocial">Razón social<span class="required-mark" aria-hidden="true">*</span></label><input id="e-razonSocial" type="text" formControlName="razonSocial" /></div>
+        <p class="alert alert--danger" role="alert" *ngIf="emisorForm.invalid && emisorFormEnviado()">
+          Revisa los campos marcados: hay datos obligatorios vacíos o con un formato inválido.
+        </p>
+        <div class="field">
+          <label for="e-ruc">RUC (13 dígitos)<span class="required-mark" aria-hidden="true">*</span></label>
+          <input id="e-ruc" type="text" formControlName="ruc" maxlength="13"
+                 [attr.aria-invalid]="tieneErrorEmisor('ruc')" [attr.aria-describedby]="tieneErrorEmisor('ruc') ? 'err-e-ruc' : null" />
+          <p class="field-error" id="err-e-ruc" *ngIf="tieneErrorEmisor('ruc')">{{ mensajeErrorEmisor('ruc') }}</p>
+        </div>
+        <div class="field">
+          <label for="e-razonSocial">Razón social<span class="required-mark" aria-hidden="true">*</span></label>
+          <input id="e-razonSocial" type="text" formControlName="razonSocial"
+                 [attr.aria-invalid]="tieneErrorEmisor('razonSocial')" [attr.aria-describedby]="tieneErrorEmisor('razonSocial') ? 'err-e-razonSocial' : null" />
+          <p class="field-error" id="err-e-razonSocial" *ngIf="tieneErrorEmisor('razonSocial')">{{ mensajeErrorEmisor('razonSocial') }}</p>
+        </div>
         <div class="field"><label for="e-nombreComercial">Nombre comercial</label><input id="e-nombreComercial" type="text" formControlName="nombreComercial" /></div>
-        <div class="field"><label for="e-direccion">Dirección matriz<span class="required-mark" aria-hidden="true">*</span></label><input id="e-direccion" type="text" formControlName="direccionMatriz" /></div>
+        <div class="field">
+          <label for="e-direccion">Dirección matriz<span class="required-mark" aria-hidden="true">*</span></label>
+          <input id="e-direccion" type="text" formControlName="direccionMatriz"
+                 [attr.aria-invalid]="tieneErrorEmisor('direccionMatriz')" [attr.aria-describedby]="tieneErrorEmisor('direccionMatriz') ? 'err-e-direccion' : null" />
+          <p class="field-error" id="err-e-direccion" *ngIf="tieneErrorEmisor('direccionMatriz')">{{ mensajeErrorEmisor('direccionMatriz') }}</p>
+        </div>
         <div class="field"><label class="checkbox-row"><input type="checkbox" formControlName="obligadoContabilidad" /> Obligado a llevar contabilidad</label></div>
         <div class="field"><label class="checkbox-row"><input type="checkbox" formControlName="rimpe" /> Régimen RIMPE</label></div>
         <div class="field"><label for="e-contribuyente">Resolución de contribuyente especial</label><input id="e-contribuyente" type="text" formControlName="contribuyenteEspecial" /></div>
@@ -103,8 +121,21 @@ type Tab = 'emisor' | 'puntos' | 'conceptos' | 'tarifas';
 
       <form [formGroup]="puntoForm" (ngSubmit)="crearPunto()" novalidate *ngIf="mostrarFormPunto()">
         <p class="field-hint" *ngIf="!emisorConfigurado()">Configura primero el emisor fiscal en la pestaña «Emisor».</p>
-        <div class="field"><label for="pe-establecimiento">Establecimiento (3 dígitos)<span class="required-mark" aria-hidden="true">*</span></label><input id="pe-establecimiento" type="text" formControlName="establecimiento" maxlength="3" placeholder="001" /></div>
-        <div class="field"><label for="pe-punto">Punto de emisión (3 dígitos)<span class="required-mark" aria-hidden="true">*</span></label><input id="pe-punto" type="text" formControlName="puntoEmision" maxlength="3" placeholder="001" /></div>
+        <p class="alert alert--danger" role="alert" *ngIf="puntoForm.invalid && puntoFormEnviado()">
+          Revisa los campos marcados: establecimiento y punto de emisión deben ser exactamente 3 dígitos (p. ej. «001»).
+        </p>
+        <div class="field">
+          <label for="pe-establecimiento">Establecimiento (3 dígitos)<span class="required-mark" aria-hidden="true">*</span></label>
+          <input id="pe-establecimiento" type="text" formControlName="establecimiento" maxlength="3" placeholder="001"
+                 [attr.aria-invalid]="tieneErrorPunto('establecimiento')" [attr.aria-describedby]="tieneErrorPunto('establecimiento') ? 'err-pe-establecimiento' : null" />
+          <p class="field-error" id="err-pe-establecimiento" *ngIf="tieneErrorPunto('establecimiento')">{{ mensajeErrorPunto('establecimiento') }}</p>
+        </div>
+        <div class="field">
+          <label for="pe-punto">Punto de emisión (3 dígitos)<span class="required-mark" aria-hidden="true">*</span></label>
+          <input id="pe-punto" type="text" formControlName="puntoEmision" maxlength="3" placeholder="001"
+                 [attr.aria-invalid]="tieneErrorPunto('puntoEmision')" [attr.aria-describedby]="tieneErrorPunto('puntoEmision') ? 'err-pe-punto' : null" />
+          <p class="field-error" id="err-pe-punto" *ngIf="tieneErrorPunto('puntoEmision')">{{ mensajeErrorPunto('puntoEmision') }}</p>
+        </div>
         <div class="field"><label for="pe-direccion">Dirección del establecimiento</label><input id="pe-direccion" type="text" formControlName="direccionEstablecimiento" /></div>
         <div class="modal-panel__actions">
           <button type="submit" class="btn btn--primary" [disabled]="guardandoPunto() || !emisorConfigurado()">{{ guardandoPunto() ? 'Creando…' : 'Crear' }}</button>
@@ -276,6 +307,18 @@ export class FacturacionConfigComponent implements OnInit {
   cargandoEmisor = signal(false);
   guardandoEmisor = signal(false);
   mostrarFormEmisor = signal(false);
+  /**
+   * Diagnóstico "Crear Emisor ❌"/"Crear Punto de emisión ❌" (fase "demo
+   * local"): el formulario era Reactive Forms válido, pero cuando
+   * `.invalid` bloqueaba el submit (RUC no de 13 dígitos, serie no de 3
+   * dígitos, campo obligatorio vacío...) NO había ningún mensaje en
+   * pantalla -ni banner, ni error por campo, ni resaltado-: para quien lo
+   * usa se veía exactamente como "no hace nada". El bug real no estaba en
+   * el backend (create funciona -ver EmisorPuntoEmisionReproTest, ahora
+   * retirado tras confirmarlo-): era la ausencia total de feedback aquí.
+   * Este flag solo evita mostrar el banner ANTES del primer intento.
+   */
+  emisorFormEnviado = signal(false);
   get emisorConfigurado(): () => boolean {
     return () => this.emisor() !== null;
   }
@@ -296,6 +339,7 @@ export class FacturacionConfigComponent implements OnInit {
   cargandoPuntos = signal(false);
   guardandoPunto = signal(false);
   mostrarFormPunto = signal(false);
+  puntoFormEnviado = signal(false);
   editandoPuntoId = signal<number | null>(null);
   direccionEnEdicion = '';
   puntoForm = this.fb.group({
@@ -385,11 +429,29 @@ export class FacturacionConfigComponent implements OnInit {
         activo: true,
       }
     );
+    this.emisorFormEnviado.set(false);
     this.mostrarFormEmisor.set(true);
+  }
+
+  tieneErrorEmisor(campo: string): boolean {
+    const control = this.emisorForm.get(campo);
+    return !!control && control.invalid && (control.touched || control.dirty || this.emisorFormEnviado());
+  }
+
+  mensajeErrorEmisor(campo: string): string {
+    const control = this.emisorForm.get(campo);
+    if (control?.hasError('required')) return 'Este campo es obligatorio.';
+    if (control?.hasError('pattern') && campo === 'ruc') return 'El RUC debe tener exactamente 13 dígitos.';
+    if (control?.hasError('maxlength')) {
+      const max = control.getError('maxlength')?.requiredLength;
+      return `Máximo ${max} caracteres.`;
+    }
+    return 'Valor inválido.';
   }
 
   guardarEmisor(): void {
     this.error.set('');
+    this.emisorFormEnviado.set(true);
     if (this.emisorForm.invalid) {
       this.emisorForm.markAllAsTouched();
       return;
@@ -440,14 +502,29 @@ export class FacturacionConfigComponent implements OnInit {
 
   abrirCrearPunto(): void {
     this.puntoForm.reset({ establecimiento: '', puntoEmision: '', direccionEstablecimiento: '' });
+    this.puntoFormEnviado.set(false);
     this.mostrarFormPunto.set(true);
+  }
+
+  tieneErrorPunto(campo: string): boolean {
+    const control = this.puntoForm.get(campo);
+    return !!control && control.invalid && (control.touched || control.dirty || this.puntoFormEnviado());
+  }
+
+  mensajeErrorPunto(campo: string): string {
+    const control = this.puntoForm.get(campo);
+    if (control?.hasError('required')) return 'Este campo es obligatorio.';
+    if (control?.hasError('pattern')) return 'Deben ser exactamente 3 dígitos (p. ej. «001»).';
+    return 'Valor inválido.';
   }
 
   crearPunto(): void {
     const e = this.emisor();
     this.error.set('');
+    this.puntoFormEnviado.set(true);
     if (this.puntoForm.invalid || !e) {
       this.puntoForm.markAllAsTouched();
+      if (!e) this.error.set('Configura primero el emisor fiscal en la pestaña «Emisor».');
       return;
     }
     const v = this.puntoForm.getRawValue();

@@ -1,17 +1,18 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../core/auth.service';
 import { ProblemDetailService } from '../core/problem-detail.service';
-import { UsuarioSeleccionable, UsuarioSeleccionableApiService } from '../core/usuario-seleccionable-api.service';
-import { Mascota, MascotaApiService } from './mascota-api.service';
-import { Cita, CitaApiService, CitaRequestPayload, EstadoCita } from './cita-api.service';
+import { UsuarioSeleccionableApiService } from '../core/usuario-seleccionable-api.service';
+import { MascotaApiService } from './mascota-api.service';
+import { Cita, CitaApiService, CitaRequestPayload, EstadoCita, FiltrosCitas } from './cita-api.service';
 import { PageHeaderComponent } from '../shared/page-header/page-header.component';
 import { IconComponent } from '../shared/icons/icon.component';
 import { FocusTrapDirective } from '../shared/focus-trap/focus-trap.directive';
+import { EntitySearchSelectComponent, OpcionBusqueda } from '../shared/entity-search-select/entity-search-select.component';
 import {
   chipClaseEstadoCita,
   etiquetaEstadoCita,
@@ -19,18 +20,12 @@ import {
   formatearExpediente,
   instantAFechaHoraLocal,
 } from '../shared/presentacion';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 const TAMANIO_PAGINA = 10;
 const DURACION_MENSAJE_EXITO_MS = 4000;
 const FILAS_SKELETON = 4;
-/**
- * No existe un endpoint "selector" para mascotas (a diferencia de
- * /api/usuarios/duenios): reutilizamos GET /api/mascotas —ya auditado
- * como seguro y sin filtrar para ADMIN/VETERINARIO/AUXILIAR en la fase
- * de Vacunas V2— con una página lo bastante grande para cubrir el
- * listado completo de la clínica en un solo selector.
- */
-const TAMANIO_PAGINA_SELECTOR_MASCOTAS = 200;
 
 /**
  * IMPORTANTE — reglas reales de CitaController/CitaService (auditadas en
@@ -62,7 +57,7 @@ const TAMANIO_PAGINA_SELECTOR_MASCOTAS = 200;
  */
 @Component({
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, PageHeaderComponent, IconComponent, FocusTrapDirective],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, PageHeaderComponent, IconComponent, FocusTrapDirective, EntitySearchSelectComponent],
   template: `
   <app-page-header
     eyebrow="Agenda"
@@ -79,7 +74,57 @@ const TAMANIO_PAGINA_SELECTOR_MASCOTAS = 200;
     <button type="button" class="btn btn--ghost btn--sm" (click)="cargar()" [disabled]="cargando()">
       Actualizar
     </button>
+    <button type="button" class="btn btn--secondary btn--sm" (click)="alternarFiltros()" [attr.aria-expanded]="mostrarFiltros()">
+      {{ mostrarFiltros() ? 'Ocultar filtros' : 'Filtros' }}
+    </button>
   </div>
+
+  <!-- ===== Filtros (auditoría de usabilidad + corrección de listados, fase "demo local") ===== -->
+  <section *ngIf="mostrarFiltros()" class="panel" aria-labelledby="filtros-citas-titulo">
+    <h2 id="filtros-citas-titulo" class="panel__title-inline">Filtros</h2>
+    <div class="toolbar">
+      <app-entity-search-select
+        #filtroMascotaSelector
+        [controlId]="'f-filtro-mascota'"
+        label="Mascota"
+        placeholder="Nombre de la mascota…"
+        [buscar]="buscarMascotas"
+        [seleccionInicial]="mascotaFiltroSeleccionInicial"
+        (seleccion)="onMascotaFiltroSeleccionada($event)">
+      </app-entity-search-select>
+      <app-entity-search-select
+        #filtroVeterinarioSelector
+        *ngIf="puedeFiltrarPorVeterinario"
+        [controlId]="'f-filtro-veterinario'"
+        label="Veterinario"
+        placeholder="Nombre o email…"
+        [buscar]="buscarVeterinarios"
+        [seleccionInicial]="veterinarioFiltroSeleccionInicial"
+        (seleccion)="onVeterinarioFiltroSeleccionado($event)">
+      </app-entity-search-select>
+      <div class="field">
+        <label for="f-filtro-estado">Estado</label>
+        <select id="f-filtro-estado" [(ngModel)]="filtroEstado" [ngModelOptions]="{ standalone: true }">
+          <option [ngValue]="null">Todos</option>
+          <option value="PROGRAMADA">Programada</option>
+          <option value="COMPLETADA">Completada</option>
+          <option value="CANCELADA">Cancelada</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-filtro-desde">Desde</label>
+        <input id="f-filtro-desde" type="date" [(ngModel)]="filtroDesde" [ngModelOptions]="{ standalone: true }" />
+      </div>
+      <div class="field">
+        <label for="f-filtro-hasta">Hasta</label>
+        <input id="f-filtro-hasta" type="date" [(ngModel)]="filtroHasta" [ngModelOptions]="{ standalone: true }" />
+      </div>
+      <div class="field" style="align-self: flex-end;">
+        <button type="button" class="btn btn--primary btn--sm" (click)="aplicarFiltros()">Filtrar</button>
+        <button type="button" class="btn btn--secondary btn--sm" (click)="limpiarFiltros()">Limpiar</button>
+      </div>
+    </div>
+  </section>
 
   <p class="alert alert--danger" role="alert" aria-live="assertive" *ngIf="error()">
     <strong>Error:</strong> {{ error() }}
@@ -104,47 +149,27 @@ const TAMANIO_PAGINA_SELECTOR_MASCOTAS = 200;
 
     <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
       <span class="label form-section-label">Agenda</span>
-      <div class="field">
-        <label for="f-mascotaId">Mascota<span class="required-mark" aria-hidden="true">*</span></label>
-        <select
-          id="f-mascotaId"
-          formControlName="mascotaId"
-          [disabled]="cargandoMascotas()"
-          [attr.aria-invalid]="tieneError('mascotaId')"
-          [attr.aria-describedby]="tieneError('mascotaId') ? 'err-mascotaId' : (errorMascotas() ? 'hint-mascotaId' : null)">
-          <option [ngValue]="null" disabled>
-            {{ cargandoMascotas() ? 'Cargando mascotas…' : (mascotasSelect().length === 0 && !errorMascotas() ? 'No hay mascotas registradas' : 'Selecciona una mascota') }}
-          </option>
-          <option *ngFor="let m of mascotasSelect()" [ngValue]="m.id">
-            {{ m.nombre }} — {{ formatearExpediente(m.id) }} — {{ m.duenioNombre }}
-          </option>
-        </select>
-        <p class="field-error" id="err-mascotaId" *ngIf="tieneError('mascotaId')">{{ mensajeError('mascotaId') }}</p>
-        <p class="field-hint" id="hint-mascotaId" *ngIf="!tieneError('mascotaId') && errorMascotas()">
-          {{ errorMascotas() }}
-          <button type="button" class="btn btn--ghost btn--sm" (click)="cargarMascotas(true)">Reintentar</button>
-        </p>
-      </div>
+      <app-entity-search-select
+        [controlId]="'f-mascotaId'"
+        label="Mascota"
+        [requerido]="true"
+        placeholder="Nombre de la mascota (mín. 2 caracteres)…"
+        [buscar]="buscarMascotas"
+        [seleccionInicial]="mascotaSeleccionInicial"
+        (seleccion)="onMascotaSeleccionada($event)">
+      </app-entity-search-select>
+      <p class="field-error" id="err-mascotaId" *ngIf="tieneError('mascotaId')">{{ mensajeError('mascotaId') }}</p>
 
-      <div class="field">
-        <label for="f-veterinarioId">Veterinario<span class="required-mark" aria-hidden="true">*</span></label>
-        <select
-          id="f-veterinarioId"
-          formControlName="veterinarioId"
-          [disabled]="cargandoVeterinarios()"
-          [attr.aria-invalid]="tieneError('veterinarioId')"
-          [attr.aria-describedby]="tieneError('veterinarioId') ? 'err-veterinarioId' : (errorVeterinarios() ? 'hint-veterinarioId' : null)">
-          <option [ngValue]="null" disabled>
-            {{ cargandoVeterinarios() ? 'Cargando veterinarios…' : (veterinarios().length === 0 && !errorVeterinarios() ? 'No hay veterinarios registrados' : 'Selecciona un veterinario') }}
-          </option>
-          <option *ngFor="let vet of veterinarios()" [ngValue]="vet.id">{{ vet.nombre }} — {{ vet.email }}</option>
-        </select>
-        <p class="field-error" id="err-veterinarioId" *ngIf="tieneError('veterinarioId')">{{ mensajeError('veterinarioId') }}</p>
-        <p class="field-hint" id="hint-veterinarioId" *ngIf="!tieneError('veterinarioId') && errorVeterinarios()">
-          {{ errorVeterinarios() }}
-          <button type="button" class="btn btn--ghost btn--sm" (click)="cargarVeterinarios(true)">Reintentar</button>
-        </p>
-      </div>
+      <app-entity-search-select
+        [controlId]="'f-veterinarioId'"
+        label="Veterinario"
+        [requerido]="true"
+        placeholder="Nombre o email del veterinario (mín. 2 caracteres)…"
+        [buscar]="buscarVeterinarios"
+        [seleccionInicial]="veterinarioSeleccionInicial"
+        (seleccion)="onVeterinarioSeleccionado($event)">
+      </app-entity-search-select>
+      <p class="field-error" id="err-veterinarioId" *ngIf="tieneError('veterinarioId')">{{ mensajeError('veterinarioId') }}</p>
 
       <div class="field">
         <label for="f-fechaHora">Fecha y hora<span class="required-mark" aria-hidden="true">*</span></label>
@@ -355,6 +380,19 @@ export class CitasComponent implements OnInit {
   error = signal('');
   mensajeExito = signal('');
 
+  // ---------- Filtros (corrección de listados, fase "demo local") ----------
+  mostrarFiltros = signal(false);
+  filtroEstado: EstadoCita | null = null;
+  filtroDesde = ''; // yyyy-MM-dd
+  filtroHasta = ''; // yyyy-MM-dd
+  private filtroMascotaId: number | null = null;
+  private filtroVeterinarioId: number | null = null;
+  mascotaFiltroSeleccionInicial: OpcionBusqueda | null = null;
+  veterinarioFiltroSeleccionInicial: OpcionBusqueda | null = null;
+  private filtrosAplicados: FiltrosCitas = {};
+  @ViewChild('filtroMascotaSelector') private filtroMascotaSelector?: EntitySearchSelectComponent;
+  @ViewChild('filtroVeterinarioSelector') private filtroVeterinarioSelector?: EntitySearchSelectComponent;
+
   mostrarFormulario = signal(false);
   editando = signal<Cita | null>(null);
   guardando = signal(false);
@@ -363,16 +401,9 @@ export class CitasComponent implements OnInit {
   accionConfirmar = signal<{ cita: Cita; tipo: 'completar' | 'cancelar' | 'baja' } | null>(null);
   procesandoAccion = signal(false);
 
-  // ---------- Selectores del formulario ----------
-  mascotasSelect = signal<Mascota[]>([]);
-  cargandoMascotas = signal(false);
-  errorMascotas = signal('');
-  private mascotasCargadas = false;
-
-  veterinarios = signal<UsuarioSeleccionable[]>([]);
-  cargandoVeterinarios = signal(false);
-  errorVeterinarios = signal('');
-  private veterinariosCargados = false;
+  // ---------- Selectores buscables del formulario (auditoría de usabilidad con datos masivos) ----------
+  mascotaSeleccionInicial: OpcionBusqueda | null = null;
+  veterinarioSeleccionInicial: OpcionBusqueda | null = null;
 
   form = this.fb.group({
     mascotaId: [null as number | null, [Validators.required, Validators.min(1)]],
@@ -472,7 +503,9 @@ export class CitasComponent implements OnInit {
   cargar(): void {
     this.error.set('');
     this.cargando.set(true);
-    this.api.listar(this.pagina(), TAMANIO_PAGINA, 'fechaHora,asc').subscribe({
+    // Orden por defecto: más reciente/próxima primero (antes 'asc' dejaba
+    // una cita recién creada al final del listado -corrección "demo local").
+    this.api.listar(this.pagina(), TAMANIO_PAGINA, this.filtrosAplicados, 'fechaHora,desc').subscribe({
       next: (res) => {
         this.citas.set(res.content ?? []);
         this.totalPaginas.set(res.totalPages ?? 0);
@@ -487,46 +520,82 @@ export class CitasComponent implements OnInit {
     });
   }
 
+  /** ADMIN/AUXILIAR ven la agenda completa; un VETERINARIO solo ve la suya (el filtro sería inerte). */
+  get puedeFiltrarPorVeterinario(): boolean {
+    return this.puedeCrear;
+  }
+
+  alternarFiltros(): void {
+    this.mostrarFiltros.set(!this.mostrarFiltros());
+  }
+
+  onMascotaFiltroSeleccionada(opcion: OpcionBusqueda | null): void {
+    this.filtroMascotaId = opcion?.id ?? null;
+  }
+
+  onVeterinarioFiltroSeleccionado(opcion: OpcionBusqueda | null): void {
+    this.filtroVeterinarioId = opcion?.id ?? null;
+  }
+
+  aplicarFiltros(): void {
+    this.filtrosAplicados = {
+      mascotaId: this.filtroMascotaId ?? undefined,
+      veterinarioId: this.filtroVeterinarioId ?? undefined,
+      estado: this.filtroEstado ?? undefined,
+      desde: this.filtroDesde ? `${this.filtroDesde}T00:00:00Z` : undefined,
+      hasta: this.filtroHasta ? `${this.filtroHasta}T23:59:59Z` : undefined,
+    };
+    this.pagina.set(0);
+    this.cargar();
+  }
+
+  limpiarFiltros(): void {
+    this.filtroMascotaId = null;
+    this.filtroVeterinarioId = null;
+    this.filtroEstado = null;
+    this.filtroDesde = '';
+    this.filtroHasta = '';
+    this.mascotaFiltroSeleccionInicial = null;
+    this.veterinarioFiltroSeleccionInicial = null;
+    this.filtroMascotaSelector?.limpiar();
+    this.filtroVeterinarioSelector?.limpiar();
+    this.filtrosAplicados = {};
+    this.pagina.set(0);
+    this.cargar();
+  }
+
   irAPagina(nuevaPagina: number): void {
     if (nuevaPagina < 0 || nuevaPagina >= this.totalPaginas()) return;
     this.pagina.set(nuevaPagina);
     this.cargar();
   }
 
-  // ---------- Selectores ----------
+  // ---------- Selectores buscables ----------
 
-  cargarMascotas(forzar = false): void {
-    if (this.mascotasCargadas && !forzar) return;
-    this.cargandoMascotas.set(true);
-    this.errorMascotas.set('');
-    this.mascotaApi.listar(0, TAMANIO_PAGINA_SELECTOR_MASCOTAS, 'nombre,asc').subscribe({
-      next: (res) => {
-        this.mascotasSelect.set(res.content ?? []);
-        this.mascotasCargadas = true;
-        this.cargandoMascotas.set(false);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.cargandoMascotas.set(false);
-        this.errorMascotas.set(this.problemDetail.mensaje(err));
-      },
-    });
+  /**
+   * Búsqueda real contra GET /api/mascotas?q=...&size=... (paginada en el
+   * backend). Antes se precargaban 200 de las 10.000 mascotas reales de
+   * biopet_db_1m_v2 -alfabéticas- y el resto quedaba, en la práctica,
+   * imposible de elegir; ahora cada tecleo busca de verdad, sin traer todo.
+   */
+  buscarMascotas = (q: string): Observable<OpcionBusqueda[]> =>
+    this.mascotaApi
+      .buscarSeleccionables(q, 0, 15)
+      .pipe(map((res) => res.content.map((m) => ({ id: m.id, principal: m.nombre, secundario: `${formatearExpediente(m.id)} · ${m.duenioNombre}` }))));
+
+  buscarVeterinarios = (q: string): Observable<OpcionBusqueda[]> =>
+    this.usuarioSeleccionableApi
+      .buscarVeterinarios(q, 0, 15)
+      .pipe(map((res) => res.content.map((v) => ({ id: v.id, principal: v.nombre, secundario: v.email }))));
+
+  onMascotaSeleccionada(opcion: OpcionBusqueda | null): void {
+    this.form.patchValue({ mascotaId: opcion?.id ?? null });
+    this.form.get('mascotaId')?.markAsTouched();
   }
 
-  cargarVeterinarios(forzar = false): void {
-    if (this.veterinariosCargados && !forzar) return;
-    this.cargandoVeterinarios.set(true);
-    this.errorVeterinarios.set('');
-    this.usuarioSeleccionableApi.listarVeterinarios().subscribe({
-      next: (res) => {
-        this.veterinarios.set(res ?? []);
-        this.veterinariosCargados = true;
-        this.cargandoVeterinarios.set(false);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.cargandoVeterinarios.set(false);
-        this.errorVeterinarios.set(this.problemDetail.mensaje(err));
-      },
-    });
+  onVeterinarioSeleccionado(opcion: OpcionBusqueda | null): void {
+    this.form.patchValue({ veterinarioId: opcion?.id ?? null });
+    this.form.get('veterinarioId')?.markAsTouched();
   }
 
   // ---------- Formulario crear/editar ----------
@@ -535,9 +604,9 @@ export class CitasComponent implements OnInit {
     this.editando.set(null);
     this.erroresServidor = null;
     this.form.reset({ mascotaId: null, veterinarioId: null, fechaHora: '', motivo: '' });
+    this.mascotaSeleccionInicial = null;
+    this.veterinarioSeleccionInicial = null;
     this.mostrarFormulario.set(true);
-    this.cargarMascotas();
-    this.cargarVeterinarios();
     this.enfocarPrimerCampo();
   }
 
@@ -550,9 +619,11 @@ export class CitasComponent implements OnInit {
       fechaHora: instantAFechaHoraLocal(c.fechaHora),
       motivo: c.motivo ?? '',
     });
+    // Mascota y veterinario ya conocidos (edición): se muestran sin volver
+    // a buscarlos.
+    this.mascotaSeleccionInicial = { id: c.mascotaId, principal: c.mascotaNombre };
+    this.veterinarioSeleccionInicial = { id: c.veterinarioId, principal: c.veterinarioNombre };
     this.mostrarFormulario.set(true);
-    this.cargarMascotas();
-    this.cargarVeterinarios();
     this.enfocarPrimerCampo();
   }
 

@@ -6,12 +6,15 @@ import com.biopet.service.ConsultaService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/consultas")
@@ -22,10 +25,26 @@ public class ConsultaController {
         this.consultaService = consultaService;
     }
 
+    /**
+     * Todos los filtros son opcionales (auditoría de usabilidad + corrección
+     * de visibilidad por rol, fase "demo local"): sin ninguno, usa
+     * consultaService.listar (con cache), igual que antes -ya con el
+     * alcance por rol correcto-.
+     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','AUXILIAR','DUENO')")
-    public Page<ConsultaResponse> listar(Pageable pageable, @AuthenticationPrincipal UserDetails userDetails) {
-        return consultaService.listar(pageable, userDetails.getUsername());
+    public Page<ConsultaResponse> listar(@RequestParam(required = false) Long mascotaId,
+                                          @RequestParam(required = false) Long veterinarioId,
+                                          @RequestParam(required = false) String q,
+                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant desde,
+                                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant hasta,
+                                          Pageable pageable,
+                                          @AuthenticationPrincipal UserDetails userDetails) {
+        boolean sinFiltros = mascotaId == null && veterinarioId == null && (q == null || q.isBlank()) && desde == null && hasta == null;
+        if (sinFiltros) {
+            return consultaService.listar(pageable, userDetails.getUsername());
+        }
+        return consultaService.buscar(pageable, userDetails.getUsername(), mascotaId, veterinarioId, q, desde, hasta);
     }
 
     /**
