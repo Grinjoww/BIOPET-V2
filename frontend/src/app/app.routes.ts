@@ -130,6 +130,22 @@ export const routes: Routes = [
         loadComponent: () => import('./features/usuarios.component').then((m) => m.UsuariosComponent),
         canActivate: [roleGuard(['ROLE_ADMIN'])],
       },
+      // Modulo de respaldos (com.biopet.backup): RespaldoController exige
+      // hasRole('ADMIN') en las 4 rutas de /api/admin/respaldos/**, sin
+      // excepcion para ningun otro rol -mismo roleGuard que /usuarios.
+      {
+        path: 'respaldos',
+        loadComponent: () => import('./features/respaldos.component').then((m) => m.RespaldosComponent),
+        canActivate: [roleGuard(['ROLE_ADMIN'])],
+      },
+      // Auditoria (com.biopet.audit): AuditoriaController exige
+      // hasRole('ADMIN') en sus 2 rutas de solo lectura -mismo roleGuard que
+      // /usuarios y /respaldos.
+      {
+        path: 'auditoria',
+        loadComponent: () => import('./features/auditoria.component').then((m) => m.AuditoriaComponent),
+        canActivate: [roleGuard(['ROLE_ADMIN'])],
+      },
       {
         path: 'perfil',
         loadComponent: () => import('./features/perfil.component').then((m) => m.PerfilComponent),

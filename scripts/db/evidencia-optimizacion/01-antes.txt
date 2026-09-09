@@ -1,0 +1,145 @@
+EVIDENCIA "ANTES" — Optimización de consulta crítica (BIOPET-V2, biopet_db_1m_v2)
+================================================================================
+Rama: feature/admin-respaldos-db-1m
+Fecha de captura: 2026-09-08 (sesión de optimización con 1.012.001 registros)
+PostgreSQL: 18.4 local. Base: biopet_db_1m_v2 (biopet_db_1m_v2 real, NO H2).
+
+CONSULTA CRÍTICA ELEGIDA
+------------------------
+Endpoint real:      GET /api/citas?page=0&size=20&sort=fechaHora,desc
+Rol que la dispara:  ROLE_ADMIN / ROLE_VETERINARIO / ROLE_AUXILIAR (vista global
+                     de citas — la que usa el frontend por defecto al abrir la
+                     pantalla "Citas": ver cita-api.service.ts, listar() usa
+                     sort='fechaHora,desc' como valor por defecto).
+Controller:          CitaController.listar(Pageable, UserDetails)
+Service:             CitaService.listar(...) -> para estos 3 roles llama a
+                     CitaRepository.findAllByActivoTrue(pageable)
+Repository:          CitaRepository (Spring Data derived query)
+Tabla:               citas (400.000 filas, 384.266 con activo=true)
+Filtro:              activo = true (selectividad ~96 %: casi ninguna fila se
+                     descarta, por eso idx_citas_activo YA EXISTE pero el
+                     planificador nunca lo usa — no aporta nada con esa
+                     selectividad).
+Ordenamiento:        fecha_hora DESC (pedido explícito del frontend).
+Índices existentes en citas ANTES de esta fase:
+    citas_pkey             btree (id)
+    idx_citas_activo       btree (activo)      <- existe, NO se usa en el plan
+    idx_citas_mascota      btree (mascota_id)
+    idx_citas_veterinario  btree (veterinario_id)
+Ningún índice cubre fecha_hora.
+
+SQL EXACTO capturado con spring.jpa.show-sql=true contra el endpoint real
+(Hibernate 6, generado tal cual, sin editar):
+
+    SELECT c1_0.id, c1_0.activo, c1_0.actualizado_en, c1_0.creado_en,
+           c1_0.estado, c1_0.fecha_hora, c1_0.mascota_id, c1_0.motivo,
+           c1_0.veterinario_id
+    FROM public.citas c1_0
+    WHERE c1_0.activo
+    ORDER BY c1_0.fecha_hora DESC
+    FETCH FIRST 20 ROWS ONLY;
+
+Consulta de conteo que Spring Data ejecuta en la MISMA petición (para
+Page.totalElements):
+
+    SELECT count(c1_0.id) FROM public.citas c1_0 WHERE c1_0.activo;
+
+--------------------------------------------------------------------------------
+PLAN 1 — página 0 (offset 0), la más visitada en la práctica
+--------------------------------------------------------------------------------
+EXPLAIN (ANALYZE, BUFFERS) SELECT ... FROM public.citas c1_0
+WHERE c1_0.activo ORDER BY c1_0.fecha_hora DESC FETCH FIRST 20 ROWS ONLY;
+
+ Limit  (cost=13277.19..13279.52 rows=20 width=96) (actual time=60.738..65.361 rows=20.00 loops=1)
+   Buffers: shared hit=2659 read=3767
+   ->  Gather Merge  (cost=13277.19..58031.30 rows=384266 width=96) (actual time=60.737..65.358 rows=20.00 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=2659 read=3767
+         ->  Sort  (cost=12277.16..12677.44 rows=160111 width=96) (actual time=40.154..40.156 rows=20.00 loops=3)
+               Sort Key: fecha_hora DESC
+               Sort Method: top-N heapsort  Memory: 32kB
+               Buffers: shared hit=2659 read=3767
+               ->  Parallel Seq Scan on citas c1_0  (cost=0.00..8016.67 rows=160111 width=96) (actual time=0.083..20.098 rows=128000.00 loops=3)
+                     Filter: activo
+                     Rows Removed by Filter: 5333
+                     Buffers: shared hit=2583 read=3767
+ Planning Time: 0.642 ms
+ Execution Time: 65.401 ms
+
+RESUMEN:
+  Tipo de scan:        Parallel Seq Scan (2 workers) + Sort (top-N heapsort)
+                        sobre TODA la tabla (384.266 filas examinadas)
+  Filas examinadas:    384.000 (128.000 x 3 procesos: líder + 2 workers)
+  Filas devueltas:     20
+  Buffers:             shared hit=2659 read=3767  (6.426 páginas = ~50 MB tocados
+                        para devolver 20 filas)
+  Índice usado:        NINGUNO (idx_citas_activo existe pero el planificador
+                        lo descarta: casi todas las filas cumplen activo=true)
+  Planning Time:       0.642 ms
+  Execution Time:      65.401 ms
+
+--------------------------------------------------------------------------------
+PLAN 2 — página profunda (offset 4000 filas, size 20 ≈ página 200)
+--------------------------------------------------------------------------------
+EXPLAIN (ANALYZE, BUFFERS) SELECT ... FROM public.citas c1_0
+WHERE c1_0.activo ORDER BY c1_0.fecha_hora DESC
+OFFSET 4000 ROWS FETCH FIRST 20 ROWS ONLY;
+
+ Limit  (cost=19868.14..19870.47 rows=20 width=96) (actual time=72.657..77.549 rows=20.00 loops=1)
+   Buffers: shared hit=2941 read=3485
+   ->  Gather Merge  (cost=19402.27..64156.38 rows=384266 width=96) (actual time=71.998..77.443 rows=4020.00 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=2941 read=3485
+         ->  Sort  (cost=18402.25..18802.53 rows=160111 width=96) (actual time=51.727..51.792 rows=1642.33 loops=3)
+               Sort Key: fecha_hora DESC
+               Sort Method: top-N heapsort  Memory: 1596kB
+               Buffers: shared hit=2941 read=3485
+               ->  Parallel Seq Scan on citas c1_0  (cost=0.00..8016.67 rows=160111 width=96) (actual time=0.078..20.780 rows=128000.00 loops=3)
+                     Filter: activo
+                     Rows Removed by Filter: 5333
+                     Buffers: shared hit=2865 read=3485
+ Planning Time: 0.611 ms
+ Execution Time: 77.724 ms
+
+RESUMEN:
+  Execution Time:      77.724 ms  (empeora con el offset: el heapsort ahora
+                        debe retener 4020 filas en memoria por worker en vez
+                        de 20, para poder descartar las primeras 4000 después
+                        de ordenar)
+
+--------------------------------------------------------------------------------
+PLAN 3 — consulta de conteo (SIEMPRE se ejecuta, en toda página)
+--------------------------------------------------------------------------------
+EXPLAIN (ANALYZE, BUFFERS) SELECT count(c1_0.id) FROM public.citas c1_0
+WHERE c1_0.activo;
+
+ Finalize Aggregate  (cost=9417.16..9417.17 rows=1 width=8) (actual time=52.666..56.105 rows=1.00 loops=1)
+   Buffers: shared hit=3147 read=3203
+   ->  Gather  (cost=9416.94..9417.15 rows=2 width=8) (actual time=49.999..56.095 rows=3.00 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=3147 read=3203
+         ->  Partial Aggregate  (cost=8416.94..8416.95 rows=1 width=8) (actual time=21.096..21.097 rows=1.00 loops=3)
+               Buffers: shared hit=3147 read=3203
+               ->  Parallel Seq Scan on citas c1_0  (cost=0.00..8016.67 rows=160111 width=8) (actual time=0.013..15.606 rows=128000.00 loops=3)
+                     Filter: activo
+                     Rows Removed by Filter: 5333
+                     Buffers: shared hit=3147 read=3203
+ Planning Time: 0.596 ms
+ Execution Time: 56.221 ms
+
+NOTA IMPORTANTE (para no exagerar la mejora más adelante):
+  El COUNT necesita tocar TODAS las filas que cumplen activo=true sin importar
+  el orden — ningún índice sobre fecha_hora puede acelerar este COUNT. Se
+  documenta aquí para que el "antes/después" del reporte final sea honesto:
+  la mejora del índice aplica al SELECT principal (el que ordena y pagina),
+  NO a este conteo.
+
+LATENCIA TOTAL DE LA PETICIÓN (SELECT + COUNT, página 0):
+  65.401 ms + 56.221 ms ≈ 121.6 ms de trabajo en PostgreSQL, más
+  deserialización JPA, el N+1 real de mascota/veterinario por fila (ver
+  hallazgo de la sección 5) y serialización JSON — coherente con los ~153 ms
+  de extremo a extremo medidos en la verificación end-to-end de una fase
+  anterior de este mismo proyecto.

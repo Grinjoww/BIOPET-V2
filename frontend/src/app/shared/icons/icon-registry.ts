@@ -28,7 +28,9 @@ export type IconName =
   | 'chevron-right'
   | 'facturas'
   | 'documento'
-  | 'descargar';
+  | 'descargar'
+  | 'respaldos'
+  | 'auditoria';
 
 export interface IconShape {
   paths?: string[];
@@ -170,5 +172,24 @@ export const ICONS: Record<IconName, IconShape> = {
       [4, 21, 20, 21],
     ],
     polylines: ['7 10 12 15 17 10'],
+  },
+  // Cilindro de base de datos (3 curvas: elipse superior + dos costados que
+  // cierran en la elipse inferior). Se distingue a proposito de "descargar"
+  // -que es una flecha generica hacia una bandeja-: este icono es
+  // especificamente una base de datos, coherente con que la pantalla
+  // respalda justamente eso.
+  respaldos: {
+    paths: [
+      'M3 5c0-1.66 4-3 9-3s9 1.34 9 3-4 3-9 3-9-1.34-9-3Z',
+      'M21 12c0 1.66-4 3-9 3s-9-1.34-9-3',
+      'M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5',
+    ],
+  },
+  // Lupa: "inspeccionar registros", el glifo estandar de auditoria/busqueda.
+  // Se distingue de "respaldos" (cilindro de base de datos) a proposito:
+  // esta pantalla no maneja datos binarios, solo consulta metadatos.
+  auditoria: {
+    circles: [[10, 10, 6]],
+    lines: [[14.5, 14.5, 20, 20]],
   },
 };

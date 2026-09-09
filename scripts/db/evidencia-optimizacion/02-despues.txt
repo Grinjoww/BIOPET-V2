@@ -1,0 +1,90 @@
+EVIDENCIA "DESPUÉS" — Optimización de consulta crítica (BIOPET-V2, biopet_db_1m_v2)
+===================================================================================
+Misma consulta, mismos parámetros, misma base (biopet_db_1m_v2, 400.000 filas en
+citas) que 01-antes.txt. Único cambio entre una medición y otra:
+
+    CREATE INDEX IF NOT EXISTS idx_citas_fecha_hora ON citas (fecha_hora DESC);
+
+(V11__indice_citas_fecha_hora.sql — ver ese archivo para el razonamiento
+completo). Se ejecutó ANALYZE citas; antes de repetir las mediciones.
+
+--------------------------------------------------------------------------------
+PLAN 1 — página 0 (offset 0) — 3 corridas, todas consistentes
+--------------------------------------------------------------------------------
+ Limit  (cost=0.42..1.97 rows=20 width=96) (actual time=0.056..0.060 rows=20.00 loops=1)
+   Buffers: shared hit=1 read=3
+   ->  Index Scan using idx_citas_fecha_hora on citas c1_0  (cost=0.42..29655.10 rows=384333 width=96) (actual time=0.055..0.058 rows=20.00 loops=1)
+         Filter: activo
+         Rows Removed by Filter: 1
+         Index Searches: 1
+         Buffers: shared hit=1 read=3
+ Planning Time: 0.775 ms
+ Execution Time: 0.085 ms
+
+Repeticiones (misma sesión, caché ya caliente): 0.048 ms / 0.047 ms / 0.050 ms
+— estable, sin sort, sin escaneo de la tabla completa.
+
+RESUMEN:
+  Tipo de scan:        Index Scan using idx_citas_fecha_hora (sin Sort, sin
+                        Seq Scan, sin paralelismo -ya no hace falta-)
+  Filas examinadas:    21 (20 devueltas + 1 descartada por el filtro activo)
+  Filas devueltas:     20
+  Buffers:             shared hit=1 read=3  (4 páginas, frente a ~6.426 antes)
+  Índice usado:        idx_citas_fecha_hora (NUEVO, V11)
+  Planning Time:       0.775 ms
+  Execution Time:      0.085 ms (primera corrida) / ~0.05 ms estable
+
+--------------------------------------------------------------------------------
+PLAN 2 — página profunda (offset 4000 filas ≈ página 200)
+--------------------------------------------------------------------------------
+ Limit  (cost=309.06..310.60 rows=20 width=96) (actual time=1.272..1.279 rows=20.00 loops=1)
+   Buffers: shared hit=71 read=11
+   ->  Index Scan using idx_citas_fecha_hora on citas c1_0  (cost=0.42..29655.10 rows=384333 width=96) (actual time=0.020..1.180 rows=4020.00 loops=1)
+         Filter: activo
+         Rows Removed by Filter: 168
+         Index Searches: 1
+         Buffers: shared hit=71 read=11
+ Planning Time: 0.746 ms
+ Execution Time: 1.305 ms
+
+RESUMEN:
+  Execution Time:      1.305 ms (antes: 77.724 ms)
+  El Index Scan recorre secuencialmente las primeras (4000+20) entradas del
+  índice en orden de fecha -sigue habiendo trabajo proporcional al offset,
+  pero muchísimo más barato que ordenar 384.266 filas desde cero.
+
+--------------------------------------------------------------------------------
+PLAN 3 — consulta de conteo (SIN CAMBIO, tal como se anticipó en 01-antes.txt)
+--------------------------------------------------------------------------------
+ Finalize Aggregate (…)
+   ->  Gather (…)
+         ->  Partial Aggregate (…)
+               ->  Parallel Seq Scan on citas c1_0  (Filter: activo, Rows Removed by Filter: 5333)
+ Execution Time: 42.944 ms / 54.398 ms / 47.838 ms  (3 corridas, sin índice nuevo aplicado)
+
+RESUMEN: el plan del COUNT(*) es idéntico al de antes (Parallel Seq Scan,
+sin usar idx_citas_fecha_hora): contar filas no depende del orden, así que
+un índice sobre fecha_hora no puede acelerarlo. Confirma que la mejora es
+real y específica del SELECT paginado, no un efecto general de "todo mejoró".
+
+--------------------------------------------------------------------------------
+COMPARACIÓN OBJETIVA (mismos parámetros, misma base, antes vs. después)
+--------------------------------------------------------------------------------
+                            ANTES (Seq Scan+Sort)   DESPUÉS (Index Scan)   Mejora
+Página 0 (offset 0):        65.401 ms                0.085 ms              99.87 %  (≈770×)
+Página profunda (offset 4000): 77.724 ms              1.305 ms              98.32 %  (≈60×)
+COUNT(*) (misma petición):  ~43–56 ms                 ~43–56 ms (sin cambio)  0 % (esperado, ver arriba)
+Buffers (página 0):         hit=2659 read=3767 (~6.426 páginas)   hit=1 read=3 (4 páginas)   ~99.94 %
+Tipo de scan:                Parallel Seq Scan + top-N heapsort   Index Scan (sin sort)   cambio de plan confirmado
+
+Latencia total estimada de la petición completa (SELECT + COUNT, página 0):
+  Antes:    65.4 + ~50  ≈ 115 ms de trabajo en PostgreSQL
+  Después:  0.1 + ~50   ≈  50 ms de trabajo en PostgreSQL
+  (el resto de los ~153 ms medidos end-to-end en una fase anterior son N+1 de
+  mascota/veterinario, deserialización JPA y serialización JSON — no se
+  tocan en esta fase, ver hallazgo de la sección "colapso con 1M").
+
+No se exagera: la mejora del SELECT paginado es real y grande porque el
+patrón "ORDER BY sin índice sobre 384.000 filas" es exactamente el caso que
+un índice de orden resuelve mejor. La mejora NO se extiende al COUNT(*) de
+la misma petición, y se reporta así explícitamente.

@@ -7,6 +7,13 @@ RUN mvn -q -DskipTests package
 
 FROM eclipse-temurin:21-jre-alpine@sha256:3f08b13888f595cc49edabea7250ba69499ba25602b267da591720769400e08c
 WORKDIR /app
+# pg_dump real para el modulo de respaldos (com.biopet.backup): la imagen
+# JRE base no trae cliente de PostgreSQL. "postgresql-client" (sin pin de
+# version) para no acoplar el build a la version exacta de Alpine de esta
+# imagen; si el respaldo real reporta un aviso de version distinta al
+# servidor (postgres:16-alpine en docker-compose.yml), pin explicito a
+# postgresql16-client.
+RUN apk add --no-cache postgresql-client
 COPY --from=build /app/target/biopet-backend-0.1.0.jar app.jar
 # Script de arranque exclusivo para Render (render.yaml -> dockerCommand:
 # /app/render-entrypoint.sh), que construye DB_URL en runtime a partir de

@@ -72,6 +72,14 @@ export function navGroupsParaRol(rol: RolBiopet): NavGroup[] {
   const administracion: NavItem[] = [];
   if (rol === 'ROLE_ADMIN') {
     administracion.push({ path: '/usuarios', label: 'Usuarios', icon: 'usuarios' });
+    // Modulo de respaldos (com.biopet.backup): exclusivo de ROLE_ADMIN, igual
+    // que "Usuarios" -RespaldoController exige hasRole('ADMIN') en las 4
+    // rutas, sin excepcion para ningun otro rol.
+    administracion.push({ path: '/respaldos', label: 'Respaldos', icon: 'respaldos' });
+    // Auditoria (com.biopet.audit): exclusiva de ROLE_ADMIN -
+    // AuditoriaController exige hasRole('ADMIN') en sus 2 rutas de solo
+    // lectura, sin excepcion para ningun otro rol.
+    administracion.push({ path: '/auditoria', label: 'Auditoría', icon: 'auditoria' });
   }
   administracion.push({ path: '/perfil', label: 'Perfil', icon: 'perfil' });
 

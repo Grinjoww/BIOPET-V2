@@ -1,5 +1,6 @@
 package com.biopet.exception;
 
+import com.biopet.backup.exception.RespaldoEnProcesoException;
 import com.biopet.facturacion.exception.AutorizacionSriInconsistenteException;
 import com.biopet.facturacion.exception.CertificadoFirmaInvalidoException;
 import com.biopet.facturacion.exception.ConceptoFacturableNoDisponibleException;
@@ -123,6 +124,17 @@ public class GlobalExceptionHandler {
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getSegundosRestantes()))
                 .body(problemDetail);
+    }
+
+    // ======================================================================
+    // Respaldos (modulo administrativo)
+    // ======================================================================
+
+    /** Ya hay un respaldo EN_PROCESO cuando se pidio disparar otro (manual o automatico). */
+    @ExceptionHandler(RespaldoEnProcesoException.class)
+    public ResponseEntity<ProblemDetail> respaldoEnProceso(RespaldoEnProcesoException ex, HttpServletRequest request) {
+        return problemResponse(HttpStatus.CONFLICT, ProblemType.CONFLICT, "Respaldo en proceso",
+                ex.getMessage(), request);
     }
 
     private ResponseEntity<ProblemDetail> problemResponse(HttpStatus status, ProblemType type, String title,

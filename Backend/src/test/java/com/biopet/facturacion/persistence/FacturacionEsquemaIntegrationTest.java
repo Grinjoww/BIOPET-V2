@@ -45,12 +45,24 @@ class FacturacionEsquemaIntegrationTest extends FacturacionPostgresTestBase {
     // ------------------------------------------------------------------
 
     @Test
-    void flywayAplicoLasOchoMigracionesSinFallos() {
+    void flywayAplicoLasOnceMigracionesSinFallos() {
         List<String> versiones = jdbc.queryForList(
                 "SELECT version FROM flyway_schema_history WHERE version IS NOT NULL ORDER BY installed_rank",
                 String.class);
 
-        assertThat(versiones).containsExactly("1", "2", "3", "4", "5", "6", "7", "8");
+        // V9 y V10 (modulo de respaldos + auditoria, com.biopet.backup /
+        // com.biopet.audit) y V11 (indice de rendimiento sobre citas,
+        // fase "Optimizacion con 1M+") son la unica razon del 11: ninguna
+        // toca una tabla/funcion/trigger de V1-V8 -ver su propio test
+        // lasOnceTablasDelModuloExistenYLasDeV1aV6SiguenIntactas, que sigue
+        // verificando exactamente las mismas tablas de V1-V8 de siempre,
+        // sin las migraciones nuevas en su lista. V10 corrige V9 (intervalo
+        // -> dia+hora) porque V9 ya estaba aplicada en la base de trabajo
+        // persistente biopet_db_1m_v2 cuando llego la correccion -ver el
+        // encabezado de V10__respaldos_dia_hora_y_auditoria.sql. V11 agrega
+        // un unico CREATE INDEX sobre citas.fecha_hora, con evidencia en
+        // scripts/db/evidencia-optimizacion/.
+        assertThat(versiones).containsExactly("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11");
 
         Integer fallidas = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE success = FALSE", Integer.class);

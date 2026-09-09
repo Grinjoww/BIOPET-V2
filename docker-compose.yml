@@ -62,6 +62,12 @@ services:
     env_file: .env
     ports:
       - "8080:8080"
+    volumes:
+      # Modulo de respaldos (com.biopet.backup): los .dump de pg_dump NUNCA
+      # se guardan en PostgreSQL, viven en disco. Montado en la MISMA ruta
+      # que BACKUP_STORAGE_PATH (.env/.env.example) para que sobrevivan a
+      # "docker compose down" y sean inspeccionables desde el host.
+      - ./backups:/app/backups
     depends_on:
       postgres:
         condition: service_healthy

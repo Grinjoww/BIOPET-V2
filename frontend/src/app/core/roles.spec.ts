@@ -14,18 +14,37 @@ function label(rol: Parameters<typeof navGroupsParaRol>[0], path: string): strin
 }
 
 describe('roles (navegación por rol — solo wayfinding de UI)', () => {
-  it('ADMIN ve las 7 secciones: Panel, Mascotas, Citas, Consultas, Vacunas, Usuarios y Perfil', () => {
+  it('ADMIN ve las 9 secciones: Panel, Mascotas, Citas, Consultas, Vacunas, Usuarios, Respaldos, Auditoría y Perfil', () => {
     const rutas = paths('ROLE_ADMIN');
     expect(rutas).toEqual(
-      jasmine.arrayContaining(['/panel', '/mascotas', '/citas', '/consultas', '/vacunas', '/usuarios', '/perfil'])
+      jasmine.arrayContaining([
+        '/panel',
+        '/mascotas',
+        '/citas',
+        '/consultas',
+        '/vacunas',
+        '/usuarios',
+        '/respaldos',
+        '/auditoria',
+        '/perfil',
+      ])
     );
   });
 
-  it('ni VETERINARIO ni AUXILIAR ven Usuarios (solo ADMIN puede administrar cuentas)', () => {
+  it('ni VETERINARIO ni AUXILIAR ven Usuarios, Respaldos ni Auditoría (las 3 exclusivas de ADMIN)', () => {
     expect(paths('ROLE_VETERINARIO')).not.toContain('/usuarios');
     expect(paths('ROLE_AUXILIAR')).not.toContain('/usuarios');
+    expect(paths('ROLE_VETERINARIO')).not.toContain('/respaldos');
+    expect(paths('ROLE_AUXILIAR')).not.toContain('/respaldos');
+    expect(paths('ROLE_VETERINARIO')).not.toContain('/auditoria');
+    expect(paths('ROLE_AUXILIAR')).not.toContain('/auditoria');
     // Sí conservan el resto de la clínica.
     expect(paths('ROLE_VETERINARIO')).toEqual(jasmine.arrayContaining(['/panel', '/mascotas', '/citas']));
+  });
+
+  it('DUENO tampoco ve Respaldos ni Auditoría (ambos controllers exigen hasRole(ADMIN), sin excepción)', () => {
+    expect(paths('ROLE_DUENO')).not.toContain('/respaldos');
+    expect(paths('ROLE_DUENO')).not.toContain('/auditoria');
   });
 
   it('DUENO no ve Panel ni Usuarios, y ve sus 4 secciones filtradas por propiedad con el label "Mis..." consistente (Mascotas/Citas/Consultas/Vacunas)', () => {

@@ -1,0 +1,51 @@
+-- V11__indice_citas_fecha_hora.sql
+-- Optimizacion basada en evidencia (fase "Optimizacion con 1M+", medida
+-- contra biopet_db_1m_v2 con 400.000 filas reales en citas). Migracion
+-- ADITIVA sobre V1-V10: un unico CREATE INDEX, no toca ninguna tabla,
+-- funcion, trigger, grant ni dato existente. No es una tabla fiscal.
+--
+-- CONSULTA CRITICA (real, no inventada):
+--   GET /api/citas?sort=fechaHora,desc -> CitaController.listar ->
+--   CitaService.listar -> CitaRepository.findAllByActivoTrue(pageable),
+--   la vista de ADMIN/VETERINARIO/AUXILIAR al abrir la pantalla "Citas"
+--   (cita-api.service.ts usa 'fechaHora,desc' como sort por defecto).
+--   Hibernate genera:
+--     SELECT ... FROM citas WHERE activo ORDER BY fecha_hora DESC
+--     FETCH FIRST ? ROWS ONLY [OFFSET ?]
+--
+-- POR QUE ESTE INDICE Y NO idx_citas_activo (V2, ya existente):
+--   idx_citas_activo (btree sobre una columna booleana) es prácticamente
+--   inutil aqui: activo=true cubre ~96% de las 400.000 filas (384.266), asi
+--   que el planificador SIEMPRE prefiere un Seq Scan sobre ese indice -se
+--   comprobo con EXPLAIN antes de tocar nada, ver
+--   scripts/db/evidencia-optimizacion/01-antes.txt-. El cuello de botella
+--   real no es el filtro (poco selectivo), es el ORDER BY fecha_hora DESC
+--   sin ningun indice que lo soporte: PostgreSQL debe leer las 384.266 filas
+--   activas y ordenarlas en memoria (Parallel Seq Scan + top-N heapsort)
+--   solo para devolver 20.
+--
+-- EVIDENCIA (scripts/db/evidencia-optimizacion/, medida en esta misma base):
+--   ANTES (pagina 0):  Parallel Seq Scan + Sort, Execution Time ~65.4 ms,
+--                       buffers shared hit=2659 read=3767 (~6.400 paginas).
+--   DESPUES (pagina 0): Index Scan using idx_citas_fecha_hora,
+--                       Execution Time ~0.05 ms, buffers shared hit=1 read=3.
+--   Mejora: >99.9% (page 0), ~98% en una pagina profunda (offset 4000:
+--   77.7 ms -> 1.3 ms). El COUNT(*) que la misma peticion tambien ejecuta
+--   (para Page.totalElements) NO mejora -sigue en Seq Scan, ~43-56 ms
+--   estable en ambas mediciones-: contar filas no depende del orden, ningun
+--   indice sobre fecha_hora puede acelerar ese COUNT. Se documenta para no
+--   exagerar la mejora total de la peticion.
+--
+-- DESC explicito porque el sort real es SIEMPRE descendente (citas mas
+-- recientes primero); un btree ASC serviria igual de bien para un
+-- "Index Scan Backward", pero se deja expresado tal cual coincide con el
+-- ORDER BY real, sin ambiguedad.
+--
+-- Sin CONCURRENTLY: Flyway ejecuta cada migracion dentro de una
+-- transaccion, y CREATE INDEX CONCURRENTLY no puede correr dentro de una
+-- transaccion (PostgreSQL lo rechaza explicitamente). Para una base de
+-- demostracion local esto es seguro: la tabla no recibe escritura
+-- concurrente real durante la migracion, y la creacion tardo ~0.36 s sobre
+-- 400.000 filas -confirmado antes de escribir este archivo-, muy por
+-- debajo de cualquier umbral que justificara bloquear menos.
+CREATE INDEX IF NOT EXISTS idx_citas_fecha_hora ON citas (fecha_hora DESC);

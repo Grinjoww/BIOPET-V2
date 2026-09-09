@@ -125,6 +125,67 @@ sri:
     # Aqui no hay ningun secreto: los servicios offline del SRI no usan
     # credenciales. La identidad la aporta la firma XAdES del comprobante.
 
+# Modulo administrativo de respaldos PostgreSQL (Proyecto Final de
+# Administracion de Bases de Datos). Sin relacion con facturacion/SRI de
+# arriba: no comparte ninguna tabla, credencial ni configuracion con ellos.
+backup:
+  # Directorio donde pg_dump escribe los .dump (-Fc). Se crea si no existe.
+  # Sin default pensado para produccion: "./backups" alcanza para
+  # desarrollo/demo, pero un despliegue real debe fijar una ruta persistente
+  # explicita (ver docker-compose.yml, volumen dedicado del backend).
+  storage-path: ${BACKUP_STORAGE_PATH:./backups}
+  # Ejecutable de pg_dump. Portabilidad (riesgo ya observado): un servidor
+  # PostgreSQL 18 con un pg_dump 16 en el PATH del sistema falla el respaldo
+  # (pg_dump rechaza volcar una version de servidor mas nueva que la suya).
+  # PG_DUMP_PATH permite fijar la ruta EXACTA al pg_dump correspondiente a la
+  # version real del servidor de cada maquina, sin hardcodear ninguna ruta de
+  # un sistema en particular. Si no se define, se intenta primero
+  # BACKUP_PGDUMP_PATH (nombre historico de esta misma clave, se mantiene por
+  # compatibilidad) y, si tampoco esta, "pg_dump" resuelto contra el PATH del
+  # sistema -funciona solo si esa version coincide con la del servidor.
+  # PgDumpExecutorImpl valida "pg_dump --version" ANTES de cada respaldo real;
+  # si el ejecutable no existe o no responde, el respaldo queda FALLIDO con un
+  # mensaje seguro, sin tumbar BIOPET.
+  pg-dump-path: ${PG_DUMP_PATH:${BACKUP_PGDUMP_PATH:pg_dump}}
+  # Tiempo maximo que se espera a que pg_dump termine antes de forzar su
+  # cancelacion (destroyForcibly). Finito a proposito, mismo criterio que
+  # sri.soap.read-timeout arriba: un proceso colgado no debe quedar
+  # esperando para siempre.
+  timeout-seconds: ${BACKUP_TIMEOUT_SECONDS:300}
+  # Cada cuanto RespaldoScheduler revisa la configuracion vigente. NO es el
+  # intervalo real entre respaldos -ese lo elige el ADMIN en
+  # minutos/horas/dias desde la pantalla y se compara en cada revision
+  # contra proximoRespaldoEn; ver el javadoc de RespaldoScheduler para el
+  # porque no se usa un fixedRate igual a ese intervalo.
+  scheduler-check-interval-ms: ${BACKUP_SCHEDULER_INTERVAL_MS:30000}
+  # Conexion que usa pg_dump. Por defecto la MISMA base que usa el resto de
+  # la aplicacion (spring.datasource.url, arriba) -no se duplica esa
+  # configuracion. Usuario/password son los del rol PROPIETARIO del esquema
+  # -DB_USER/DB_PASSWORD, las MISMAS variables que ya usa Flyway para
+  # migrar (spring.flyway.user/password, arriba)-, NO
+  # spring.datasource.username/password -biopet_app, de privilegio minimo-:
+  # un volcado completo del esquema necesita los privilegios del
+  # propietario que corrio las migraciones, no los del runtime de la
+  # aplicacion. Ningun secreto nuevo.
+  #
+  # Se leen DB_USER/DB_PASSWORD directamente -NO como
+  # "${spring.flyway.user:}"/"${spring.flyway.password:}"- a proposito:
+  # spring.flyway.password (arriba) NO tiene default ("Sin fallback: un
+  # secreto con fallback no es un secreto"), y BackupProperties es un
+  # @ConfigurationProperties que Spring instancia SIEMPRE al arrancar,
+  # incluso cuando Flyway esta deshabilitado (spring.flyway.enabled=false,
+  # perfil "test"). Encadenar el default vacio aqui ("${spring.flyway.password:}")
+  # no evita el fallo: Spring igual intenta resolver el valor CRUDO de
+  # spring.flyway.password primero ("${DB_PASSWORD}", sin su propio
+  # default) y esa resolucion interna falla ANTES de llegar al ":" de
+  # afuera, tumbando el arranque de CUALQUIER test que no exporte
+  # DB_PASSWORD -asi nunca vaya a generar un respaldo real. Leyendo
+  # DB_PASSWORD como variable de entorno de nivel raiz, con su propio
+  # default vacio explicito, esa resolucion nunca falla.
+  pgdump-source-url: ${spring.datasource.url}
+  pgdump-usuario: ${DB_USER:biopet_user}
+  pgdump-password: ${DB_PASSWORD:}
+
 springdoc:
   api-docs:
     path: /api/openapi

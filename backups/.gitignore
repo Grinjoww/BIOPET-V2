@@ -1,0 +1,3 @@
+# Los .dump de pg_dump nunca se versionan (pueden contener datos reales).
+*
+!.gitignore

@@ -1,5 +1,6 @@
 package com.biopet.config;
 
+import com.biopet.audit.filter.AuditoriaHttpFilter;
 import com.biopet.security.JwtAuthenticationFilter;
 import com.biopet.security.ProblemAccessDeniedHandler;
 import com.biopet.security.ProblemAuthenticationEntryPoint;
@@ -32,6 +33,7 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final AuditoriaHttpFilter auditoriaHttpFilter;
     private final UserDetailsServiceImpl userDetailsService;
     private final ProblemAuthenticationEntryPoint problemAuthenticationEntryPoint;
     private final ProblemAccessDeniedHandler problemAccessDeniedHandler;
@@ -40,10 +42,12 @@ public class SecurityConfig {
     private String allowedOrigins;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          AuditoriaHttpFilter auditoriaHttpFilter,
                           UserDetailsServiceImpl userDetailsService,
                           ProblemAuthenticationEntryPoint problemAuthenticationEntryPoint,
                           ProblemAccessDeniedHandler problemAccessDeniedHandler) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.auditoriaHttpFilter = auditoriaHttpFilter;
         this.userDetailsService = userDetailsService;
         this.problemAuthenticationEntryPoint = problemAuthenticationEntryPoint;
         this.problemAccessDeniedHandler = problemAccessDeniedHandler;
@@ -87,7 +91,11 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // DESPUES de jwtAuthenticationFilter: para cuando este filtro lee
+                // el usuario (tras el resto de la cadena, ver su javadoc) el
+                // SecurityContext ya esta resuelto.
+                .addFilterAfter(auditoriaHttpFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 
