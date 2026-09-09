@@ -61,7 +61,7 @@ export const routes: Routes = [
       // ROLE_DUENO sigue en 'mascotas' (sin acceso real a Panel — ver
       // roles.ts), así que para ese rol el resultado visible es idéntico
       // al de antes.
-      { path: '', pathMatch: 'full', canActivate: [homeRedirectGuard] },
+      { path: '', pathMatch: 'full', canActivate: [homeRedirectGuard], children: [] },
 
       // Panel V2 consume GET /api/dashboard/resumen, restringido en el
       // backend a ADMIN/VETERINARIO/AUXILIAR (fn_reporte_dashboard no
@@ -158,5 +158,5 @@ export const routes: Routes = [
   // (Panel), no forzarlo a Mascotas. Sin sesión, homeRedirectGuard manda a
   // /login igual que antes hacía indirectamente (redirectTo: 'mascotas' →
   // authGuard del shell → /login).
-  { path: '**', canActivate: [homeRedirectGuard] },
+  { path: '**', canActivate: [homeRedirectGuard], children: [] },
 ];
